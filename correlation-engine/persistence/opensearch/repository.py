@@ -1,4 +1,4 @@
-from opensearch.mapper import (
+from persistence.opensearch.mapper import (
     OpenSearchIncidentMapper
 )
 

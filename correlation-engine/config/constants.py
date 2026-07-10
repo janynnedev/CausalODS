@@ -1,0 +1,7 @@
+INCIDENT_INDEX = "incidents"
+
+TRACE_INDEX = "traces"
+
+MODEL_VERSION = "1.0"
+
+PIPELINE_VERSION = "1.0"

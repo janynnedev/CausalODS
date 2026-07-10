@@ -1,9 +1,10 @@
 from kafka import KafkaConsumer
 
+from config.settings import Settings
 
 consumer = KafkaConsumer(
-    "traces",
-    bootstrap_servers="kafka:9092"
+    Settings.KAFKA_TOPIC,
+    bootstrap_servers=Settings.KAFKA_BOOTSTRAP_SERVERS
 )
 
 msg = next(consumer)

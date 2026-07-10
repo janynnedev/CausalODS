@@ -21,7 +21,7 @@ class IndexManager:
 
         if self.client.indices.exists(
 
-            self.INDEX_NAME
+            index=self.INDEX_NAME
 
         ):
 

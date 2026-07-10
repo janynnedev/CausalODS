@@ -1,23 +1,26 @@
 from kafka import KafkaConsumer
-
+from config.settings import Settings
 from consumer.otlp_deserializer import OTLPDeserializer
-from inspector.otlp_inspector import OTLPInspector
+from consumer.otlp_inspector import OTLPInspector
 
 
-consumer = KafkaConsumer(
-    "traces",
-    bootstrap_servers="kafka:9092"
-)
+def main():
 
-deserializer = OTLPDeserializer()
+    consumer = KafkaConsumer(
+        Settings.KAFKA_TOPIC,
+        bootstrap_servers=Settings.KAFKA_BOOTSTRAP_SERVERS
+    )
 
-inspector = OTLPInspector()
+    deserializer = OTLPDeserializer()
+
+    inspector = OTLPInspector()
+
+    for message in consumer:
+
+        request = deserializer.deserialize(message.value)
+
+        inspector.inspect(request)
 
 
-for message in consumer:
-
-    request = deserializer.deserialize(message.value)
-
-    inspector.inspect(request)
-
-    break
+if __name__ == "__main__":
+    main()

@@ -150,6 +150,53 @@ services:
     networks:
       - observability
 
+  opensearch:
+
+    image: opensearchproject/opensearch:2.19.0
+
+    container_name: causalods-opensearch
+
+    restart: unless-stopped
+
+    environment:
+
+      discovery.type: single-node
+
+      bootstrap.memory_lock: "true"
+
+      OPENSEARCH_JAVA_OPTS: "-Xms512m -Xmx512m"
+
+      DISABLE_SECURITY_PLUGIN: "true"
+
+    ulimits:
+
+      memlock:
+
+        soft: -1
+
+        hard: -1
+
+    ports:
+
+      - "9200:9200"
+
+      - "9600:9600"
+
+    healthcheck:
+
+      test: ["CMD-SHELL", "curl -fs http://localhost:9200 >/dev/null || exit 1"]
+
+      interval: 20s
+
+      timeout: 10s
+
+      retries: 20
+
+      start_period: 30s
+
+    networks:
+      - observability
+
   kafka:
 
     image: confluentinc/cp-kafka:7.8.0
@@ -211,14 +258,20 @@ services:
     depends_on:
       kafka:
         condition: service_healthy
+      opensearch:
+        condition: service_healthy
 
     environment:
 
-      KAFKA_BOOTSTRAP: kafka:9092
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
 
       KAFKA_TOPIC: traces
 
       CONSUMER_GROUP: correlation-engine
+
+      OPENSEARCH_HOST: causalods-opensearch
+
+      OPENSEARCH_PORT: 9200
 
     volumes:
       - ./correlation-engine/output:/app/output
