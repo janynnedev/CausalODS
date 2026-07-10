@@ -1,6 +1,6 @@
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional
-from datetime import datetime
+from datetime import datetime, timezone
 
 
 @dataclass
@@ -45,6 +45,7 @@ class TraceState:
 
     end_time: Optional[datetime] = None
 
+    last_updated: Optional[datetime] = None
 
     def add_span(self, span: SpanNode):
         """
@@ -53,6 +54,7 @@ class TraceState:
 
         self.spans[span.span_id] = span
 
+        self.last_updated = datetime.now(timezone.utc)
 
         # identifica root span
         if span.parent_span_id is None:

@@ -1,10 +1,11 @@
 from typing import Dict
 
+from models.span import Span
+
 from models.trace_state import (
     TraceState,
     SpanNode
 )
-
 
 
 class TraceBuilder:
@@ -25,12 +26,10 @@ class TraceBuilder:
 
     def process_span(
         self,
-        normalized_span: dict
+        span: Span
     ):
 
-        trace_id = (
-            normalized_span["trace_id"]
-        )
+        trace_id = span.trace_id
 
 
         # cria trace caso não exista
@@ -49,61 +48,51 @@ class TraceBuilder:
         ]
 
 
+        span_node = SpanNode(
 
-        span = SpanNode(
+            span_id=
+                span.span_id,
 
-            span_id =
-                normalized_span["span_id"],
 
-            parent_span_id =
-                normalized_span.get(
-                    "parent_span_id"
+            parent_span_id=
+                span.parent_span_id,
+
+
+            service_name=
+                span.service_name,
+
+
+            operation_name=
+                span.operation_name,
+
+
+            start_time=
+                self._to_datetime(
+                    span.start_time
                 ),
 
-            service_name =
-                normalized_span[
-                    "service_name"
-                ],
 
-            operation_name =
-                normalized_span[
-                    "operation_name"
-                ],
+            end_time=
+                self._to_datetime(
+                    span.end_time
+                ),
 
 
-            start_time =
-                normalized_span[
-                    "start_time"
-                ],
+            duration_ms=
+                span.duration_ns / 1_000_000,
 
 
-            end_time =
-                normalized_span[
-                    "end_time"
-                ],
+            status_code=
+                span.status_code,
 
 
-            duration_ms =
-                normalized_span[
-                    "duration_ms"
-                ],
-
-
-            status_code =
-                normalized_span[
-                    "status"
-                ],
-
-
-            attributes =
-                normalized_span.get(
-                    "attributes",
-                    {}
-                )
+            attributes={}
         )
 
 
-        trace.add_span(span)
+        trace.add_span(
+            span_node
+        )
 
 
         trace.connect_parent_child()
@@ -113,9 +102,24 @@ class TraceBuilder:
 
 
 
+    def _to_datetime(
+        self,
+        timestamp_ns: int
+    ):
+
+        from datetime import datetime, timezone
+
+
+        return datetime.fromtimestamp(
+            timestamp_ns / 1_000_000_000,
+            tz=timezone.utc
+        )
+
+
+
     def get_trace(
         self,
-        trace_id:str
+        trace_id: str
     ):
 
         return self.active_traces.get(
@@ -126,14 +130,10 @@ class TraceBuilder:
 
     def finish_trace(
         self,
-        trace_id:str
+        trace_id: str
     ):
 
-        trace = (
-            self.active_traces.pop(
-                trace_id,
-                None
-            )
+        return self.active_traces.pop(
+            trace_id,
+            None
         )
-
-        return trace
