@@ -6,44 +6,33 @@ class RCAFeature:
 
     service_name: str
 
+    request_count: int
 
-    # Trace features
+    error_count: int
 
-    request_count: int = 0
+    error_rate: float
 
-    error_count: int = 0
+    avg_latency_ms: float
 
-    error_rate: float = 0.0
+    max_latency_ms: float
 
-    avg_latency_ms: float = 0.0
+    incoming_dependencies: int
 
+    outgoing_dependencies: int
 
-    # Graph features
+    dependency_count: int
 
-    incoming_dependencies: int = 0
+    is_first_failure: bool
 
-    outgoing_dependencies: int = 0
+    failure_order: int
 
+    failure_lead_time_ms: float
 
-    # Temporal features
+    latency_zscore: float
 
-    is_first_failure: int = 0
+    anomaly_score: float
 
-    failure_lead_time_ms: float = 0.0
-
-
-    # Causal features
-
-    downstream_impact: float = 0.0
-
-    propagation_depth: int = 0
-
-
-    # Anomaly features
-
-    latency_zscore: float = 0.0
-
-    anomaly_score: float = 0.0
+    is_anomalous: bool
 
 
 

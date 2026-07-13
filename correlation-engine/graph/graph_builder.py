@@ -1,7 +1,6 @@
 from models.service_graph import ServiceGraph
 
 
-
 class GraphBuilder:
 
 
@@ -9,36 +8,27 @@ class GraphBuilder:
 
         graph = ServiceGraph()
 
-
         for span in trace.spans.values():
 
-
-            graph.add_service(
+            node = graph.add_service(
                 span.service_name
             )
 
+            node.request_count += 1
 
-            graph.nodes[
-                span.service_name
-            ].request_count += 1
-
-
+            node.total_latency_ms += (
+                span.duration_ms
+            )
 
             if span.status_code == "ERROR":
 
-                graph.nodes[
-                    span.service_name
-                ].error_count += 1
-
-
+                node.error_count += 1
 
             for child_id in span.children:
-
 
                 child = trace.spans[
                     child_id
                 ]
-
 
                 graph.add_dependency(
 
@@ -51,6 +41,5 @@ class GraphBuilder:
                     child.status_code == "ERROR"
 
                 )
-
 
         return graph

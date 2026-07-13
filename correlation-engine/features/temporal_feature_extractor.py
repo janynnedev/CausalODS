@@ -1,45 +1,44 @@
 class TemporalFeatureExtractor:
 
-
-
-    def extract(
-        self,
-        temporal_result
-    ):
-
+    def extract(self, temporal_result):
 
         result = {}
 
-
-        first_failure = (
-            temporal_result
-            .get(
-                "first_failure"
-            )
+        ordered = temporal_result.get(
+            "ordered_failures",
+            []
         )
 
-
-        if not first_failure:
+        if not ordered:
 
             return result
 
+        first = ordered[0]
 
+        initial_time = first["timestamp"]
 
-        service = (
-            first_failure["service"]
-        )
+        for index, failure in enumerate(ordered):
 
+            result[
+                failure["service"]
+            ] = {
 
-        result[service] = {
+                "failure_order":
 
+                    index,
 
-            "is_first_failure":1,
+                "is_first_failure":
 
+                    index == 0,
 
-            "failure_lead_time_ms":
-                0
+                "failure_lead_time_ms":
 
-        }
+                    (
+                        failure["timestamp"]
+                        -
+                        initial_time
+                    ).total_seconds() * 1000
 
+            }
 
         return result

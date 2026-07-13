@@ -1,67 +1,79 @@
 class TraceFeatureExtractor:
 
-
     def extract(self, trace):
 
         features = {}
-
 
         for service in trace.services:
 
             spans = [
 
-                s
+                span
 
-                for s in trace.spans.values()
+                for span in trace.spans.values()
 
-                if s.service_name == service
+                if span.service_name == service
 
             ]
 
-
             request_count = len(spans)
 
-
-            errors = sum(
+            error_count = sum(
 
                 1
 
-                for s in spans
+                for span in spans
 
-                if s.status_code == "ERROR"
-
-            )
-
-
-            latency = sum(
-
-                s.duration_ms
-
-                for s in spans
+                if span.status_code == "ERROR"
 
             )
 
+            total_latency = sum(
+
+                span.duration_ms
+
+                for span in spans
+
+            )
+
+            max_latency = max(
+
+                (
+                    span.duration_ms
+                    for span in spans
+                ),
+
+                default=0
+
+            )
 
             features[service] = {
 
                 "request_count":
                     request_count,
 
-
                 "error_count":
-                    errors,
-
+                    error_count,
 
                 "error_rate":
-                    errors / request_count
-                    if request_count else 0,
-
+                    (
+                        error_count /
+                        request_count
+                    )
+                    if request_count
+                    else 0,
 
                 "avg_latency_ms":
-                    latency / request_count
-                    if request_count else 0
+                    (
+                        total_latency /
+                        request_count
+                    )
+                    if request_count
+                    else 0,
+
+                "max_latency_ms":
+                    max_latency
 
             }
-
 
         return features

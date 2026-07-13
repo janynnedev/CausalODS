@@ -97,34 +97,19 @@ class FeatureAggregator:
 
                 service_name=service,
 
+                request_count=...,
 
-                request_count=
+                error_count=...,
+
+                error_rate=...,
+
+                avg_latency_ms=...,
+
+                max_latency_ms=
                     trace.get(
-                        "request_count",
+                        "max_latency_ms",
                         0
                     ),
-
-
-                error_count=
-                    trace.get(
-                        "error_count",
-                        0
-                    ),
-
-
-                error_rate=
-                    trace.get(
-                        "error_rate",
-                        0
-                    ),
-
-
-                avg_latency_ms=
-                    trace.get(
-                        "avg_latency_ms",
-                        0
-                    ),
-
 
                 incoming_dependencies=
                     graph.get(
@@ -132,13 +117,17 @@ class FeatureAggregator:
                         0
                     ),
 
-
                 outgoing_dependencies=
                     graph.get(
                         "outgoing_dependencies",
                         0
                     ),
 
+                dependency_count=
+                    graph.get(
+                        "dependency_count",
+                        0
+                    ),
 
                 is_first_failure=
                     temporal.get(
@@ -146,6 +135,11 @@ class FeatureAggregator:
                         0
                     ),
 
+                failure_order=
+                    temporal.get(
+                        "failure_order",
+                        -1
+                    ),
 
                 failure_lead_time_ms=
                     temporal.get(
@@ -153,18 +147,22 @@ class FeatureAggregator:
                         0
                     ),
 
-
                 latency_zscore=
                     anomaly.get(
                         "latency_zscore",
                         0
                     ),
 
-
                 anomaly_score=
                     anomaly.get(
                         "anomaly_score",
                         0
+                    ),
+
+                is_anomalous=
+                    anomaly.get(
+                        "is_anomalous",
+                        False
                     )
 
             )

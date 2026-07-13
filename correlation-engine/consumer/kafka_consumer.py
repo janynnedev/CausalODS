@@ -8,7 +8,11 @@ from models.trace_builder import TraceBuilder
 from correlation.trace_lifecycle import (
     TraceLifecycleManager
 )
-
+from persistence.opensearch.client import OpenSearchClient
+from persistence.opensearch.trace_repository import (
+    OpenSearchTraceRepository
+)
+from graph.graph_builder import GraphBuilder
 
 
 def is_noise_span(span):
@@ -41,6 +45,16 @@ class TraceConsumer:
         self.lifecycle = TraceLifecycleManager(
             timeout_seconds=5
         )
+
+        client = OpenSearchClient()
+
+        self.trace_repository = (
+            OpenSearchTraceRepository(
+                client.get_client()
+            )
+        )
+
+        self.graph_builder = GraphBuilder()
 
 
     def consume(self):
@@ -122,11 +136,33 @@ class TraceConsumer:
                 )
             )
 
-
             print(
                 "\n========== TRACE FINALIZADO =========="
             )
 
-            print(
+            trace_document = (
                 trace.to_dict()
             )
+
+
+            self.trace_repository.save(
+                trace_document
+            )
+
+
+            print(
+                trace_document
+            )
+
+            graph = self.graph_builder.build(
+                trace
+            )
+
+            print()
+
+            print("========== SERVICE GRAPH ==========")
+
+            print(graph)
+
+
+            
