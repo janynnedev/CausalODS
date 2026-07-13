@@ -4,18 +4,17 @@ from correlation.temporal_correlator import (
     TemporalCorrelator
 )
 
-from features.feature_pipeline import (
+from pipeline.feature_pipeline import (
     FeaturePipeline
 )
 
-from persistence.opensearch.trace_repository import (
-    TraceRepository
-)
+from pipeline.prediction_pipeline import PredictionPipeline
 
+from storage.incident_service import IncidentService
 
 class RCAPipeline:
 
-    def __init__(self):
+    def __init__(self, trace_repository):
 
         self.graph_builder = GraphBuilder()
 
@@ -23,73 +22,144 @@ class RCAPipeline:
 
         self.feature_pipeline = FeaturePipeline()
 
-        self.trace_repository = TraceRepository()
+        self.trace_repository = trace_repository
+
+        self.prediction_pipeline = PredictionPipeline()
+
+        self.incident_service = IncidentService()
 
 
     def process(self, trace):
 
-        print()
-        print("=" * 70)
-        print("RCA PIPELINE")
-        print("=" * 70)
+        graph = self.build_graph(trace)
 
-        #
-        # 1. Grafo
-        #
+        correlation_result = (self.build_temporal(trace))
 
-        graph = self.graph_builder.build(trace)
-
-        print()
-
-        print("SERVICE GRAPH")
-
-        print(graph.to_dict())
-
-
-        #
-        # 2. Correlação temporal
-        #
-
-        temporal_result = self.temporal.correlate(
-            trace
-        )
-
-        print()
-
-        print("TEMPORAL")
-
-        print(temporal_result)
-
-
-        #
-        # 3. Features
-        #
-
-        features = self.feature_pipeline.build(
-
+        features = self.build_features(
             trace,
-
             graph,
+            correlation_result
+        )
 
-            temporal_result
+        rca_result = self.run_rca(
+            features
+        )
 
+        incident = None
+
+        if rca_result:
+            incident = self.build_incident(
+                trace,
+                rca_result
+            )
+
+
+        self.persist_trace(trace)
+
+        if incident: 
+            self.persist_incident(
+                incident
+            )
+
+        return {
+
+            "graph": graph,
+            "correlation_result": correlation_result,
+            "features": features,
+            "rca_result": rca_result,
+            "incident": incident
+        }
+
+
+    def build_graph(
+        self,
+        trace
+    ):
+
+        graph = (
+            self.graph_builder
+            .build(trace)
         )
 
         print()
 
-        print("FEATURES")
+        print(
+            "========== SERVICE GRAPH =========="
+        )
+
+        print(
+            graph.to_dict()
+        )
+
+        return graph
+
+
+    def build_temporal(
+        self,
+        trace
+    ):
+
+        correlation_result = (
+            self.temporal_correlator
+            .analyze(trace)
+        )
+
+        print()
+
+        print(
+            "========== TEMPORAL =========="
+        )
+
+        print(
+            correlation_result
+        )
+
+        return correlation_result
+
+
+    def build_features(
+
+        self,
+
+        trace,
+
+        graph,
+
+        correlation_result
+
+    ):
+
+        features = (
+            self.feature_pipeline
+            .build(
+
+                trace,
+
+                graph,
+
+                correlation_result
+
+            )
+        )
+
+        print()
+
+        print(
+            "========== FEATURES =========="
+        )
 
         for feature in features:
 
             print(feature)
 
+        return features
 
-        #
-        # 4. Persistência do trace
-        #
+
+    def persist(
+        self,
+        trace
+    ):
 
         self.trace_repository.save(
             trace.to_dict()
         )
-
-        return features

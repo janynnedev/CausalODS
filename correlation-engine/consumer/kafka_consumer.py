@@ -1,18 +1,27 @@
 from kafka import KafkaConsumer
 
 from config.settings import Settings
+
 from consumer.otlp_deserializer import OTLPDeserializer
 from normalizer.span_normalizer import SpanNormalizer
+
 from models.trace_builder import TraceBuilder
 
 from correlation.trace_lifecycle import (
     TraceLifecycleManager
 )
-from persistence.opensearch.client import OpenSearchClient
+
+from persistence.opensearch.client import (
+    OpenSearchClient
+)
+
 from persistence.opensearch.trace_repository import (
     OpenSearchTraceRepository
 )
-from graph.graph_builder import GraphBuilder
+
+from pipeline.rca_pipeline import (
+    RCAPipeline
+)
 
 
 def is_noise_span(span):
@@ -23,38 +32,60 @@ def is_noise_span(span):
     )
 
 
-
 class TraceConsumer:
 
 
     def __init__(self):
 
         self.consumer = KafkaConsumer(
+
             Settings.KAFKA_TOPIC,
+
             bootstrap_servers=
-                Settings.KAFKA_BOOTSTRAP_SERVERS
+                Settings.KAFKA_BOOTSTRAP_SERVERS,
+
+            group_id=
+                Settings.CONSUMER_GROUP,
+
+            auto_offset_reset="latest"
         )
 
 
-        self.deserializer = OTLPDeserializer()
-
-        self.normalizer = SpanNormalizer()
-
-        self.trace_builder = TraceBuilder()
-
-        self.lifecycle = TraceLifecycleManager(
-            timeout_seconds=5
+        self.deserializer = (
+            OTLPDeserializer()
         )
 
-        client = OpenSearchClient()
+        self.normalizer = (
+            SpanNormalizer()
+        )
 
-        self.trace_repository = (
-            OpenSearchTraceRepository(
-                client.get_client()
+        self.trace_builder = (
+            TraceBuilder()
+        )
+
+        self.lifecycle = (
+            TraceLifecycleManager(
+                timeout_seconds=5
             )
         )
 
-        self.graph_builder = GraphBuilder()
+
+        client = (
+            OpenSearchClient()
+            .get_client()
+        )
+
+        repository = (
+            OpenSearchTraceRepository(
+                client
+            )
+        )
+
+        self.pipeline = (
+            RCAPipeline(
+                repository
+            )
+        )
 
 
     def consume(self):
@@ -70,61 +101,64 @@ class TraceConsumer:
 
                 for message in messages:
 
-                    request = (
-                        self.deserializer
-                        .deserialize(
-                            message.value
-                        )
+                    self.process_message(
+                        message
                     )
 
-
-                    spans = (
-                        self.normalizer
-                        .normalize(
-                            request
-                        )
-                    )
-
-
-                    for span in spans:
-
-                        print(
-                            "SPAN NORMALIZADO:",
-                            span.service_name,
-                            span.operation_name,
-                            span.trace_id
-                        )
-
-                        if is_noise_span(span):
-                            continue
-
-
-                        self.trace_builder.process_span(
-                            span
-                        )
 
             self.check_completed_traces()
-                    
-    
-    def check_completed_traces(self):
 
-        print("Verificando traces ativos:", len(self.trace_builder.active_traces))
+
+    def process_message(
+        self,
+        message
+    ):
+
+        request = (
+            self.deserializer
+            .deserialize(
+                message.value
+            )
+        )
+
+
+        spans = (
+            self.normalizer
+            .normalize(
+                request
+            )
+        )
+
+
+        for span in spans:
+
+            if is_noise_span(span):
+                continue
+
+            self.trace_builder.process_span(
+                span
+            )
+
+
+    def check_completed_traces(self):
 
         finished = []
 
         for trace_id, trace in list(
-            self.trace_builder.active_traces.items()
+
+            self.trace_builder
+            .active_traces
+            .items()
+
         ):
 
             if self.lifecycle.should_finish(
                 trace
             ):
-                print(
-                    "Trace pronto para finalizar:",
+
+                finished.append(
                     trace_id
                 )
-
-                finished.append(trace_id)
 
 
         for trace_id in finished:
@@ -136,33 +170,6 @@ class TraceConsumer:
                 )
             )
 
-            print(
-                "\n========== TRACE FINALIZADO =========="
-            )
-
-            trace_document = (
-                trace.to_dict()
-            )
-
-
-            self.trace_repository.save(
-                trace_document
-            )
-
-
-            print(
-                trace_document
-            )
-
-            graph = self.graph_builder.build(
+            self.pipeline.process(
                 trace
             )
-
-            print()
-
-            print("========== SERVICE GRAPH ==========")
-
-            print(graph)
-
-
-            
