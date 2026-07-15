@@ -1,5 +1,7 @@
 import os
+from pathlib import Path
 
+BASE_DIR = Path(__file__).resolve().parents[1]
 
 class Settings:
 
@@ -42,7 +44,12 @@ class Settings:
 
     MODEL_PATH = os.getenv(
         "MODEL_PATH",
-        "training/models/xgboost_rca.pkl"
+        str(
+            BASE_DIR
+            / "training"
+            / "models"
+            / "xgboost_rca.pkl"
+        ),
     )
 
     SHAP_CACHE = os.getenv(

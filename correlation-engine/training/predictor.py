@@ -1,11 +1,12 @@
 import os
+from pathlib import Path
 
 import joblib
 import pandas as pd
 
 from config.settings import Settings
 
-
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
 
 class Predictor:
     """
@@ -14,23 +15,46 @@ class Predictor:
 
 
 
-    def __init__(self):
+    def __init__(
+        self,
+        model_path: str | Path | None = None,
+    ):
+
+        configured_path = (
+            model_path
+            if model_path is not None
+            else Settings.MODEL_PATH
+        )
+
+        self.model_path = self._resolve_model_path(
+            configured_path
+        )
 
         self.model = self.load_model()
 
 
+    def _resolve_model_path(
+        self,
+        model_path: str | Path,
+    ) -> Path:
+
+        path = Path(model_path).expanduser()
+
+        if not path.is_absolute():
+            path = PROJECT_ROOT / path
+
+        return path.resolve()
+
 
     def load_model(self):
 
-        model_path = (
-            Settings.MODEL_PATH
-        )
+        model_path = self.model_path
 
-
-        if not os.path.exists(model_path):
-
+        if not model_path.is_file():
             raise FileNotFoundError(
-                f"Modelo não encontrado: {model_path}"
+                "Modelo XGBoost não encontrado. "
+                f"Caminho resolvido: {model_path}. "
+                f"Diretório de execução: {Path.cwd()}."
             )
 
 

@@ -9,7 +9,7 @@ from pipeline.feature_pipeline import (
 )
 
 from pipeline.prediction_pipeline import PredictionPipeline
-
+from ranking.ranking_service import RCARankingService
 from storage.incident_service import IncidentService
 
 class RCAPipeline:
@@ -26,8 +26,10 @@ class RCAPipeline:
 
         self.prediction_pipeline = PredictionPipeline()
 
-        self.incident_service = IncidentService()
+        self.ranking_service = RCARankingService()
 
+        self.incident_service = IncidentService()
+        
 
     def process(self, trace):
 
