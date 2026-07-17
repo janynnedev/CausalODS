@@ -14,21 +14,45 @@ from storage.incident_service import IncidentService
 
 class RCAPipeline:
 
-    def __init__(self, trace_repository):
+    def __init__(
+        self,
+        trace_repository,
+        incident_repository=None,
+    ):
 
         self.graph_builder = GraphBuilder()
 
-        self.temporal = TemporalCorrelator()
+        self.temporal_correlator = (
+            TemporalCorrelator()
+        )
 
-        self.feature_pipeline = FeaturePipeline()
+        self.feature_pipeline = (
+            FeaturePipeline()
+        )
 
-        self.trace_repository = trace_repository
+        self.prediction_pipeline = (
+            PredictionPipeline()
+        )
 
-        self.prediction_pipeline = PredictionPipeline()
+        self.ranking_service = (
+            RCARankingService()
+        )
 
-        self.ranking_service = RCARankingService()
+        self.trace_repository = (
+            trace_repository
+        )
 
-        self.incident_service = IncidentService()
+        self.incident_repository = (
+            incident_repository
+            if incident_repository is not None
+            else trace_repository
+        )
+
+        self.incident_service = (
+            IncidentService(
+                repository=self.incident_repository
+            )
+        )
         
 
     def process(self, trace):
