@@ -3,8 +3,10 @@ from models.service_graph import ServiceGraph
 
 class GraphBuilder:
 
-
-    def build(self, trace):
+    def build(
+        self,
+        trace,
+    ):
 
         graph = ServiceGraph()
 
@@ -20,6 +22,11 @@ class GraphBuilder:
                 span.duration_ms
             )
 
+            node.max_latency_ms = max(
+                node.max_latency_ms,
+                span.duration_ms,
+            )
+
             if span.status_code == "ERROR":
 
                 node.error_count += 1
@@ -31,15 +38,10 @@ class GraphBuilder:
                 ]
 
                 graph.add_dependency(
-
                     span.service_name,
-
                     child.service_name,
-
                     child.duration_ms,
-
-                    child.status_code == "ERROR"
-
+                    child.status_code == "ERROR",
                 )
 
         return graph

@@ -1,4 +1,7 @@
-from datetime import datetime
+from datetime import (
+    datetime,
+    timezone,
+)
 
 import uuid
 
@@ -37,7 +40,7 @@ class IncidentService:
 
 
             timestamp=
-                datetime.utcnow(),
+                datetime.now(timezone.utc),
 
 
             root_cause_service=

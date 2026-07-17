@@ -152,7 +152,9 @@ class ServiceGraph:
                         node.error_rate,
 
                     "avg_latency":
-                        node.average_latency
+                        node.average_latency,
+                    "max_latency": 
+                        node.max_latency_ms,
 
                 }
 
