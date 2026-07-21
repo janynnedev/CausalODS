@@ -1,90 +1,102 @@
-from dataset.scenario_generator import ScenarioGenerator
-from dataset.feature_generator import FeatureGenerator
-from dataset.label_generator import LabelGenerator
-
+from dataset.feature_generator import (
+    FeatureGenerator,
+)
+from dataset.label_generator import (
+    LabelGenerator,
+)
+from dataset.scenario_generator import (
+    ScenarioGenerator,
+)
 
 
 class DatasetBuilder:
 
+    SERVICES = (
+        "frontend",
+        "order",
+        "payment",
+        "database",
+        "cache",
+        "kafka-broker",
+    )
 
+    def __init__(
+        self,
+        seed: int = 42,
+    ):
 
-    def __init__(self):
+        self.scenario_generator = (
+            ScenarioGenerator(
+                seed=seed
+            )
+        )
 
-        self.scenario_generator = ScenarioGenerator()
+        self.feature_generator = (
+            FeatureGenerator(
+                seed=seed + 1
+            )
+        )
 
-        self.feature_generator = FeatureGenerator()
-
-        self.label_generator = LabelGenerator()
-
-
+        self.label_generator = (
+            LabelGenerator()
+        )
 
     def generate(
         self,
-        samples:int=1000
+        samples: int = 1000,
     ):
 
+        if samples <= 0:
 
-        dataset=[]
-
-
-
-        services=[
-
-            "frontend",
-
-            "order",
-
-            "payment",
-
-            "database",
-
-            "cache"
-
-        ]
-
-
-
-        for _ in range(samples):
-
-
-            scenario = (
-                self.scenario_generator.generate()
+            raise ValueError(
+                "samples deve ser maior que zero."
             )
 
+        dataset = []
 
-            for service in services:
+        for sample_index in range(
+            samples
+        ):
 
+            scenario = (
+                self.scenario_generator
+                .generate(
+                    sample_index=sample_index
+                )
+            )
+
+            sample_id = (
+                f"sample-{sample_index:06d}"
+            )
+
+            for service in self.SERVICES:
 
                 feature = (
-
-                    self.feature_generator.generate(
-
-                        scenario,
-
-                        service
-
+                    self.feature_generator
+                    .generate(
+                        scenario=scenario,
+                        service=service,
                     )
-
                 )
 
+                feature["sample_id"] = (
+                    sample_id
+                )
+
+                feature["scenario"] = (
+                    scenario
+                )
 
                 feature["root_cause"] = (
-
-                    self.label_generator.generate(
-
-                        feature,
-
-                        scenario
-
+                    self.label_generator
+                    .generate(
+                        feature=feature,
+                        scenario=scenario,
                     )
-
                 )
-
 
                 dataset.append(
                     feature
                 )
-
-
 
         return dataset

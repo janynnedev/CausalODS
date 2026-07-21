@@ -5,6 +5,12 @@ import joblib
 import pandas as pd
 
 from config.settings import Settings
+from models.rca_feature_schema import (
+    BOOLEAN_FEATURE_COLUMNS,
+    FLOAT_FEATURE_COLUMNS,
+    INTEGER_FEATURE_COLUMNS,
+    MODEL_FEATURE_COLUMNS,
+)
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 
@@ -93,15 +99,21 @@ class Predictor:
             )
         )
 
+        predicted_classes = (
+            self.model.predict(
+                dataframe
+            )
+        )
 
 
         results = []
 
 
 
-        for feature, probability in zip(
+        for feature, probability, predicted_class in zip(
             features,
-            probabilities
+            probabilities,
+            predicted_classes
         ):
 
 
@@ -119,24 +131,6 @@ class Predictor:
 
 
 
-            prediction = (
-                int(
-                    self.model.predict(
-                        dataframe[
-                            dataframe.index[
-                                len(results)
-                            ]
-                        :
-                            dataframe.index[
-                                len(results)
-                            ] + 1
-                        ]
-                    )[0]
-                )
-            )
-
-
-
             results.append(
 
                 {
@@ -146,7 +140,7 @@ class Predictor:
 
 
                     "prediction":
-                        prediction,
+                        int(predicted_class),
 
 
                     "confidence":
@@ -160,96 +154,66 @@ class Predictor:
 
             )
 
-
-
         return results
-
-
-
-
+    
+    
     def to_dataframe(
         self,
-        features
+        features,
     ):
         """
-        Converte RCAFeature para dataframe
-        compatível com o treinamento.
+        Converte RCAFeature para o schema canônico
+        usado no treinamento.
         """
-
 
         rows = []
 
-
         for feature in features:
 
+            row = {
+                column: getattr(
+                    feature,
+                    column,
+                )
+                for column in MODEL_FEATURE_COLUMNS
+            }
+
             rows.append(
-
-                {
-
-                    "request_count":
-                        feature.request_count,
-
-
-                    "error_count":
-                        feature.error_count,
-
-
-                    "error_rate":
-                        feature.error_rate,
-
-
-                    "avg_latency_ms":
-                        feature.avg_latency_ms,
-
-
-                    "max_latency_ms":
-                        feature.max_latency_ms,
-
-
-                    "incoming_dependencies":
-                        feature.incoming_dependencies,
-
-
-                    "outgoing_dependencies":
-                        feature.outgoing_dependencies,
-
-
-                    "dependency_count":
-                        feature.dependency_count,
-
-
-                    "is_first_failure":
-                        int(
-                            feature.is_first_failure
-                        ),
-
-
-                    "failure_order":
-                        feature.failure_order,
-
-
-                    "failure_lead_time_ms":
-                        feature.failure_lead_time_ms,
-
-
-                    "latency_zscore":
-                        feature.latency_zscore,
-
-
-                    "anomaly_score":
-                        feature.anomaly_score,
-
-
-                    "is_anomalous":
-                        int(
-                            feature.is_anomalous
-                        )
-
-                }
-
+                row
             )
 
-
-        return pd.DataFrame(
-            rows
+        dataframe = pd.DataFrame(
+            rows,
+            columns=list(
+                MODEL_FEATURE_COLUMNS
+            ),
         )
+
+        for column in BOOLEAN_FEATURE_COLUMNS:
+
+            dataframe[column] = (
+                dataframe[column]
+                .fillna(False)
+                .astype(int)
+            )
+
+        for column in INTEGER_FEATURE_COLUMNS:
+
+            dataframe[column] = pd.to_numeric(
+                dataframe[column],
+                errors="raise",
+            ).astype(int)
+
+        for column in FLOAT_FEATURE_COLUMNS:
+
+            dataframe[column] = pd.to_numeric(
+                dataframe[column],
+                errors="raise",
+            ).astype(float)
+
+        return dataframe
+
+
+
+
+    

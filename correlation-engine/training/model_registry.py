@@ -1,22 +1,61 @@
+from pathlib import Path
+
 import joblib
 
 from config.settings import Settings
 
 
-
 class ModelRegistry:
 
+    def save(
+        self,
+        model,
+        path=None,
+    ):
 
+        resolved_path = Path(
+            path
+            if path is not None
+            else Settings.MODEL_PATH
+        ).expanduser()
 
-    def save(self, model, path=None):
-        if path is None:
-            path = Settings.MODEL_PATH
+        if not resolved_path.is_absolute():
 
-        joblib.dump(model, path)
+            resolved_path = (
+                Path.cwd()
+                / resolved_path
+            )
 
-    def load(self, path=None):
-        if path is None:
-            path = Settings.MODEL_PATH
+        resolved_path.parent.mkdir(
+            parents=True,
+            exist_ok=True,
+        )
 
+        joblib.dump(
+            model,
+            resolved_path,
+        )
 
-        return joblib.load(path)
+        return resolved_path
+
+    def load(
+        self,
+        path=None,
+    ):
+
+        resolved_path = Path(
+            path
+            if path is not None
+            else Settings.MODEL_PATH
+        ).expanduser()
+
+        if not resolved_path.is_file():
+
+            raise FileNotFoundError(
+                "Modelo não encontrado: "
+                f"{resolved_path}"
+            )
+
+        return joblib.load(
+            resolved_path
+        )

@@ -1,40 +1,33 @@
 from dataclasses import dataclass
 
 
-
-@dataclass
+@dataclass(frozen=True)
 class DatasetRecord:
 
+    # Metadados — não entram no XGBoost.
+    sample_id: str
+    scenario: str
+    service_name: str
 
-    service_name:str
+    # Features do modelo.
+    request_count: int
+    error_count: int
+    error_rate: float
 
+    avg_latency_ms: float
+    max_latency_ms: float
 
-    request_count:int
+    incoming_dependencies: int
+    outgoing_dependencies: int
+    dependency_count: int
 
-    error_count:int
+    is_first_failure: int
+    failure_order: int
+    failure_lead_time_ms: float
 
-    error_rate:float
+    latency_zscore: float
+    anomaly_score: float
+    is_anomalous: int
 
-    avg_latency_ms:float
-
-
-    incoming_dependencies:int
-
-    outgoing_dependencies:int
-
-
-    is_first_failure:int
-
-
-    downstream_impact:float
-
-    propagation_depth:int
-
-
-    latency_zscore:float
-
-
-    anomaly_score:float
-
-
-    root_cause:int
+    # Variável alvo.
+    root_cause: int

@@ -37,6 +37,12 @@ class GraphBuilder:
                     child_id
                 ]
 
+                if (
+                    span.service_name
+                    == child.service_name
+                ):
+                    continue
+
                 graph.add_dependency(
                     span.service_name,
                     child.service_name,
