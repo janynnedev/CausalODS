@@ -23,6 +23,10 @@ from pipeline.rca_pipeline import (
     RCAPipeline
 )
 
+from persistence.opensearch.repository import (
+    OpenSearchIncidentRepository
+)
+
 
 def is_noise_span(span):
 
@@ -75,17 +79,28 @@ class TraceConsumer:
             .get_client()
         )
 
-        repository = (
+        trace_repository = (
             OpenSearchTraceRepository(
+                client
+            )
+        )
+
+        incident_repository = (
+            OpenSearchIncidentRepository(
                 client
             )
         )
 
         self.pipeline = (
             RCAPipeline(
-                repository
+                trace_repository=(
+                    trace_repository
+                ),
+                incident_repository=(
+                    incident_repository
+                ),
             )
-        )
+    )
 
 
     def consume(self):

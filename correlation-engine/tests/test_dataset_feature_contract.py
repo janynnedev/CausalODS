@@ -86,6 +86,21 @@ def test_database_latency_generates_anomaly():
         <= zscore_max
     )
 
+    anomaly_min, anomaly_max = (
+        FeatureGenerator
+        .ROOT_PROFILES[
+            "database_latency"
+        ][
+            "anomaly_range"
+        ]
+    )
+
+    assert (
+        anomaly_min
+        <= record["anomaly_score"]
+        <= anomaly_max
+    )
+
     assert (
         record["max_latency_ms"]
         >= record["avg_latency_ms"]

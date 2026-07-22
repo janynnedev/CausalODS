@@ -1,5 +1,6 @@
 from typing import Any
 
+import features
 from shap_analysis.shap_service import SHAPService
 from training.predictor import Predictor
 
@@ -43,27 +44,34 @@ class PredictionPipeline:
 
     def explain(
         self,
-        features: Any,
-        predictions: Any,
+        features
     ) -> Any:
 
+        dataframe = (
+            self.predictor
+            .to_dataframe(
+                features
+            )
+        )
+
         return self.shap_service.explain(
-            features,
-            predictions,
+            dataframe
         )
 
     def process(
         self,
-        features: Any,
-    ) -> tuple[Any, Any]:
+        features,
+    ):
 
         predictions = self.predict(
             features
         )
 
         shap_results = self.explain(
-            features,
-            predictions,
+            features
         )
 
-        return predictions, shap_results
+        return (
+            predictions,
+            shap_results,
+        )

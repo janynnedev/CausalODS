@@ -4,6 +4,7 @@ from correlation.temporal_correlator import (
     TemporalCorrelator
 )
 
+import incident
 from pipeline.feature_pipeline import (
     FeaturePipeline
 )
@@ -15,6 +16,7 @@ from pipeline.rca_result_factory import RCAResultFactory
 from ranking.ranking_service import RCARankingService
 from storage.incident_service import IncidentService
 from models.rca_result import RCAResult
+from pprint import pprint
 
 class RCAPipeline:
 
@@ -58,10 +60,15 @@ class RCAPipeline:
             trace_repository
         )
 
+        if incident_repository is None:
+
+            raise ValueError(
+                "incident_repository é obrigatório "
+                "para inicializar o RCAPipeline."
+            )
+
         self.incident_repository = (
             incident_repository
-            if incident_repository is not None
-            else trace_repository
         )
 
         self.incident_service = (
@@ -107,22 +114,20 @@ class RCAPipeline:
             ]
         )
 
+        self.print_rca_execution(
+            rca_execution
+        )
+
+        self.persist_trace(
+            trace
+        )
+
         incident = self.build_incident(
             trace=trace,
             rca_result=rca_result,
         )
 
-        # Preserve aqui os nomes reais dos seus métodos
-        # de persistência.
-        self.persist_trace(
-            trace
-        )
-
-        if incident is not None:
-
-            self.persist_incident(
-                incident
-            )
+        self.print_incident( incident )
 
         return {
             "trace": trace,
@@ -290,7 +295,7 @@ class RCAPipeline:
             "rca_result": rca_result,
         }
 
-    def persist(
+    def persist_trace(
         self,
         trace
     ):
@@ -365,6 +370,263 @@ class RCAPipeline:
             .create_incident(
                 legacy_ranking_item
             )
+        )
+
+    def print_rca_execution(
+        self,
+        rca_execution,
+    ):
+
+        rca_result = (
+            rca_execution[
+                "rca_result"
+            ]
+        )
+
+        predictions = (
+            rca_execution[
+                "predictions"
+            ]
+        )
+
+        shap_results = (
+            rca_execution[
+                "shap_results"
+            ]
+        )
+
+        print(
+            "\n========== RCA SUMMARY ==========",
+            flush=True,
+        )
+
+        print(
+            (
+                "rca_result_id="
+                f"{rca_result.rca_result_id}"
+            ),
+            flush=True,
+        )
+
+        print(
+            (
+                "trace_id="
+                f"{rca_result.trace_id}"
+            ),
+            flush=True,
+        )
+
+        print(
+            (
+                "confidence="
+                f"{rca_result.confidence:.6f}"
+            ),
+            flush=True,
+        )
+
+        print(
+            (
+                "evidence_count="
+                f"{len(rca_result.evidence)}"
+            ),
+            flush=True,
+        )
+
+        print(
+            "\n========== PREDICTIONS ==========",
+            flush=True,
+        )
+
+        for prediction in predictions:
+
+            print(
+                (
+                    "- service="
+                    f"{prediction.get('service')}"
+                    " | prediction="
+                    f"{prediction.get('prediction')}"
+                    " | confidence="
+                    f"{float(prediction.get('confidence', 0.0)):.6f}"
+                ),
+                flush=True,
+            )
+
+        print(
+            "\n========== SHAP SUMMARY ==========",
+            flush=True,
+        )
+
+        if isinstance(
+            shap_results,
+            dict,
+        ):
+
+            print(
+                (
+                    "type=dict"
+                    f" | keys={list(shap_results.keys())}"
+                ),
+                flush=True,
+            )
+
+        elif isinstance(
+            shap_results,
+            (list, tuple),
+        ):
+
+            print(
+                (
+                    f"type={type(shap_results).__name__}"
+                    f" | items={len(shap_results)}"
+                ),
+                flush=True,
+            )
+
+        else:
+
+            print(
+                (
+                    "type="
+                    f"{type(shap_results).__name__}"
+                ),
+                flush=True,
+            )
+
+        print(
+            "\n========== RANKING ==========",
+            flush=True,
+        )
+
+        if not rca_result.ranking:
+
+            print(
+                "Nenhum serviço classificado.",
+                flush=True,
+            )
+
+        else:
+
+            for position, item in enumerate(
+                rca_result.ranking,
+                start=1,
+            ):
+
+                scores = (
+                    item.scores.to_dict()
+                )
+
+                print(
+                    (
+                        f"{position}. "
+                        f"service={item.service_name}"
+                        " | final_score="
+                        f"{item.scores.final_score:.6f}"
+                        f" | scores={scores}"
+                    ),
+                    flush=True,
+                )
+
+        print(
+            "\n========== EVIDENCE SUMMARY ==========",
+            flush=True,
+        )
+
+        evidence_groups = {}
+
+        for evidence in rca_result.evidence:
+
+            payload = evidence.to_dict()
+
+            service_name = (
+                payload.get(
+                    "service_name",
+                    payload.get(
+                        "service",
+                        "unknown",
+                    ),
+                )
+            )
+
+            evidence_type = (
+                payload.get(
+                    "evidence_type",
+                    "unknown",
+                )
+            )
+
+            group_key = (
+                str(service_name),
+                str(evidence_type),
+            )
+
+            evidence_groups[group_key] = (
+                evidence_groups.get(
+                    group_key,
+                    0,
+                )
+                + 1
+            )
+
+        for (
+            service_name,
+            evidence_type,
+        ), count in sorted(
+            evidence_groups.items()
+        ):
+
+            print(
+                (
+                    f"- service={service_name}"
+                    f" | type={evidence_type}"
+                    f" | count={count}"
+                ),
+                flush=True,
+            )
+
+        print(
+            "\n========== RELIABILITY ==========",
+            flush=True,
+        )
+
+        print(
+            rca_result
+            .reliability
+            .to_dict(),
+            flush=True,
+        )
+    
+    def print_incident(
+        self,
+        incident,
+    ):
+
+        print(
+            "\n========== INCIDENT ==========",
+            flush=True,
+        )
+
+        if incident is None:
+
+            print(
+                (
+                    "created=False"
+                    " | reason=RCA result not reliable"
+                ),
+                flush=True,
+            )
+
+            return
+
+        print(
+            (
+                "created=True"
+                f" | incident_id={incident.incident_id}"
+                " | root_cause_service="
+                f"{incident.root_cause_service}"
+                " | confidence="
+                f"{incident.confidence:.6f}"
+            ),
+            flush=True,
         )
     
     def _get_model_version(self) -> str:
