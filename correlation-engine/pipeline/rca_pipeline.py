@@ -23,7 +23,8 @@ class RCAPipeline:
     def __init__(
         self,
         trace_repository,
-        incident_repository=None,
+        incident_repository,
+        rca_result_repository,
     ):
 
         self.graph_builder = GraphBuilder()
@@ -58,6 +59,17 @@ class RCAPipeline:
 
         self.trace_repository = (
             trace_repository
+        )
+
+        if rca_result_repository is None:
+
+            raise ValueError(
+                "rca_result_repository é obrigatório "
+                "para inicializar o RCAPipeline."
+            )
+
+        self.rca_result_repository = (
+            rca_result_repository
         )
 
         if incident_repository is None:
@@ -120,6 +132,10 @@ class RCAPipeline:
 
         self.persist_trace(
             trace
+        )
+
+        self.persist_rca_result(
+            rca_result
         )
 
         incident = self.build_incident(
@@ -303,6 +319,26 @@ class RCAPipeline:
         self.trace_repository.save(
             trace.to_dict()
         )
+
+    def persist_rca_result(
+        self,
+        rca_result,
+    ):
+
+        self.rca_result_repository.save(
+            rca_result
+        )
+
+        print(
+            (
+                "RCAResult persisted"
+                " | rca_result_id="
+                f"{rca_result.rca_result_id}"
+                " | trace_id="
+                f"{rca_result.trace_id}"
+            ),
+            flush=True,
+        )        
 
     def build_incident(
         self,
