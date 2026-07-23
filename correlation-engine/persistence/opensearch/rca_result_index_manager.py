@@ -29,8 +29,6 @@ class RCAResultIndexManager:
                     }
                 },
                 "mappings": {
-                    # Somente os campos de consulta são
-                    # indexados explicitamente.
                     "dynamic": False,
                     "properties": {
                         "rca_result_id": {
@@ -66,10 +64,6 @@ class RCAResultIndexManager:
                         "evidence_count": {
                             "type": "integer",
                         },
-
-                        # Mantém o RCAResult completo no _source,
-                        # mas não cria mappings para cada campo
-                        # variável das evidências.
                         "payload": {
                             "type": "object",
                             "enabled": False,
