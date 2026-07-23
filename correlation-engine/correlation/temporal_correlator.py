@@ -41,10 +41,6 @@ class TemporalCorrelator:
             trace
         )
 
-        first_failure = self.detect_first_failure(
-            timeline
-        )
-
         latency_order = self.compute_latency_order(
             timeline
         )
@@ -65,24 +61,28 @@ class TemporalCorrelator:
             )
         )
 
+        first_failure = (
+            self.detect_failure_origin(
+                timeline=timeline,
+                summaries=service_summaries,
+                propagation=propagation,
+            )
+        )
+
         service_results = self.build_service_results(
             summaries=service_summaries,
             first_failure=first_failure,
             latency_order=latency_order,
+            propagation=propagation,
         )
 
         return {
-            # Novo contrato canônico por serviço.
             "services": service_results,
-
-            # Campos anteriores preservados para compatibilidade
-            # e auditoria.
             "timeline": timeline,
             "first_failure": first_failure,
             "latency_order": latency_order,
             "propagation": propagation,
             "service_depth": service_depth,
-
             "method": self.METHOD_VERSION,
         }
 
@@ -205,6 +205,125 @@ class TemporalCorrelator:
             service_name
             for service_name, _ in ordered
         ]
+
+    def detect_failure_origin(
+        self,
+        *,
+        timeline: list[dict[str, Any]],
+        summaries: Mapping[
+            str,
+            Mapping[str, Any],
+        ],
+        propagation: Mapping[
+            str,
+            list[str],
+        ],
+    ) -> dict[str, Any] | None:
+        
+        error_services = {
+            service_name
+            for service_name, summary
+            in summaries.items()
+            if int(
+                summary.get(
+                    "error_count",
+                    0,
+                )
+            ) > 0
+        }
+
+        if not error_services:
+            return None
+
+        origin_candidates = [
+            service_name
+            for service_name in error_services
+            if not any(
+                child_service
+                in error_services
+                for child_service
+                in propagation.get(
+                    service_name,
+                    [],
+                )
+            )
+        ]
+
+        if not origin_candidates:
+
+            origin_candidates = list(
+                error_services
+            )
+
+        selected_service = min(
+            origin_candidates,
+            key=lambda service_name: (
+                self._time_key(
+                    summaries[
+                        service_name
+                    ].get(
+                        "first_error_start"
+                    )
+                ),
+                -int(
+                    summaries[
+                        service_name
+                    ].get(
+                        "depth"
+                    )
+                    or 0
+                ),
+                service_name,
+            ),
+        )
+
+        matching_items = [
+            item
+            for item in timeline
+            if (
+                item.get("service")
+                == selected_service
+                and item.get("error")
+            )
+        ]
+
+        if matching_items:
+
+            selected_item = min(
+                matching_items,
+                key=lambda item: (
+                    self._time_key(
+                        item.get("start")
+                    )
+                ),
+            )
+
+            result = dict(
+                selected_item
+            )
+
+        else:
+
+            result = {
+                "service": selected_service,
+                "operation": None,
+                "span_id": None,
+                "parent": None,
+                "start": summaries[
+                    selected_service
+                ].get(
+                    "first_error_start"
+                ),
+                "end": None,
+                "duration": 0.0,
+                "error": True,
+            }
+
+        result[
+            "detection_method"
+        ] = "downstream_error_leaf"
+
+        return result
 
     def compute_propagation(
         self,
@@ -558,6 +677,10 @@ class TemporalCorrelator:
             Any,
         ] | None,
         latency_order: list[str],
+        propagation: Mapping[
+            str,
+            list[str],
+        ] | None = None,
     ) -> dict[str, dict[str, Any]]:
 
         service_count = len(
@@ -577,6 +700,19 @@ class TemporalCorrelator:
             first_failure.get("service")
             if first_failure
             else None
+        )
+
+        failure_order_by_service = (
+            self._compute_failure_order(
+                summaries=summaries,
+                propagation=(
+                    propagation
+                    or {}
+                ),
+                first_failure_service=(
+                    first_failure_service
+                ),
+            )
         )
 
         lead_by_service = (
@@ -678,6 +814,12 @@ class TemporalCorrelator:
                 "is_first_failure": (
                     is_first_failure
                 ),
+                "failure_order": (
+                    failure_order_by_service.get(
+                        service_name,
+                        -1,
+                    )
+                ),
                 "anomaly_started_at": (
                     summary.get(
                         "first_error_start"
@@ -686,9 +828,13 @@ class TemporalCorrelator:
                 "lead_ms": lead_by_service.get(
                     service_name
                 ),
+                "failure_lead_time_ms": float(
+                    lead_by_service.get(
+                        service_name
+                    )
+                    or 0.0
+                ),
                 "rank": rank,
-
-                # Informações semânticas preservadas.
                 "latency_rank": rank,
                 "latency_rank_score": (
                     latency_score
@@ -780,6 +926,143 @@ class TemporalCorrelator:
             }
 
         return results
+
+    def _compute_failure_order(
+        self,
+        *,
+        summaries: Mapping[
+            str,
+            Mapping[str, Any],
+        ],
+        propagation: Mapping[
+            str,
+            list[str],
+        ],
+        first_failure_service: str | None,
+    ) -> dict[str, int]:
+        """
+        Ordena a falha pela propagação causal observada.
+
+        A origem recebe ordem 1. Serviços upstream afetados recebem
+        ordens 2, 3 e assim por diante.
+        """
+
+        if not first_failure_service:
+            return {}
+
+        error_services = {
+            service_name
+            for service_name, summary
+            in summaries.items()
+            if int(
+                summary.get(
+                    "error_count",
+                    0,
+                )
+            ) > 0
+        }
+
+        reverse_propagation: dict[
+            str,
+            list[str],
+        ] = defaultdict(list)
+
+        for parent_service, children in (
+            propagation.items()
+        ):
+
+            for child_service in children:
+
+                if (
+                    parent_service
+                    not in reverse_propagation[
+                        child_service
+                    ]
+                ):
+                    reverse_propagation[
+                        child_service
+                    ].append(
+                        parent_service
+                    )
+
+        orders = {
+            first_failure_service: 1
+        }
+
+        queue = deque(
+            [first_failure_service]
+        )
+
+        while queue:
+
+            current_service = (
+                queue.popleft()
+            )
+
+            current_order = orders[
+                current_service
+            ]
+
+            for upstream_service in (
+                reverse_propagation.get(
+                    current_service,
+                    [],
+                )
+            ):
+
+                if (
+                    upstream_service
+                    not in error_services
+                ):
+                    continue
+
+                if upstream_service in orders:
+                    continue
+
+                orders[
+                    upstream_service
+                ] = current_order + 1
+
+                queue.append(
+                    upstream_service
+                )
+
+        remaining_services = sorted(
+            error_services
+            - set(
+                orders.keys()
+            ),
+            key=lambda service_name: (
+                self._time_key(
+                    summaries[
+                        service_name
+                    ].get(
+                        "first_error_start"
+                    )
+                ),
+                service_name,
+            ),
+        )
+
+        next_order = (
+            max(
+                orders.values(),
+                default=0,
+            )
+            + 1
+        )
+
+        for service_name in (
+            remaining_services
+        ):
+
+            orders[
+                service_name
+            ] = next_order
+
+            next_order += 1
+
+        return orders
 
     def _compute_failure_leads(
         self,

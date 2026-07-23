@@ -83,6 +83,11 @@ services:
 
       OTEL_RESOURCE_ATTRIBUTES: deployment.environment=development  
 
+      CAUSALODS_FAULT_MODE: ${CAUSALODS_FAULT_MODE:-none}
+      CAUSALODS_FAULT_RATE: ${CAUSALODS_FAULT_RATE:-1.0}
+      CAUSALODS_FAULT_DELAY_MS: ${CAUSALODS_FAULT_DELAY_MS:-1500}
+      CAUSALODS_FAULT_SEED: ${CAUSALODS_FAULT_SEED:-42}
+
     depends_on:
       - otel-collector
 

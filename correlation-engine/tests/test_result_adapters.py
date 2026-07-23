@@ -125,6 +125,58 @@ def test_prediction_adapter():
         == 0.8
     )
 
+def test_prediction_adapter_uses_confidence_from_predictor_list():
+
+    raw = [
+        {
+            "service": "order-service",
+            "prediction": 0,
+            "confidence": 0.10,
+        },
+        {
+            "service": "payment-service",
+            "prediction": 1,
+            "confidence": 0.85,
+        },
+    ]
+
+    result = (
+        PredictionResultAdapter()
+        .adapt(
+            raw=raw,
+            services=(
+                "order-service",
+                "payment-service",
+            ),
+        )
+    )
+
+    assert (
+        result[
+            "order-service"
+        ][
+            "probability"
+        ]
+        == 0.10
+    )
+
+    assert (
+        result[
+            "payment-service"
+        ][
+            "probability"
+        ]
+        == 0.85
+    )
+
+    assert (
+        result[
+            "payment-service"
+        ][
+            "prediction"
+        ]
+        == 1
+    )
 
 def test_builds_rca_context():
 

@@ -35,6 +35,10 @@ from persistence.opensearch.rca_result_repository import (
     OpenSearchRCAResultRepository
 )
 
+from persistence.opensearch.incident_index_manager import (
+    IncidentIndexManager
+)
+
 def is_noise_span(span):
 
     return (
@@ -86,7 +90,7 @@ class TraceConsumer:
             .get_client()
         )
 
-        RCAResultIndexManager(
+        IncidentIndexManager(
             client
         ).create_index()
 

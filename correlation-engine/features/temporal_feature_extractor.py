@@ -1,44 +1,117 @@
+from __future__ import annotations
+
+from collections.abc import Mapping
+from typing import Any
+
+
 class TemporalFeatureExtractor:
 
-    def extract(self, temporal_result):
+    def extract(
+        self,
+        temporal_result: Any,
+    ) -> dict[str, dict[str, Any]]:
+        """
+        Extrai as features temporais produzidas pelo contrato
+        atual do TemporalCorrelator.
 
-        result = {}
+        Contrato esperado:
 
-        ordered = temporal_result.get(
-            "ordered_failures",
-            []
+            {
+                "services": {
+                    "payment-service": {
+                        "is_first_failure": True,
+                        "failure_order": 1,
+                        "failure_lead_time_ms": 0.0,
+                        ...
+                    }
+                }
+            }
+        """
+
+        if not isinstance(
+            temporal_result,
+            Mapping,
+        ):
+            return {}
+
+        services = temporal_result.get(
+            "services",
+            {},
         )
 
-        if not ordered:
+        if not isinstance(
+            services,
+            Mapping,
+        ):
+            return {}
 
-            return result
+        result: dict[
+            str,
+            dict[str, Any],
+        ] = {}
 
-        first = ordered[0]
+        for service_name, payload in (
+            services.items()
+        ):
 
-        initial_time = first["timestamp"]
+            if not isinstance(
+                payload,
+                Mapping,
+            ):
+                continue
 
-        for index, failure in enumerate(ordered):
+            is_first_failure = bool(
+                payload.get(
+                    "is_first_failure",
+                    payload.get(
+                        "is_first_anomaly",
+                        False,
+                    ),
+                )
+            )
+
+            failure_order = payload.get(
+                "failure_order"
+            )
+
+            if failure_order is None:
+
+                failure_order = (
+                    1
+                    if is_first_failure
+                    else -1
+                )
+
+            failure_lead_time_ms = (
+                payload.get(
+                    "failure_lead_time_ms"
+                )
+            )
+
+            if failure_lead_time_ms is None:
+
+                failure_lead_time_ms = (
+                    payload.get(
+                        "lead_ms",
+                        0.0,
+                    )
+                )
 
             result[
-                failure["service"]
+                str(service_name)
             ] = {
+                "failure_order": int(
+                    failure_order
+                ),
 
-                "failure_order":
+                "is_first_failure": (
+                    is_first_failure
+                ),
 
-                    index,
-
-                "is_first_failure":
-
-                    index == 0,
-
-                "failure_lead_time_ms":
-
-                    (
-                        failure["timestamp"]
-                        -
-                        initial_time
-                    ).total_seconds() * 1000
-
+                "failure_lead_time_ms": float(
+                    failure_lead_time_ms
+                    or 0.0
+                ),
             }
 
         return result

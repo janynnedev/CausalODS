@@ -314,22 +314,75 @@ class PredictionResultAdapter:
         services: Sequence[str],
     ) -> dict[str, dict[str, Any]]:
 
-        raw_mapping = object_to_dict(raw)
+        raw_mapping: dict[
+            str,
+            Any,
+        ] = {}
 
-        nested = get_first(
-            raw_mapping,
-            (
-                "probabilities",
-                "predictions",
-                "scores",
-                "services",
-            ),
-        )
+        if (
+            isinstance(
+                raw,
+                Sequence,
+            )
+            and not isinstance(
+                raw,
+                (
+                    str,
+                    bytes,
+                    bytearray,
+                ),
+            )
+        ):
 
-        if isinstance(nested, Mapping):
-            raw_mapping = dict(nested)
+            for item in raw:
 
-        result = {}
+                payload = object_to_dict(
+                    item
+                )
+
+                service_name = (
+                    extract_service_name(
+                        item
+                    )
+                )
+
+                if not service_name:
+                    continue
+
+                raw_mapping[
+                    service_name
+                ] = payload
+
+        else:
+
+            raw_mapping = (
+                object_to_dict(
+                    raw
+                )
+            )
+
+            nested = get_first(
+                raw_mapping,
+                (
+                    "probabilities",
+                    "predictions",
+                    "scores",
+                    "services",
+                ),
+            )
+
+            if isinstance(
+                nested,
+                Mapping,
+            ):
+                raw_mapping = dict(
+                    nested
+                )
+
+        result: dict[
+            str,
+            dict[str, Any],
+        ] = {}
 
         for service in services:
 
@@ -338,33 +391,41 @@ class PredictionResultAdapter:
                 0.0,
             )
 
-            if isinstance(current, Mapping):
-                payload = dict(current)
+            if isinstance(
+                current,
+                Mapping,
+            ):
+
+                payload = dict(
+                    current
+                )
 
                 probability = get_first(
                     payload,
                     (
                         "probability",
-                        "score",
                         "confidence",
+                        "score",
                         "prediction",
                     ),
                     default=0.0,
                 )
 
             else:
+
                 payload = {}
+
                 probability = current
 
             result[service] = {
                 **payload,
+
                 "probability": clamp_score(
                     probability
                 ),
             }
 
         return result
-
 
 class ShapResultAdapter:
 
