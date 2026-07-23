@@ -1,0 +1,56 @@
+[
+  {
+    "run_id": "3e6fc45628ca",
+    "scenario": "healthy",
+    "iteration": 1,
+    "started_at": "2026-07-23T18:32:28.306408+00:00",
+    "finished_at": "2026-07-23T18:32:49.145991+00:00",
+    "duration_ms": 20839.583000000002,
+    "fault_mode": "none",
+    "http_status": 200,
+    "rca_count_before": 9,
+    "rca_count_after": 11,
+    "incident_count_before": 2,
+    "incident_count_after": 2,
+    "rca_result_id": "4ce94ed7-2e8f-495f-816e-7c369b71081a",
+    "trace_id": "286de8d22aeb2d8960bfc6415d33e875",
+    "top_service": "payment-service",
+    "confidence": 0.2009456053376198,
+    "is_reliable": false,
+    "incident_id": null,
+    "incident_root_cause": null,
+    "restart_count_before": 0,
+    "restart_count_after": 0,
+    "passed": false,
+    "failures": [
+      "Quantidade inesperada de novos RCAResults: esperado=1; encontrado=2."
+    ]
+  },
+  {
+    "run_id": "679d4cad095b",
+    "scenario": "payment_failure",
+    "iteration": 1,
+    "started_at": "2026-07-23T18:32:49.146118+00:00",
+    "finished_at": "2026-07-23T18:33:07.956370+00:00",
+    "duration_ms": 18810.251999999997,
+    "fault_mode": "error",
+    "http_status": 500,
+    "rca_count_before": 11,
+    "rca_count_after": 12,
+    "incident_count_before": 2,
+    "incident_count_after": 3,
+    "rca_result_id": "9137213b-7752-4c99-82d0-b95e3272ccee",
+    "trace_id": "d9a8bb47de03bedbf19db878f6312c58",
+    "top_service": "payment-service",
+    "confidence": 0.2009456053376198,
+    "is_reliable": false,
+    "incident_id": "a754d655-990e-43b4-9605-125b26e4d217",
+    "incident_root_cause": "payment-service",
+    "restart_count_before": 0,
+    "restart_count_after": 0,
+    "passed": false,
+    "failures": [
+      "Decisão de confiabilidade incorreta: esperado=True; encontrado=False."
+    ]
+  }
+]
