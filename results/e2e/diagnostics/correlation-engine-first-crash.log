@@ -1,0 +1,660 @@
+2026-07-23T21:06:25.974632975Z 
+2026-07-23T21:06:25.974708962Z ========== SERVICE GRAPH ==========
+2026-07-23T21:06:25.974722060Z {'services': {'payment-service': {'requests': 1, 'errors': 0, 'error_rate': 0.0, 'avg_latency': 283.26938, 'max_latency': 283.26938}}, 'dependencies': []}
+2026-07-23T21:06:25.975130595Z 
+2026-07-23T21:06:25.975187986Z ========== TEMPORAL ==========
+2026-07-23T21:06:25.975203883Z {'services': {'payment-service': {'score': 1.0, 'raw_score': 1.0, 'is_first_anomaly': False, 'is_first_failure': False, 'failure_order': -1, 'anomaly_started_at': None, 'lead_ms': None, 'failure_lead_time_ms': 0.0, 'rank': 1, 'latency_rank': 1, 'latency_rank_score': 1.0, 'span_count': 1, 'error_count': 0, 'max_duration_ms': 283.26938, 'total_duration_ms': 283.26938, 'earliest_start': datetime.datetime(2026, 7, 23, 21, 6, 18, 670760, tzinfo=datetime.timezone.utc), 'latest_end': datetime.datetime(2026, 7, 23, 21, 6, 18, 954030, tzinfo=datetime.timezone.utc), 'first_error_start': None, 'depth': 0, 'upstream_services': [], 'downstream_services': [], 'operations': ['GET /actuator/health'], 'score_components': {'first_failure': 0.0, 'error_presence': 0.0, 'latency_order': 1.0}, 'score_weights': {'first_failure': 0.6, 'error_presence': 0.25, 'latency_order': 0.15}, 'scoring_mode': 'latency_order_only', 'method': 'temporal-correlation-v1'}}, 'timeline': [{'service': 'payment-service', 'operation': 'GET /actuator/health', 'span_id': '47c36a45d655244b', 'parent': None, 'start': datetime.datetime(2026, 7, 23, 21, 6, 18, 670760, tzinfo=datetime.timezone.utc), 'end': datetime.datetime(2026, 7, 23, 21, 6, 18, 954030, tzinfo=datetime.timezone.utc), 'duration': 283.26938, 'error': False}], 'first_failure': None, 'latency_order': ['payment-service'], 'propagation': {}, 'service_depth': {'payment-service': 0}, 'method': 'temporal-correlation-v1'}
+2026-07-23T21:06:25.975348960Z 
+2026-07-23T21:06:25.975396052Z ========== FEATURES ==========
+2026-07-23T21:06:25.975408250Z RCAFeature(service_name='payment-service', request_count=1, error_count=0, error_rate=0.0, avg_latency_ms=283.26938, max_latency_ms=283.26938, incoming_dependencies=0, outgoing_dependencies=0, dependency_count=0, is_first_failure=False, failure_order=-1, failure_lead_time_ms=0.0, latency_zscore=0.0, anomaly_score=0.0, is_anomalous=False)
+2026-07-23T21:06:26.017741999Z 
+2026-07-23T21:06:26.017770985Z ========== RCA SUMMARY ==========
+2026-07-23T21:06:26.017774283Z rca_result_id=ac886a7c-d9e3-4bb3-b43d-186242f5a855
+2026-07-23T21:06:26.017776282Z trace_id=7d515e1fca9299bbea5a8b75abfc2dd2
+2026-07-23T21:06:26.017778181Z confidence=0.200946
+2026-07-23T21:06:26.017780080Z evidence_count=5
+2026-07-23T21:06:26.017781979Z 
+2026-07-23T21:06:26.017783678Z ========== PREDICTIONS ==========
+2026-07-23T21:06:26.017785478Z - service=payment-service | prediction=0 | confidence=0.002364
+2026-07-23T21:06:26.017800270Z 
+2026-07-23T21:06:26.017802069Z ========== SHAP SUMMARY ==========
+2026-07-23T21:06:26.017803369Z type=list | items=1
+2026-07-23T21:06:26.017804568Z 
+2026-07-23T21:06:26.017805767Z ========== RANKING ==========
+2026-07-23T21:06:26.017807167Z 1. service=payment-service | final_score=0.200946 | scores={'model_probability': 0.0023640133440494537, 'shap_support_score': 0.0, 'temporal_score': 1.0, 'graph_score': 0.0, 'anomaly_score': 0.0, 'final_score': 0.2009456053376198, 'component_weights': {'model_probability': 0.4, 'shap_support': 0.25, 'temporal': 0.2, 'graph': 0.15, 'anomaly': 0.0}, 'normalization_method': 'normalized_weighted_ranking_v1'}
+2026-07-23T21:06:26.017808966Z 
+2026-07-23T21:06:26.017810165Z ========== EVIDENCE SUMMARY ==========
+2026-07-23T21:06:26.017829855Z - service=payment-service | type=anomaly | count=1
+2026-07-23T21:06:26.017839351Z - service=payment-service | type=graph | count=1
+2026-07-23T21:06:26.017841350Z - service=payment-service | type=model | count=1
+2026-07-23T21:06:26.017842849Z - service=payment-service | type=shap | count=1
+2026-07-23T21:06:26.017847247Z - service=payment-service | type=temporal | count=1
+2026-07-23T21:06:26.017848546Z 
+2026-07-23T21:06:26.017849846Z ========== RELIABILITY ==========
+2026-07-23T21:06:26.017851345Z {'is_reliable': False, 'confidence': 0.2009456053376198, 'confidence_method': 'reliability-gate-v1', 'minimum_confidence': 0.5, 'margin_to_second': None, 'minimum_margin': 0.05, 'passed_rules': ['ranking_present', 'single_candidate', 'minimum_evidence_count', 'minimum_source_diversity'], 'failed_rules': ['minimum_confidence']}
+2026-07-23T21:06:26.132989432Z RCAResult persisted | rca_result_id=ac886a7c-d9e3-4bb3-b43d-186242f5a855 | trace_id=7d515e1fca9299bbea5a8b75abfc2dd2
+2026-07-23T21:06:26.133011421Z 
+2026-07-23T21:06:26.133013720Z ========== INCIDENT ==========
+2026-07-23T21:06:26.133015219Z created=False | reason=RCA result not reliable
+2026-07-23T21:06:35.994140727Z 
+2026-07-23T21:06:35.994169165Z ========== SERVICE GRAPH ==========
+2026-07-23T21:06:35.994176050Z {'services': {'order-service': {'requests': 2, 'errors': 2, 'error_rate': 1.0, 'avg_latency': 78.6351755, 'max_latency': 81.666419}, 'payment-service': {'requests': 2, 'errors': 1, 'error_rate': 0.5, 'avg_latency': 35.990516, 'max_latency': 71.733355}}, 'dependencies': [{'source': 'order-service', 'target': 'payment-service', 'calls': 1, 'errors': 1, 'avg_latency': 71.733355}]}
+2026-07-23T21:06:35.994199599Z 
+2026-07-23T21:06:35.994200996Z ========== TEMPORAL ==========
+2026-07-23T21:06:35.994404154Z {'services': {'order-service': {'score': 0.4, 'raw_score': 0.4, 'is_first_anomaly': False, 'is_first_failure': False, 'failure_order': 2, 'anomaly_started_at': datetime.datetime(2026, 7, 23, 21, 6, 26, 59896, tzinfo=datetime.timezone.utc), 'lead_ms': 5.107, 'failure_lead_time_ms': 5.107, 'rank': 1, 'latency_rank': 1, 'latency_rank_score': 1.0, 'span_count': 2, 'error_count': 2, 'max_duration_ms': 81.666419, 'total_duration_ms': 157.270351, 'earliest_start': datetime.datetime(2026, 7, 23, 21, 6, 26, 59896, tzinfo=datetime.timezone.utc), 'latest_end': datetime.datetime(2026, 7, 23, 21, 6, 26, 141562, tzinfo=datetime.timezone.utc), 'first_error_start': datetime.datetime(2026, 7, 23, 21, 6, 26, 59896, tzinfo=datetime.timezone.utc), 'depth': 0, 'upstream_services': [], 'downstream_services': ['payment-service'], 'operations': ['POST /orders', 'POST'], 'score_components': {'first_failure': 0.0, 'error_presence': 1.0, 'latency_order': 1.0}, 'score_weights': {'first_failure': 0.6, 'error_presence': 0.25, 'latency_order': 0.15}, 'scoring_mode': 'failure_precedence_and_latency', 'method': 'temporal-correlation-v1'}, 'payment-service': {'score': 0.85, 'raw_score': 0.85, 'is_first_anomaly': True, 'is_first_failure': True, 'failure_order': 1, 'anomaly_started_at': datetime.datetime(2026, 7, 23, 21, 6, 26, 65003, tzinfo=datetime.timezone.utc), 'lead_ms': None, 'failure_lead_time_ms': 0.0, 'rank': 2, 'latency_rank': 2, 'latency_rank_score': 0.0, 'span_count': 2, 'error_count': 1, 'max_duration_ms': 71.733355, 'total_duration_ms': 71.981032, 'earliest_start': datetime.datetime(2026, 7, 23, 21, 6, 26, 65003, tzinfo=datetime.timezone.utc), 'latest_end': datetime.datetime(2026, 7, 23, 21, 6, 26, 136736, tzinfo=datetime.timezone.utc), 'first_error_start': datetime.datetime(2026, 7, 23, 21, 6, 26, 65003, tzinfo=datetime.timezone.utc), 'depth': 2, 'upstream_services': ['order-service'], 'downstream_services': [], 'operations': ['POST /payments', 'ResponseFacade.sendError'], 'score_components': {'first_failure': 1.0, 'error_presence': 1.0, 'latency_order': 0.0}, 'score_weights': {'first_failure': 0.6, 'error_presence': 0.25, 'latency_order': 0.15}, 'scoring_mode': 'failure_precedence_and_latency', 'method': 'temporal-correlation-v1'}}, 'timeline': [{'service': 'order-service', 'operation': 'POST /orders', 'span_id': '954748d4572a5ba3', 'parent': None, 'start': datetime.datetime(2026, 7, 23, 21, 6, 26, 59896, tzinfo=datetime.timezone.utc), 'end': datetime.datetime(2026, 7, 23, 21, 6, 26, 141562, tzinfo=datetime.timezone.utc), 'duration': 81.666419, 'error': True}, {'service': 'order-service', 'operation': 'POST', 'span_id': '4538f7edb7a95a85', 'parent': '954748d4572a5ba3', 'start': datetime.datetime(2026, 7, 23, 21, 6, 26, 61684, tzinfo=datetime.timezone.utc), 'end': datetime.datetime(2026, 7, 23, 21, 6, 26, 137288, tzinfo=datetime.timezone.utc), 'duration': 75.603932, 'error': True}, {'service': 'payment-service', 'operation': 'POST /payments', 'span_id': 'aee20ae9c07c086a', 'parent': '4538f7edb7a95a85', 'start': datetime.datetime(2026, 7, 23, 21, 6, 26, 65003, tzinfo=datetime.timezone.utc), 'end': datetime.datetime(2026, 7, 23, 21, 6, 26, 136736, tzinfo=datetime.timezone.utc), 'duration': 71.733355, 'error': True}, {'service': 'payment-service', 'operation': 'ResponseFacade.sendError', 'span_id': '6b6517e497dab55a', 'parent': 'aee20ae9c07c086a', 'start': datetime.datetime(2026, 7, 23, 21, 6, 26, 119476, tzinfo=datetime.timezone.utc), 'end': datetime.datetime(2026, 7, 23, 21, 6, 26, 119723, tzinfo=datetime.timezone.utc), 'duration': 0.247677, 'error': False}], 'first_failure': {'service': 'payment-service', 'operation': 'POST /payments', 'span_id': 'aee20ae9c07c086a', 'parent': '4538f7edb7a95a85', 'start': datetime.datetime(2026, 7, 23, 21, 6, 26, 65003, tzinfo=datetime.timezone.utc), 'end': datetime.datetime(2026, 7, 23, 21, 6, 26, 136736, tzinfo=datetime.timezone.utc), 'duration': 71.733355, 'error': True, 'detection_method': 'downstream_error_leaf'}, 'latency_order': ['order-service', 'payment-service'], 'propagation': {'order-service': ['payment-service']}, 'service_depth': {'order-service': 0, 'payment-service': 2}, 'method': 'temporal-correlation-v1'}
+2026-07-23T21:06:35.994457637Z 
+2026-07-23T21:06:35.994461928Z ========== FEATURES ==========
+2026-07-23T21:06:35.994463624Z RCAFeature(service_name='order-service', request_count=2, error_count=2, error_rate=1.0, avg_latency_ms=78.6351755, max_latency_ms=81.666419, incoming_dependencies=0, outgoing_dependencies=1, dependency_count=1, is_first_failure=False, failure_order=2, failure_lead_time_ms=5.107, latency_zscore=0.0, anomaly_score=0.0, is_anomalous=False)
+2026-07-23T21:06:35.994491563Z RCAFeature(service_name='payment-service', request_count=2, error_count=1, error_rate=0.5, avg_latency_ms=35.990516, max_latency_ms=71.733355, incoming_dependencies=1, outgoing_dependencies=0, dependency_count=1, is_first_failure=True, failure_order=1, failure_lead_time_ms=0.0, latency_zscore=0.0, anomaly_score=0.0, is_anomalous=False)
+2026-07-23T21:06:36.037206489Z 
+2026-07-23T21:06:36.037231133Z ========== RCA SUMMARY ==========
+2026-07-23T21:06:36.037233428Z rca_result_id=db8fa392-9a95-469b-a3db-e5cb35fca1f3
+2026-07-23T21:06:36.037234824Z trace_id=b860c4fec0e030954d565e1dd8fb69ca
+2026-07-23T21:06:36.037236121Z confidence=0.569054
+2026-07-23T21:06:36.037237319Z evidence_count=10
+2026-07-23T21:06:36.037238616Z 
+2026-07-23T21:06:36.037239713Z ========== PREDICTIONS ==========
+2026-07-23T21:06:36.037240911Z - service=order-service | prediction=0 | confidence=0.002364
+2026-07-23T21:06:36.037242208Z - service=payment-service | prediction=1 | confidence=0.997636
+2026-07-23T21:06:36.037243405Z 
+2026-07-23T21:06:36.037244502Z ========== SHAP SUMMARY ==========
+2026-07-23T21:06:36.037245700Z type=list | items=2
+2026-07-23T21:06:36.037246897Z 
+2026-07-23T21:06:36.037248194Z ========== RANKING ==========
+2026-07-23T21:06:36.037249491Z 1. service=payment-service | final_score=0.569054 | scores={'model_probability': 0.9976359605789185, 'shap_support_score': 0.0, 'temporal_score': 0.85, 'graph_score': 0.0, 'anomaly_score': 0.0, 'final_score': 0.5690543842315674, 'component_weights': {'model_probability': 0.4, 'shap_support': 0.25, 'temporal': 0.2, 'graph': 0.15, 'anomaly': 0.0}, 'normalization_method': 'normalized_weighted_ranking_v1'}
+2026-07-23T21:06:36.037251187Z 2. service=order-service | final_score=0.080946 | scores={'model_probability': 0.0023640133440494537, 'shap_support_score': 0.0, 'temporal_score': 0.4, 'graph_score': 0.0, 'anomaly_score': 0.0, 'final_score': 0.0809456053376198, 'component_weights': {'model_probability': 0.4, 'shap_support': 0.25, 'temporal': 0.2, 'graph': 0.15, 'anomaly': 0.0}, 'normalization_method': 'normalized_weighted_ranking_v1'}
+2026-07-23T21:06:36.037252883Z 
+2026-07-23T21:06:36.037253981Z ========== EVIDENCE SUMMARY ==========
+2026-07-23T21:06:36.037402844Z - service=order-service | type=anomaly | count=1
+2026-07-23T21:06:36.037412721Z - service=order-service | type=graph | count=1
+2026-07-23T21:06:36.037414617Z - service=order-service | type=model | count=1
+2026-07-23T21:06:36.037415914Z - service=order-service | type=shap | count=1
+2026-07-23T21:06:36.037417111Z - service=order-service | type=temporal | count=1
+2026-07-23T21:06:36.037418309Z - service=payment-service | type=anomaly | count=1
+2026-07-23T21:06:36.037419606Z - service=payment-service | type=graph | count=1
+2026-07-23T21:06:36.037477175Z - service=payment-service | type=model | count=1
+2026-07-23T21:06:36.037481266Z - service=payment-service | type=shap | count=1
+2026-07-23T21:06:36.037482663Z - service=payment-service | type=temporal | count=1
+2026-07-23T21:06:36.037484060Z 
+2026-07-23T21:06:36.037485257Z ========== RELIABILITY ==========
+2026-07-23T21:06:36.037486554Z {'is_reliable': True, 'confidence': 0.5690543842315674, 'confidence_method': 'reliability-gate-v1', 'minimum_confidence': 0.5, 'margin_to_second': 0.4881087788939476, 'minimum_margin': 0.05, 'passed_rules': ['ranking_present', 'minimum_confidence', 'minimum_margin', 'minimum_evidence_count', 'minimum_source_diversity'], 'failed_rules': []}
+2026-07-23T21:06:36.126347366Z RCAResult persisted | rca_result_id=db8fa392-9a95-469b-a3db-e5cb35fca1f3 | trace_id=b860c4fec0e030954d565e1dd8fb69ca
+2026-07-23T21:06:36.134904074Z 
+2026-07-23T21:06:36.134940790Z ========== INCIDENT ==========
+2026-07-23T21:06:36.134943384Z created=True | incident_id=5324a992-4e09-4cb5-84d1-7daf4ff82b6e | root_cause_service=payment-service | confidence=0.569054
+2026-07-23T21:06:59.679868494Z 
+2026-07-23T21:06:59.679905946Z ========== SERVICE GRAPH ==========
+2026-07-23T21:06:59.679910241Z {'services': {'payment-service': {'requests': 1, 'errors': 0, 'error_rate': 0.0, 'avg_latency': 279.392441, 'max_latency': 279.392441}}, 'dependencies': []}
+2026-07-23T21:06:59.679913237Z 
+2026-07-23T21:06:59.679915734Z ========== TEMPORAL ==========
+2026-07-23T21:06:59.680017004Z {'services': {'payment-service': {'score': 1.0, 'raw_score': 1.0, 'is_first_anomaly': False, 'is_first_failure': False, 'failure_order': -1, 'anomaly_started_at': None, 'lead_ms': None, 'failure_lead_time_ms': 0.0, 'rank': 1, 'latency_rank': 1, 'latency_rank_score': 1.0, 'span_count': 1, 'error_count': 0, 'max_duration_ms': 279.392441, 'total_duration_ms': 279.392441, 'earliest_start': datetime.datetime(2026, 7, 23, 21, 6, 50, 781902, tzinfo=datetime.timezone.utc), 'latest_end': datetime.datetime(2026, 7, 23, 21, 6, 51, 61294, tzinfo=datetime.timezone.utc), 'first_error_start': None, 'depth': 0, 'upstream_services': [], 'downstream_services': [], 'operations': ['GET /actuator/health'], 'score_components': {'first_failure': 0.0, 'error_presence': 0.0, 'latency_order': 1.0}, 'score_weights': {'first_failure': 0.6, 'error_presence': 0.25, 'latency_order': 0.15}, 'scoring_mode': 'latency_order_only', 'method': 'temporal-correlation-v1'}}, 'timeline': [{'service': 'payment-service', 'operation': 'GET /actuator/health', 'span_id': '798328085800eefb', 'parent': None, 'start': datetime.datetime(2026, 7, 23, 21, 6, 50, 781902, tzinfo=datetime.timezone.utc), 'end': datetime.datetime(2026, 7, 23, 21, 6, 51, 61294, tzinfo=datetime.timezone.utc), 'duration': 279.392441, 'error': False}], 'first_failure': None, 'latency_order': ['payment-service'], 'propagation': {}, 'service_depth': {'payment-service': 0}, 'method': 'temporal-correlation-v1'}
+2026-07-23T21:06:59.680035780Z 
+2026-07-23T21:06:59.680039176Z ========== FEATURES ==========
+2026-07-23T21:06:59.680096802Z RCAFeature(service_name='payment-service', request_count=1, error_count=0, error_rate=0.0, avg_latency_ms=279.392441, max_latency_ms=279.392441, incoming_dependencies=0, outgoing_dependencies=0, dependency_count=0, is_first_failure=False, failure_order=-1, failure_lead_time_ms=0.0, latency_zscore=0.0, anomaly_score=0.0, is_anomalous=False)
+2026-07-23T21:06:59.708771674Z 
+2026-07-23T21:06:59.708795243Z ========== RCA SUMMARY ==========
+2026-07-23T21:06:59.708797740Z rca_result_id=d0c70cea-dcd6-4225-8f43-38f2b1ec2fcd
+2026-07-23T21:06:59.708799338Z trace_id=ab3843778b414bf5d8c148e44fe989e0
+2026-07-23T21:06:59.708800836Z confidence=0.200946
+2026-07-23T21:06:59.708802234Z evidence_count=5
+2026-07-23T21:06:59.708803732Z 
+2026-07-23T21:06:59.708805031Z ========== PREDICTIONS ==========
+2026-07-23T21:06:59.708806429Z - service=payment-service | prediction=0 | confidence=0.002364
+2026-07-23T21:06:59.708807827Z 
+2026-07-23T21:06:59.708809725Z ========== SHAP SUMMARY ==========
+2026-07-23T21:06:59.708811123Z type=list | items=1
+2026-07-23T21:06:59.708812421Z 
+2026-07-23T21:06:59.708813720Z ========== RANKING ==========
+2026-07-23T21:06:59.708815318Z 1. service=payment-service | final_score=0.200946 | scores={'model_probability': 0.0023640133440494537, 'shap_support_score': 0.0, 'temporal_score': 1.0, 'graph_score': 0.0, 'anomaly_score': 0.0, 'final_score': 0.2009456053376198, 'component_weights': {'model_probability': 0.4, 'shap_support': 0.25, 'temporal': 0.2, 'graph': 0.15, 'anomaly': 0.0}, 'normalization_method': 'normalized_weighted_ranking_v1'}
+2026-07-23T21:06:59.708817215Z 
+2026-07-23T21:06:59.708818613Z ========== EVIDENCE SUMMARY ==========
+2026-07-23T21:06:59.708845179Z - service=payment-service | type=anomaly | count=1
+2026-07-23T21:06:59.708854068Z - service=payment-service | type=graph | count=1
+2026-07-23T21:06:59.708856165Z - service=payment-service | type=model | count=1
+2026-07-23T21:06:59.708857663Z - service=payment-service | type=shap | count=1
+2026-07-23T21:06:59.708859062Z - service=payment-service | type=temporal | count=1
+2026-07-23T21:06:59.708860859Z 
+2026-07-23T21:06:59.708862258Z ========== RELIABILITY ==========
+2026-07-23T21:06:59.708863756Z {'is_reliable': False, 'confidence': 0.2009456053376198, 'confidence_method': 'reliability-gate-v1', 'minimum_confidence': 0.5, 'margin_to_second': None, 'minimum_margin': 0.05, 'passed_rules': ['ranking_present', 'single_candidate', 'minimum_evidence_count', 'minimum_source_diversity'], 'failed_rules': ['minimum_confidence']}
+2026-07-23T21:06:59.794639690Z RCAResult persisted | rca_result_id=d0c70cea-dcd6-4225-8f43-38f2b1ec2fcd | trace_id=ab3843778b414bf5d8c148e44fe989e0
+2026-07-23T21:06:59.794658865Z 
+2026-07-23T21:06:59.794660862Z ========== INCIDENT ==========
+2026-07-23T21:06:59.794662161Z created=False | reason=RCA result not reliable
+2026-07-23T21:07:06.702124177Z 
+2026-07-23T21:07:06.702169869Z ========== SERVICE GRAPH ==========
+2026-07-23T21:07:06.702175356Z {'services': {'payment-service': {'requests': 1, 'errors': 0, 'error_rate': 0.0, 'avg_latency': 52.771658, 'max_latency': 52.771658}, 'order-service': {'requests': 2, 'errors': 0, 'error_rate': 0.0, 'avg_latency': 59.8212745, 'max_latency': 61.94988}}, 'dependencies': [{'source': 'order-service', 'target': 'payment-service', 'calls': 1, 'errors': 0, 'avg_latency': 52.771658}]}
+2026-07-23T21:07:06.702255368Z 
+2026-07-23T21:07:06.702275221Z ========== TEMPORAL ==========
+2026-07-23T21:07:06.702555161Z {'services': {'order-service': {'score': 1.0, 'raw_score': 1.0, 'is_first_anomaly': False, 'is_first_failure': False, 'failure_order': -1, 'anomaly_started_at': None, 'lead_ms': None, 'failure_lead_time_ms': 0.0, 'rank': 1, 'latency_rank': 1, 'latency_rank_score': 1.0, 'span_count': 2, 'error_count': 0, 'max_duration_ms': 61.94988, 'total_duration_ms': 119.642549, 'earliest_start': datetime.datetime(2026, 7, 23, 21, 6, 58, 179171, tzinfo=datetime.timezone.utc), 'latest_end': datetime.datetime(2026, 7, 23, 21, 6, 58, 241121, tzinfo=datetime.timezone.utc), 'first_error_start': None, 'depth': 0, 'upstream_services': [], 'downstream_services': ['payment-service'], 'operations': ['POST /orders', 'POST'], 'score_components': {'first_failure': 0.0, 'error_presence': 0.0, 'latency_order': 1.0}, 'score_weights': {'first_failure': 0.6, 'error_presence': 0.25, 'latency_order': 0.15}, 'scoring_mode': 'latency_order_only', 'method': 'temporal-correlation-v1'}, 'payment-service': {'score': 0.0, 'raw_score': 0.0, 'is_first_anomaly': False, 'is_first_failure': False, 'failure_order': -1, 'anomaly_started_at': None, 'lead_ms': None, 'failure_lead_time_ms': 0.0, 'rank': 2, 'latency_rank': 2, 'latency_rank_score': 0.0, 'span_count': 1, 'error_count': 0, 'max_duration_ms': 52.771658, 'total_duration_ms': 52.771658, 'earliest_start': datetime.datetime(2026, 7, 23, 21, 6, 58, 186341, tzinfo=datetime.timezone.utc), 'latest_end': datetime.datetime(2026, 7, 23, 21, 6, 58, 239112, tzinfo=datetime.timezone.utc), 'first_error_start': None, 'depth': 2, 'upstream_services': ['order-service'], 'downstream_services': [], 'operations': ['POST /payments'], 'score_components': {'first_failure': 0.0, 'error_presence': 0.0, 'latency_order': 0.0}, 'score_weights': {'first_failure': 0.6, 'error_presence': 0.25, 'latency_order': 0.15}, 'scoring_mode': 'latency_order_only', 'method': 'temporal-correlation-v1'}}, 'timeline': [{'service': 'order-service', 'operation': 'POST /orders', 'span_id': '9d860c25513fc016', 'parent': None, 'start': datetime.datetime(2026, 7, 23, 21, 6, 58, 179171, tzinfo=datetime.timezone.utc), 'end': datetime.datetime(2026, 7, 23, 21, 6, 58, 241121, tzinfo=datetime.timezone.utc), 'duration': 61.94988, 'error': False}, {'service': 'order-service', 'operation': 'POST', 'span_id': '010baa19c03a5431', 'parent': '9d860c25513fc016', 'start': datetime.datetime(2026, 7, 23, 21, 6, 58, 181266, tzinfo=datetime.timezone.utc), 'end': datetime.datetime(2026, 7, 23, 21, 6, 58, 238959, tzinfo=datetime.timezone.utc), 'duration': 57.692669, 'error': False}, {'service': 'payment-service', 'operation': 'POST /payments', 'span_id': '66c83d526be39c6e', 'parent': '010baa19c03a5431', 'start': datetime.datetime(2026, 7, 23, 21, 6, 58, 186341, tzinfo=datetime.timezone.utc), 'end': datetime.datetime(2026, 7, 23, 21, 6, 58, 239112, tzinfo=datetime.timezone.utc), 'duration': 52.771658, 'error': False}], 'first_failure': None, 'latency_order': ['order-service', 'payment-service'], 'propagation': {'order-service': ['payment-service']}, 'service_depth': {'order-service': 0, 'payment-service': 2}, 'method': 'temporal-correlation-v1'}
+2026-07-23T21:07:06.702582597Z 
+2026-07-23T21:07:06.702585989Z ========== FEATURES ==========
+2026-07-23T21:07:06.702588882Z RCAFeature(service_name='order-service', request_count=2, error_count=0, error_rate=0.0, avg_latency_ms=59.8212745, max_latency_ms=61.94988, incoming_dependencies=0, outgoing_dependencies=1, dependency_count=1, is_first_failure=False, failure_order=-1, failure_lead_time_ms=0.0, latency_zscore=0.0, anomaly_score=0.0, is_anomalous=False)
+2026-07-23T21:07:06.702605942Z RCAFeature(service_name='payment-service', request_count=1, error_count=0, error_rate=0.0, avg_latency_ms=52.771658, max_latency_ms=52.771658, incoming_dependencies=1, outgoing_dependencies=0, dependency_count=1, is_first_failure=False, failure_order=-1, failure_lead_time_ms=0.0, latency_zscore=0.0, anomaly_score=0.0, is_anomalous=False)
+2026-07-23T21:07:06.744821307Z 
+2026-07-23T21:07:06.744844153Z ========== RCA SUMMARY ==========
+2026-07-23T21:07:06.744846049Z rca_result_id=c14a946b-8720-4abb-ab30-a6727985117e
+2026-07-23T21:07:06.744847346Z trace_id=0f8151c25e6c2756e99967f60b70ef5b
+2026-07-23T21:07:06.744848543Z confidence=0.200946
+2026-07-23T21:07:06.744849640Z evidence_count=10
+2026-07-23T21:07:06.744850837Z 
+2026-07-23T21:07:06.744851935Z ========== PREDICTIONS ==========
+2026-07-23T21:07:06.744853032Z - service=order-service | prediction=0 | confidence=0.002364
+2026-07-23T21:07:06.744854130Z - service=payment-service | prediction=0 | confidence=0.002364
+2026-07-23T21:07:06.744855227Z 
+2026-07-23T21:07:06.744856325Z ========== SHAP SUMMARY ==========
+2026-07-23T21:07:06.744857422Z type=list | items=2
+2026-07-23T21:07:06.744861512Z 
+2026-07-23T21:07:06.744862709Z ========== RANKING ==========
+2026-07-23T21:07:06.744863907Z 1. service=order-service | final_score=0.200946 | scores={'model_probability': 0.0023640133440494537, 'shap_support_score': 0.0, 'temporal_score': 1.0, 'graph_score': 0.0, 'anomaly_score': 0.0, 'final_score': 0.2009456053376198, 'component_weights': {'model_probability': 0.4, 'shap_support': 0.25, 'temporal': 0.2, 'graph': 0.15, 'anomaly': 0.0}, 'normalization_method': 'normalized_weighted_ranking_v1'}
+2026-07-23T21:07:06.744865503Z 2. service=payment-service | final_score=0.000946 | scores={'model_probability': 0.0023640133440494537, 'shap_support_score': 0.0, 'temporal_score': 0.0, 'graph_score': 0.0, 'anomaly_score': 0.0, 'final_score': 0.0009456053376197815, 'component_weights': {'model_probability': 0.4, 'shap_support': 0.25, 'temporal': 0.2, 'graph': 0.15, 'anomaly': 0.0}, 'normalization_method': 'normalized_weighted_ranking_v1'}
+2026-07-23T21:07:06.744866999Z 
+2026-07-23T21:07:06.744868097Z ========== EVIDENCE SUMMARY ==========
+2026-07-23T21:07:06.745007868Z - service=order-service | type=anomaly | count=1
+2026-07-23T21:07:06.745014452Z - service=order-service | type=graph | count=1
+2026-07-23T21:07:06.745015849Z - service=order-service | type=model | count=1
+2026-07-23T21:07:06.745017046Z - service=order-service | type=shap | count=1
+2026-07-23T21:07:06.745018243Z - service=order-service | type=temporal | count=1
+2026-07-23T21:07:06.745019341Z - service=payment-service | type=anomaly | count=1
+2026-07-23T21:07:06.745020438Z - service=payment-service | type=graph | count=1
+2026-07-23T21:07:06.745021635Z - service=payment-service | type=model | count=1
+2026-07-23T21:07:06.745031013Z - service=payment-service | type=shap | count=1
+2026-07-23T21:07:06.745032410Z - service=payment-service | type=temporal | count=1
+2026-07-23T21:07:06.745033507Z 
+2026-07-23T21:07:06.745034605Z ========== RELIABILITY ==========
+2026-07-23T21:07:06.745035702Z {'is_reliable': False, 'confidence': 0.2009456053376198, 'confidence_method': 'reliability-gate-v1', 'minimum_confidence': 0.5, 'margin_to_second': 0.2, 'minimum_margin': 0.05, 'passed_rules': ['ranking_present', 'minimum_margin', 'minimum_evidence_count', 'minimum_source_diversity'], 'failed_rules': ['minimum_confidence']}
+2026-07-23T21:07:06.837918025Z Traceback (most recent call last):
+2026-07-23T21:07:06.870010933Z   File "/app/app.py", line 18, in <module>
+2026-07-23T21:07:06.870033380Z     main()
+2026-07-23T21:07:06.870035575Z     ~~~~^^
+2026-07-23T21:07:06.870036872Z   File "/app/app.py", line 14, in main
+2026-07-23T21:07:06.870038269Z     consumer.consume()
+2026-07-23T21:07:06.870039466Z     ~~~~~~~~~~~~~~~~^^
+2026-07-23T21:07:06.870040663Z   File "/app/consumer/kafka_consumer.py", line 148, in consume
+2026-07-23T21:07:06.870042858Z     self.check_completed_traces()
+2026-07-23T21:07:06.870044155Z     ~~~~~~~~~~~~~~~~~~~~~~~~~~~^^
+2026-07-23T21:07:06.870045352Z   File "/app/consumer/kafka_consumer.py", line 212, in check_completed_traces
+2026-07-23T21:07:06.870046649Z     self.pipeline.process(
+2026-07-23T21:07:06.870047846Z     ~~~~~~~~~~~~~~~~~~~~~^
+2026-07-23T21:07:06.870049043Z         trace
+2026-07-23T21:07:06.870050241Z         ^^^^^
+2026-07-23T21:07:06.870051438Z     )
+2026-07-23T21:07:06.870052635Z     ^
+2026-07-23T21:07:06.870053832Z   File "/app/pipeline/rca_pipeline.py", line 133, in process
+2026-07-23T21:07:06.870055129Z     self.persist_trace(
+2026-07-23T21:07:06.870056326Z     ~~~~~~~~~~~~~~~~~~^
+2026-07-23T21:07:06.870057523Z         trace
+2026-07-23T21:07:06.870058721Z         ^^^^^
+2026-07-23T21:07:06.870059818Z     )
+2026-07-23T21:07:06.870061015Z     ^
+2026-07-23T21:07:06.870062212Z   File "/app/pipeline/rca_pipeline.py", line 319, in persist_trace
+2026-07-23T21:07:06.870063509Z     self.trace_repository.save(
+2026-07-23T21:07:06.870064707Z     ~~~~~~~~~~~~~~~~~~~~~~~~~~^
+2026-07-23T21:07:06.870066003Z         trace.to_dict()
+2026-07-23T21:07:06.870067201Z         ^^^^^^^^^^^^^^^
+2026-07-23T21:07:06.870068398Z     )
+2026-07-23T21:07:06.870069495Z     ^
+2026-07-23T21:07:06.870070692Z   File "/app/persistence/opensearch/trace_repository.py", line 31, in save
+2026-07-23T21:07:06.870072089Z     self.client.index(
+2026-07-23T21:07:06.870073286Z     ~~~~~~~~~~~~~~~~~^
+2026-07-23T21:07:06.870082964Z     
+2026-07-23T21:07:06.870084560Z     
+2026-07-23T21:07:06.870086256Z     ...<5 lines>...
+2026-07-23T21:07:06.870088351Z     
+2026-07-23T21:07:06.870090147Z     
+2026-07-23T21:07:06.870092142Z     )
+2026-07-23T21:07:06.870094536Z     ^
+2026-07-23T21:07:06.870096332Z   File "/usr/local/lib/python3.13/site-packages/opensearchpy/client/utils.py", line 176, in _wrapped
+2026-07-23T21:07:06.870098627Z     return func(*args, params=params, headers=headers, **kwargs)
+2026-07-23T21:07:06.870100722Z   File "/usr/local/lib/python3.13/site-packages/opensearchpy/client/__init__.py", line 484, in index
+2026-07-23T21:07:06.870102817Z     return self.transport.perform_request(
+2026-07-23T21:07:06.870104812Z            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+2026-07-23T21:07:06.870106708Z         "POST" if id in SKIP_IN_PATH else "PUT",
+2026-07-23T21:07:06.870109002Z         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-07-23T21:07:06.870111097Z     ...<3 lines>...
+2026-07-23T21:07:06.870112993Z         body=body,
+2026-07-23T21:07:06.870114988Z         ^^^^^^^^^^
+2026-07-23T21:07:06.870116884Z     )
+2026-07-23T21:07:06.870118679Z     ^
+2026-07-23T21:07:06.870120675Z   File "/usr/local/lib/python3.13/site-packages/opensearchpy/transport.py", line 457, in perform_request
+2026-07-23T21:07:06.870122670Z     raise e
+2026-07-23T21:07:06.870124665Z   File "/usr/local/lib/python3.13/site-packages/opensearchpy/transport.py", line 418, in perform_request
+2026-07-23T21:07:06.870126860Z     status, headers_response, data = connection.perform_request(
+2026-07-23T21:07:06.870128955Z                                      ~~~~~~~~~~~~~~~~~~~~~~~~~~^
+2026-07-23T21:07:06.870131050Z         method,
+2026-07-23T21:07:06.870133046Z         ^^^^^^^
+2026-07-23T21:07:06.870134941Z     ...<5 lines>...
+2026-07-23T21:07:06.870137036Z         timeout=timeout,
+2026-07-23T21:07:06.870139131Z         ^^^^^^^^^^^^^^^^
+2026-07-23T21:07:06.870141226Z     )
+2026-07-23T21:07:06.870143122Z     ^
+2026-07-23T21:07:06.870146115Z   File "/usr/local/lib/python3.13/site-packages/opensearchpy/connection/http_urllib3.py", line 308, in perform_request
+2026-07-23T21:07:06.870147611Z     self._raise_error(
+2026-07-23T21:07:06.870148808Z     ~~~~~~~~~~~~~~~~~^
+2026-07-23T21:07:06.870149906Z         response.status,
+2026-07-23T21:07:06.870151103Z         ^^^^^^^^^^^^^^^^
+2026-07-23T21:07:06.870152300Z         raw_data,
+2026-07-23T21:07:06.870153497Z         ^^^^^^^^^
+2026-07-23T21:07:06.870154695Z         self.get_response_headers(response).get("content-type"),
+2026-07-23T21:07:06.870159982Z         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-07-23T21:07:06.870161479Z     )
+2026-07-23T21:07:06.870162576Z     ^
+2026-07-23T21:07:06.870163773Z   File "/usr/local/lib/python3.13/site-packages/opensearchpy/connection/base.py", line 315, in _raise_error
+2026-07-23T21:07:06.870165170Z     raise HTTP_EXCEPTIONS.get(status_code, TransportError)(
+2026-07-23T21:07:06.870166367Z         status_code, error_message, additional_info
+2026-07-23T21:07:06.870167764Z     )
+2026-07-23T21:07:06.870756976Z opensearchpy.exceptions.RequestError: RequestError(400, 'illegal_argument_exception', 'Limit of total fields [1000] has been exceeded')
+2026-07-23T21:07:14.457582814Z 
+2026-07-23T21:07:14.457605254Z ======================================================================
+2026-07-23T21:07:14.457608645Z Correlation Engine
+2026-07-23T21:07:14.457610539Z ======================================================================
+2026-07-23T21:07:46.053178394Z 
+2026-07-23T21:07:46.053262267Z ========== SERVICE GRAPH ==========
+2026-07-23T21:07:46.053392316Z {'services': {'payment-service': {'requests': 1, 'errors': 0, 'error_rate': 0.0, 'avg_latency': 235.437342, 'max_latency': 235.437342}}, 'dependencies': []}
+2026-07-23T21:07:46.055061806Z 
+2026-07-23T21:07:46.055101399Z ========== TEMPORAL ==========
+2026-07-23T21:07:46.055113566Z {'services': {'payment-service': {'score': 1.0, 'raw_score': 1.0, 'is_first_anomaly': False, 'is_first_failure': False, 'failure_order': -1, 'anomaly_started_at': None, 'lead_ms': None, 'failure_lead_time_ms': 0.0, 'rank': 1, 'latency_rank': 1, 'latency_rank_score': 1.0, 'span_count': 1, 'error_count': 0, 'max_duration_ms': 235.437342, 'total_duration_ms': 235.437342, 'earliest_start': datetime.datetime(2026, 7, 23, 21, 7, 36, 20654, tzinfo=datetime.timezone.utc), 'latest_end': datetime.datetime(2026, 7, 23, 21, 7, 36, 256091, tzinfo=datetime.timezone.utc), 'first_error_start': None, 'depth': 0, 'upstream_services': [], 'downstream_services': [], 'operations': ['GET /actuator/health'], 'score_components': {'first_failure': 0.0, 'error_presence': 0.0, 'latency_order': 1.0}, 'score_weights': {'first_failure': 0.6, 'error_presence': 0.25, 'latency_order': 0.15}, 'scoring_mode': 'latency_order_only', 'method': 'temporal-correlation-v1'}}, 'timeline': [{'service': 'payment-service', 'operation': 'GET /actuator/health', 'span_id': '1dda5e83c8ae0bfe', 'parent': None, 'start': datetime.datetime(2026, 7, 23, 21, 7, 36, 20654, tzinfo=datetime.timezone.utc), 'end': datetime.datetime(2026, 7, 23, 21, 7, 36, 256091, tzinfo=datetime.timezone.utc), 'duration': 235.437342, 'error': False}], 'first_failure': None, 'latency_order': ['payment-service'], 'propagation': {}, 'service_depth': {'payment-service': 0}, 'method': 'temporal-correlation-v1'}
+2026-07-23T21:07:46.056251691Z 
+2026-07-23T21:07:46.056292282Z ========== FEATURES ==========
+2026-07-23T21:07:46.056302055Z RCAFeature(service_name='payment-service', request_count=1, error_count=0, error_rate=0.0, avg_latency_ms=235.437342, max_latency_ms=235.437342, incoming_dependencies=0, outgoing_dependencies=0, dependency_count=0, is_first_failure=False, failure_order=-1, failure_lead_time_ms=0.0, latency_zscore=0.0, anomaly_score=0.0, is_anomalous=False)
+2026-07-23T21:07:46.135175588Z 
+2026-07-23T21:07:46.135219868Z ========== RCA SUMMARY ==========
+2026-07-23T21:07:46.135222162Z rca_result_id=60433cc0-dca1-4455-9d5b-c5f9cd3caf54
+2026-07-23T21:07:46.135223558Z trace_id=9a2018758843dca80d530cdf780db8a2
+2026-07-23T21:07:46.135224855Z confidence=0.200946
+2026-07-23T21:07:46.135226051Z evidence_count=5
+2026-07-23T21:07:46.135227448Z 
+2026-07-23T21:07:46.135228744Z ========== PREDICTIONS ==========
+2026-07-23T21:07:46.135229941Z - service=payment-service | prediction=0 | confidence=0.002364
+2026-07-23T21:07:46.135231237Z 
+2026-07-23T21:07:46.135232434Z ========== SHAP SUMMARY ==========
+2026-07-23T21:07:46.135233631Z type=list | items=1
+2026-07-23T21:07:46.135234927Z 
+2026-07-23T21:07:46.135236024Z ========== RANKING ==========
+2026-07-23T21:07:46.135237520Z 1. service=payment-service | final_score=0.200946 | scores={'model_probability': 0.0023640133440494537, 'shap_support_score': 0.0, 'temporal_score': 1.0, 'graph_score': 0.0, 'anomaly_score': 0.0, 'final_score': 0.2009456053376198, 'component_weights': {'model_probability': 0.4, 'shap_support': 0.25, 'temporal': 0.2, 'graph': 0.15, 'anomaly': 0.0}, 'normalization_method': 'normalized_weighted_ranking_v1'}
+2026-07-23T21:07:46.135239316Z 
+2026-07-23T21:07:46.135240512Z ========== EVIDENCE SUMMARY ==========
+2026-07-23T21:07:46.135440771Z - service=payment-service | type=anomaly | count=1
+2026-07-23T21:07:46.135454534Z - service=payment-service | type=graph | count=1
+2026-07-23T21:07:46.135457027Z - service=payment-service | type=model | count=1
+2026-07-23T21:07:46.135458324Z - service=payment-service | type=shap | count=1
+2026-07-23T21:07:46.135459620Z - service=payment-service | type=temporal | count=1
+2026-07-23T21:07:46.135460917Z 
+2026-07-23T21:07:46.135462114Z ========== RELIABILITY ==========
+2026-07-23T21:07:46.135463510Z {'is_reliable': False, 'confidence': 0.2009456053376198, 'confidence_method': 'reliability-gate-v1', 'minimum_confidence': 0.5, 'margin_to_second': None, 'minimum_margin': 0.05, 'passed_rules': ['ranking_present', 'single_candidate', 'minimum_evidence_count', 'minimum_source_diversity'], 'failed_rules': ['minimum_confidence']}
+2026-07-23T21:07:46.224550751Z RCAResult persisted | rca_result_id=60433cc0-dca1-4455-9d5b-c5f9cd3caf54 | trace_id=9a2018758843dca80d530cdf780db8a2
+2026-07-23T21:07:46.224568304Z 
+2026-07-23T21:07:46.224570298Z ========== INCIDENT ==========
+2026-07-23T21:07:46.224571694Z created=False | reason=RCA result not reliable
+2026-07-23T21:07:51.688680446Z 
+2026-07-23T21:07:51.688708600Z ========== SERVICE GRAPH ==========
+2026-07-23T21:07:51.688711004Z {'services': {'payment-service': {'requests': 2, 'errors': 1, 'error_rate': 0.5, 'avg_latency': 32.9550215, 'max_latency': 65.655509}, 'order-service': {'requests': 2, 'errors': 2, 'error_rate': 1.0, 'avg_latency': 72.18935350000001, 'max_latency': 75.025379}}, 'dependencies': [{'source': 'order-service', 'target': 'payment-service', 'calls': 1, 'errors': 1, 'avg_latency': 65.655509}]}
+2026-07-23T21:07:51.688876619Z 
+2026-07-23T21:07:51.688907377Z ========== TEMPORAL ==========
+2026-07-23T21:07:51.689095935Z {'services': {'order-service': {'score': 0.4, 'raw_score': 0.4, 'is_first_anomaly': False, 'is_first_failure': False, 'failure_order': 2, 'anomaly_started_at': datetime.datetime(2026, 7, 23, 21, 7, 43, 371240, tzinfo=datetime.timezone.utc), 'lead_ms': 5.7749999999999995, 'failure_lead_time_ms': 5.7749999999999995, 'rank': 1, 'latency_rank': 1, 'latency_rank_score': 1.0, 'span_count': 2, 'error_count': 2, 'max_duration_ms': 75.025379, 'total_duration_ms': 144.37870700000002, 'earliest_start': datetime.datetime(2026, 7, 23, 21, 7, 43, 371240, tzinfo=datetime.timezone.utc), 'latest_end': datetime.datetime(2026, 7, 23, 21, 7, 43, 446266, tzinfo=datetime.timezone.utc), 'first_error_start': datetime.datetime(2026, 7, 23, 21, 7, 43, 371240, tzinfo=datetime.timezone.utc), 'depth': 0, 'upstream_services': [], 'downstream_services': ['payment-service'], 'operations': ['POST /orders', 'POST'], 'score_components': {'first_failure': 0.0, 'error_presence': 1.0, 'latency_order': 1.0}, 'score_weights': {'first_failure': 0.6, 'error_presence': 0.25, 'latency_order': 0.15}, 'scoring_mode': 'failure_precedence_and_latency', 'method': 'temporal-correlation-v1'}, 'payment-service': {'score': 0.85, 'raw_score': 0.85, 'is_first_anomaly': True, 'is_first_failure': True, 'failure_order': 1, 'anomaly_started_at': datetime.datetime(2026, 7, 23, 21, 7, 43, 377015, tzinfo=datetime.timezone.utc), 'lead_ms': None, 'failure_lead_time_ms': 0.0, 'rank': 2, 'latency_rank': 2, 'latency_rank_score': 0.0, 'span_count': 2, 'error_count': 1, 'max_duration_ms': 65.655509, 'total_duration_ms': 65.910043, 'earliest_start': datetime.datetime(2026, 7, 23, 21, 7, 43, 377015, tzinfo=datetime.timezone.utc), 'latest_end': datetime.datetime(2026, 7, 23, 21, 7, 43, 442671, tzinfo=datetime.timezone.utc), 'first_error_start': datetime.datetime(2026, 7, 23, 21, 7, 43, 377015, tzinfo=datetime.timezone.utc), 'depth': 2, 'upstream_services': ['order-service'], 'downstream_services': [], 'operations': ['POST /payments', 'ResponseFacade.sendError'], 'score_components': {'first_failure': 1.0, 'error_presence': 1.0, 'latency_order': 0.0}, 'score_weights': {'first_failure': 0.6, 'error_presence': 0.25, 'latency_order': 0.15}, 'scoring_mode': 'failure_precedence_and_latency', 'method': 'temporal-correlation-v1'}}, 'timeline': [{'service': 'order-service', 'operation': 'POST /orders', 'span_id': '5f4639081b00fc54', 'parent': None, 'start': datetime.datetime(2026, 7, 23, 21, 7, 43, 371240, tzinfo=datetime.timezone.utc), 'end': datetime.datetime(2026, 7, 23, 21, 7, 43, 446266, tzinfo=datetime.timezone.utc), 'duration': 75.025379, 'error': True}, {'service': 'order-service', 'operation': 'POST', 'span_id': 'ec64ded40cae3b83', 'parent': '5f4639081b00fc54', 'start': datetime.datetime(2026, 7, 23, 21, 7, 43, 373241, tzinfo=datetime.timezone.utc), 'end': datetime.datetime(2026, 7, 23, 21, 7, 43, 442594, tzinfo=datetime.timezone.utc), 'duration': 69.353328, 'error': True}, {'service': 'payment-service', 'operation': 'POST /payments', 'span_id': '3e68aad603c2109c', 'parent': 'ec64ded40cae3b83', 'start': datetime.datetime(2026, 7, 23, 21, 7, 43, 377015, tzinfo=datetime.timezone.utc), 'end': datetime.datetime(2026, 7, 23, 21, 7, 43, 442671, tzinfo=datetime.timezone.utc), 'duration': 65.655509, 'error': True}, {'service': 'payment-service', 'operation': 'ResponseFacade.sendError', 'span_id': 'dd6c7275ca10ead7', 'parent': '3e68aad603c2109c', 'start': datetime.datetime(2026, 7, 23, 21, 7, 43, 425141, tzinfo=datetime.timezone.utc), 'end': datetime.datetime(2026, 7, 23, 21, 7, 43, 425395, tzinfo=datetime.timezone.utc), 'duration': 0.254534, 'error': False}], 'first_failure': {'service': 'payment-service', 'operation': 'POST /payments', 'span_id': '3e68aad603c2109c', 'parent': 'ec64ded40cae3b83', 'start': datetime.datetime(2026, 7, 23, 21, 7, 43, 377015, tzinfo=datetime.timezone.utc), 'end': datetime.datetime(2026, 7, 23, 21, 7, 43, 442671, tzinfo=datetime.timezone.utc), 'duration': 65.655509, 'error': True, 'detection_method': 'downstream_error_leaf'}, 'latency_order': ['order-service', 'payment-service'], 'propagation': {'order-service': ['payment-service']}, 'service_depth': {'order-service': 0, 'payment-service': 2}, 'method': 'temporal-correlation-v1'}
+2026-07-23T21:07:51.689165867Z 
+2026-07-23T21:07:51.689193820Z ========== FEATURES ==========
+2026-07-23T21:07:51.689196025Z RCAFeature(service_name='order-service', request_count=2, error_count=2, error_rate=1.0, avg_latency_ms=72.18935350000001, max_latency_ms=75.025379, incoming_dependencies=0, outgoing_dependencies=1, dependency_count=1, is_first_failure=False, failure_order=2, failure_lead_time_ms=5.7749999999999995, latency_zscore=0.0, anomaly_score=0.0, is_anomalous=False)
+2026-07-23T21:07:51.689198229Z RCAFeature(service_name='payment-service', request_count=2, error_count=1, error_rate=0.5, avg_latency_ms=32.9550215, max_latency_ms=65.655509, incoming_dependencies=1, outgoing_dependencies=0, dependency_count=1, is_first_failure=True, failure_order=1, failure_lead_time_ms=0.0, latency_zscore=0.0, anomaly_score=0.0, is_anomalous=False)
+2026-07-23T21:07:51.755655200Z 
+2026-07-23T21:07:51.755681149Z ========== RCA SUMMARY ==========
+2026-07-23T21:07:51.755683253Z rca_result_id=dae4a540-52f0-428e-a56d-0dbec5b98fb8
+2026-07-23T21:07:51.755684656Z trace_id=d94b7ad6077abd879cc9bf97e3912f1a
+2026-07-23T21:07:51.755686059Z confidence=0.569054
+2026-07-23T21:07:51.755687361Z evidence_count=10
+2026-07-23T21:07:51.755688564Z 
+2026-07-23T21:07:51.755689766Z ========== PREDICTIONS ==========
+2026-07-23T21:07:51.755690968Z - service=order-service | prediction=0 | confidence=0.002364
+2026-07-23T21:07:51.755692271Z - service=payment-service | prediction=1 | confidence=0.997636
+2026-07-23T21:07:51.755693473Z 
+2026-07-23T21:07:51.755694675Z ========== SHAP SUMMARY ==========
+2026-07-23T21:07:51.755695877Z type=list | items=2
+2026-07-23T21:07:51.755697180Z 
+2026-07-23T21:07:51.755698382Z ========== RANKING ==========
+2026-07-23T21:07:51.755699785Z 1. service=payment-service | final_score=0.569054 | scores={'model_probability': 0.9976359605789185, 'shap_support_score': 0.0, 'temporal_score': 0.85, 'graph_score': 0.0, 'anomaly_score': 0.0, 'final_score': 0.5690543842315674, 'component_weights': {'model_probability': 0.4, 'shap_support': 0.25, 'temporal': 0.2, 'graph': 0.15, 'anomaly': 0.0}, 'normalization_method': 'normalized_weighted_ranking_v1'}
+2026-07-23T21:07:51.755702189Z 2. service=order-service | final_score=0.080946 | scores={'model_probability': 0.0023640133440494537, 'shap_support_score': 0.0, 'temporal_score': 0.4, 'graph_score': 0.0, 'anomaly_score': 0.0, 'final_score': 0.0809456053376198, 'component_weights': {'model_probability': 0.4, 'shap_support': 0.25, 'temporal': 0.2, 'graph': 0.15, 'anomaly': 0.0}, 'normalization_method': 'normalized_weighted_ranking_v1'}
+2026-07-23T21:07:51.755714012Z 
+2026-07-23T21:07:51.755715615Z ========== EVIDENCE SUMMARY ==========
+2026-07-23T21:07:51.755892150Z - service=order-service | type=anomaly | count=1
+2026-07-23T21:07:51.755902069Z - service=order-service | type=graph | count=1
+2026-07-23T21:07:51.755903872Z - service=order-service | type=model | count=1
+2026-07-23T21:07:51.755905275Z - service=order-service | type=shap | count=1
+2026-07-23T21:07:51.755906577Z - service=order-service | type=temporal | count=1
+2026-07-23T21:07:51.755907779Z - service=payment-service | type=anomaly | count=1
+2026-07-23T21:07:51.755912188Z - service=payment-service | type=graph | count=1
+2026-07-23T21:07:51.755913490Z - service=payment-service | type=model | count=1
+2026-07-23T21:07:51.755914793Z - service=payment-service | type=shap | count=1
+2026-07-23T21:07:51.755915995Z - service=payment-service | type=temporal | count=1
+2026-07-23T21:07:51.755917297Z 
+2026-07-23T21:07:51.755918400Z ========== RELIABILITY ==========
+2026-07-23T21:07:51.755919702Z {'is_reliable': True, 'confidence': 0.5690543842315674, 'confidence_method': 'reliability-gate-v1', 'minimum_confidence': 0.5, 'margin_to_second': 0.4881087788939476, 'minimum_margin': 0.05, 'passed_rules': ['ranking_present', 'minimum_confidence', 'minimum_margin', 'minimum_evidence_count', 'minimum_source_diversity'], 'failed_rules': []}
+2026-07-23T21:07:51.772610365Z Traceback (most recent call last):
+2026-07-23T21:07:51.775161304Z   File "/app/app.py", line 18, in <module>
+2026-07-23T21:07:51.775177034Z     main()
+2026-07-23T21:07:51.775179238Z     ~~~~^^
+2026-07-23T21:07:51.775180641Z   File "/app/app.py", line 14, in main
+2026-07-23T21:07:51.775182144Z     consumer.consume()
+2026-07-23T21:07:51.775183346Z     ~~~~~~~~~~~~~~~~^^
+2026-07-23T21:07:51.775184648Z   File "/app/consumer/kafka_consumer.py", line 148, in consume
+2026-07-23T21:07:51.775185951Z     self.check_completed_traces()
+2026-07-23T21:07:51.775187153Z     ~~~~~~~~~~~~~~~~~~~~~~~~~~~^^
+2026-07-23T21:07:51.775188456Z   File "/app/consumer/kafka_consumer.py", line 212, in check_completed_traces
+2026-07-23T21:07:51.775189758Z     self.pipeline.process(
+2026-07-23T21:07:51.775191061Z     ~~~~~~~~~~~~~~~~~~~~~^
+2026-07-23T21:07:51.775192363Z         trace
+2026-07-23T21:07:51.775193565Z         ^^^^^
+2026-07-23T21:07:51.775194768Z     )
+2026-07-23T21:07:51.775195970Z     ^
+2026-07-23T21:07:51.775197172Z   File "/app/pipeline/rca_pipeline.py", line 133, in process
+2026-07-23T21:07:51.775198575Z     self.persist_trace(
+2026-07-23T21:07:51.775199777Z     ~~~~~~~~~~~~~~~~~~^
+2026-07-23T21:07:51.775200979Z         trace
+2026-07-23T21:07:51.775202282Z         ^^^^^
+2026-07-23T21:07:51.775212601Z     )
+2026-07-23T21:07:51.775214204Z     ^
+2026-07-23T21:07:51.775215507Z   File "/app/pipeline/rca_pipeline.py", line 319, in persist_trace
+2026-07-23T21:07:51.775216809Z     self.trace_repository.save(
+2026-07-23T21:07:51.775218613Z     ~~~~~~~~~~~~~~~~~~~~~~~~~~^
+2026-07-23T21:07:51.775219815Z         trace.to_dict()
+2026-07-23T21:07:51.775221017Z         ^^^^^^^^^^^^^^^
+2026-07-23T21:07:51.775222320Z     )
+2026-07-23T21:07:51.775223522Z     ^
+2026-07-23T21:07:51.775224724Z   File "/app/persistence/opensearch/trace_repository.py", line 31, in save
+2026-07-23T21:07:51.775226027Z     self.client.index(
+2026-07-23T21:07:51.775227229Z     ~~~~~~~~~~~~~~~~~^
+2026-07-23T21:07:51.775228431Z     
+2026-07-23T21:07:51.775229634Z     
+2026-07-23T21:07:51.775230836Z     ...<5 lines>...
+2026-07-23T21:07:51.775232239Z     
+2026-07-23T21:07:51.775233441Z     
+2026-07-23T21:07:51.775234643Z     )
+2026-07-23T21:07:51.775235846Z     ^
+2026-07-23T21:07:51.775237048Z   File "/usr/local/lib/python3.13/site-packages/opensearchpy/client/utils.py", line 176, in _wrapped
+2026-07-23T21:07:51.775238551Z     return func(*args, params=params, headers=headers, **kwargs)
+2026-07-23T21:07:51.775239853Z   File "/usr/local/lib/python3.13/site-packages/opensearchpy/client/__init__.py", line 484, in index
+2026-07-23T21:07:51.775241156Z     return self.transport.perform_request(
+2026-07-23T21:07:51.775242458Z            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+2026-07-23T21:07:51.775243761Z         "POST" if id in SKIP_IN_PATH else "PUT",
+2026-07-23T21:07:51.775245263Z         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-07-23T21:07:51.775246566Z     ...<3 lines>...
+2026-07-23T21:07:51.775247768Z         body=body,
+2026-07-23T21:07:51.775249071Z         ^^^^^^^^^^
+2026-07-23T21:07:51.775250173Z     )
+2026-07-23T21:07:51.775251375Z     ^
+2026-07-23T21:07:51.775252577Z   File "/usr/local/lib/python3.13/site-packages/opensearchpy/transport.py", line 457, in perform_request
+2026-07-23T21:07:51.775253980Z     raise e
+2026-07-23T21:07:51.775255282Z   File "/usr/local/lib/python3.13/site-packages/opensearchpy/transport.py", line 418, in perform_request
+2026-07-23T21:07:51.775256685Z     status, headers_response, data = connection.perform_request(
+2026-07-23T21:07:51.775257988Z                                      ~~~~~~~~~~~~~~~~~~~~~~~~~~^
+2026-07-23T21:07:51.775259290Z         method,
+2026-07-23T21:07:51.775260492Z         ^^^^^^^
+2026-07-23T21:07:51.775261695Z     ...<5 lines>...
+2026-07-23T21:07:51.775265001Z         timeout=timeout,
+2026-07-23T21:07:51.775266403Z         ^^^^^^^^^^^^^^^^
+2026-07-23T21:07:51.775267706Z     )
+2026-07-23T21:07:51.775268808Z     ^
+2026-07-23T21:07:51.775270611Z   File "/usr/local/lib/python3.13/site-packages/opensearchpy/connection/http_urllib3.py", line 308, in perform_request
+2026-07-23T21:07:51.775272014Z     self._raise_error(
+2026-07-23T21:07:51.775273216Z     ~~~~~~~~~~~~~~~~~^
+2026-07-23T21:07:51.775274419Z         response.status,
+2026-07-23T21:07:51.775275721Z         ^^^^^^^^^^^^^^^^
+2026-07-23T21:07:51.775276923Z         raw_data,
+2026-07-23T21:07:51.775278126Z         ^^^^^^^^^
+2026-07-23T21:07:51.775279328Z         self.get_response_headers(response).get("content-type"),
+2026-07-23T21:07:51.775280731Z         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-07-23T21:07:51.775282033Z     )
+2026-07-23T21:07:51.775283135Z     ^
+2026-07-23T21:07:51.775284338Z   File "/usr/local/lib/python3.13/site-packages/opensearchpy/connection/base.py", line 315, in _raise_error
+2026-07-23T21:07:51.775285740Z     raise HTTP_EXCEPTIONS.get(status_code, TransportError)(
+2026-07-23T21:07:51.775287143Z         status_code, error_message, additional_info
+2026-07-23T21:07:51.775288345Z     )
+2026-07-23T21:07:51.775289648Z opensearchpy.exceptions.RequestError: RequestError(400, 'illegal_argument_exception', 'Limit of total fields [1000] has been exceeded')
+2026-07-23T21:07:57.773034267Z 
+2026-07-23T21:07:57.773066843Z ======================================================================
+2026-07-23T21:07:57.773069741Z Correlation Engine
+2026-07-23T21:07:57.773071939Z ======================================================================
+2026-07-23T21:08:31.025335004Z 
+2026-07-23T21:08:31.025416373Z ========== SERVICE GRAPH ==========
+2026-07-23T21:08:31.025430650Z {'services': {'payment-service': {'requests': 1, 'errors': 0, 'error_rate': 0.0, 'avg_latency': 268.67283, 'max_latency': 268.67283}}, 'dependencies': []}
+2026-07-23T21:08:31.025559843Z 
+2026-07-23T21:08:31.025614055Z ========== TEMPORAL ==========
+2026-07-23T21:08:31.026399991Z {'services': {'payment-service': {'score': 1.0, 'raw_score': 1.0, 'is_first_anomaly': False, 'is_first_failure': False, 'failure_order': -1, 'anomaly_started_at': None, 'lead_ms': None, 'failure_lead_time_ms': 0.0, 'rank': 1, 'latency_rank': 1, 'latency_rank_score': 1.0, 'span_count': 1, 'error_count': 0, 'max_duration_ms': 268.67283, 'total_duration_ms': 268.67283, 'earliest_start': datetime.datetime(2026, 7, 23, 21, 8, 21, 194725, tzinfo=datetime.timezone.utc), 'latest_end': datetime.datetime(2026, 7, 23, 21, 8, 21, 463398, tzinfo=datetime.timezone.utc), 'first_error_start': None, 'depth': 0, 'upstream_services': [], 'downstream_services': [], 'operations': ['GET /actuator/health'], 'score_components': {'first_failure': 0.0, 'error_presence': 0.0, 'latency_order': 1.0}, 'score_weights': {'first_failure': 0.6, 'error_presence': 0.25, 'latency_order': 0.15}, 'scoring_mode': 'latency_order_only', 'method': 'temporal-correlation-v1'}}, 'timeline': [{'service': 'payment-service', 'operation': 'GET /actuator/health', 'span_id': '85b983d216a7d481', 'parent': None, 'start': datetime.datetime(2026, 7, 23, 21, 8, 21, 194725, tzinfo=datetime.timezone.utc), 'end': datetime.datetime(2026, 7, 23, 21, 8, 21, 463398, tzinfo=datetime.timezone.utc), 'duration': 268.67283, 'error': False}], 'first_failure': None, 'latency_order': ['payment-service'], 'propagation': {}, 'service_depth': {'payment-service': 0}, 'method': 'temporal-correlation-v1'}
+2026-07-23T21:08:31.026500230Z 
+2026-07-23T21:08:31.026511612Z ========== FEATURES ==========
+2026-07-23T21:08:31.026518900Z RCAFeature(service_name='payment-service', request_count=1, error_count=0, error_rate=0.0, avg_latency_ms=268.67283, max_latency_ms=268.67283, incoming_dependencies=0, outgoing_dependencies=0, dependency_count=0, is_first_failure=False, failure_order=-1, failure_lead_time_ms=0.0, latency_zscore=0.0, anomaly_score=0.0, is_anomalous=False)
+2026-07-23T21:08:31.093527107Z 
+2026-07-23T21:08:31.093556260Z ========== RCA SUMMARY ==========
+2026-07-23T21:08:31.093559755Z rca_result_id=8b91b947-1918-4a8d-b413-8e6b43f180ec
+2026-07-23T21:08:31.093561851Z trace_id=6af83a547fd0a0ea02a1acd17b0c959a
+2026-07-23T21:08:31.093563948Z confidence=0.200946
+2026-07-23T21:08:31.093566144Z evidence_count=5
+2026-07-23T21:08:31.093568041Z 
+2026-07-23T21:08:31.093569938Z ========== PREDICTIONS ==========
+2026-07-23T21:08:31.093571935Z - service=payment-service | prediction=0 | confidence=0.002364
+2026-07-23T21:08:31.093573932Z 
+2026-07-23T21:08:31.093575729Z ========== SHAP SUMMARY ==========
+2026-07-23T21:08:31.093577726Z type=list | items=1
+2026-07-23T21:08:31.093579623Z 
+2026-07-23T21:08:31.093581619Z ========== RANKING ==========
+2026-07-23T21:08:31.093583816Z 1. service=payment-service | final_score=0.200946 | scores={'model_probability': 0.0023640133440494537, 'shap_support_score': 0.0, 'temporal_score': 1.0, 'graph_score': 0.0, 'anomaly_score': 0.0, 'final_score': 0.2009456053376198, 'component_weights': {'model_probability': 0.4, 'shap_support': 0.25, 'temporal': 0.2, 'graph': 0.15, 'anomaly': 0.0}, 'normalization_method': 'normalized_weighted_ranking_v1'}
+2026-07-23T21:08:31.093586611Z 
+2026-07-23T21:08:31.093588608Z ========== EVIDENCE SUMMARY ==========
+2026-07-23T21:08:31.093799669Z - service=payment-service | type=anomaly | count=1
+2026-07-23T21:08:31.093810851Z - service=payment-service | type=graph | count=1
+2026-07-23T21:08:31.093813347Z - service=payment-service | type=model | count=1
+2026-07-23T21:08:31.093815343Z - service=payment-service | type=shap | count=1
+2026-07-23T21:08:31.093817340Z - service=payment-service | type=temporal | count=1
+2026-07-23T21:08:31.093819337Z 
+2026-07-23T21:08:31.093821334Z ========== RELIABILITY ==========
+2026-07-23T21:08:31.093823530Z {'is_reliable': False, 'confidence': 0.2009456053376198, 'confidence_method': 'reliability-gate-v1', 'minimum_confidence': 0.5, 'margin_to_second': None, 'minimum_margin': 0.05, 'passed_rules': ['ranking_present', 'single_candidate', 'minimum_evidence_count', 'minimum_source_diversity'], 'failed_rules': ['minimum_confidence']}
+2026-07-23T21:08:31.107414867Z Traceback (most recent call last):
+2026-07-23T21:08:31.109408559Z   File "/app/app.py", line 18, in <module>
+2026-07-23T21:08:31.109417844Z     main()
+2026-07-23T21:08:31.109419841Z     ~~~~^^
+2026-07-23T21:08:31.109421239Z   File "/app/app.py", line 14, in main
+2026-07-23T21:08:31.109422836Z     consumer.consume()
+2026-07-23T21:08:31.109424234Z     ~~~~~~~~~~~~~~~~^^
+2026-07-23T21:08:31.109425432Z   File "/app/consumer/kafka_consumer.py", line 148, in consume
+2026-07-23T21:08:31.109426830Z     self.check_completed_traces()
+2026-07-23T21:08:31.109428128Z     ~~~~~~~~~~~~~~~~~~~~~~~~~~~^^
+2026-07-23T21:08:31.109429426Z   File "/app/consumer/kafka_consumer.py", line 212, in check_completed_traces
+2026-07-23T21:08:31.109430824Z     self.pipeline.process(
+2026-07-23T21:08:31.109432122Z     ~~~~~~~~~~~~~~~~~~~~~^
+2026-07-23T21:08:31.109433819Z         trace
+2026-07-23T21:08:31.109435217Z         ^^^^^
+2026-07-23T21:08:31.109436514Z     )
+2026-07-23T21:08:31.109437713Z     ^
+2026-07-23T21:08:31.109439010Z   File "/app/pipeline/rca_pipeline.py", line 133, in process
+2026-07-23T21:08:31.109440308Z     self.persist_trace(
+2026-07-23T21:08:31.109441606Z     ~~~~~~~~~~~~~~~~~~^
+2026-07-23T21:08:31.109442804Z         trace
+2026-07-23T21:08:31.109444102Z         ^^^^^
+2026-07-23T21:08:31.109445400Z     )
+2026-07-23T21:08:31.109446598Z     ^
+2026-07-23T21:08:31.109447896Z   File "/app/pipeline/rca_pipeline.py", line 319, in persist_trace
+2026-07-23T21:08:31.109449194Z     self.trace_repository.save(
+2026-07-23T21:08:31.109450492Z     ~~~~~~~~~~~~~~~~~~~~~~~~~~^
+2026-07-23T21:08:31.109451790Z         trace.to_dict()
+2026-07-23T21:08:31.109453088Z         ^^^^^^^^^^^^^^^
+2026-07-23T21:08:31.109454286Z     )
+2026-07-23T21:08:31.109455584Z     ^
+2026-07-23T21:08:31.109456882Z   File "/app/persistence/opensearch/trace_repository.py", line 31, in save
+2026-07-23T21:08:31.109458279Z     self.client.index(
+2026-07-23T21:08:31.109459477Z     ~~~~~~~~~~~~~~~~~^
+2026-07-23T21:08:31.109460775Z     
+2026-07-23T21:08:31.109461973Z     
+2026-07-23T21:08:31.109463172Z     ...<5 lines>...
+2026-07-23T21:08:31.109464569Z     
+2026-07-23T21:08:31.109465867Z     
+2026-07-23T21:08:31.109475052Z     )
+2026-07-23T21:08:31.109476650Z     ^
+2026-07-23T21:08:31.109477948Z   File "/usr/local/lib/python3.13/site-packages/opensearchpy/client/utils.py", line 176, in _wrapped
+2026-07-23T21:08:31.109479445Z     return func(*args, params=params, headers=headers, **kwargs)
+2026-07-23T21:08:31.109480843Z   File "/usr/local/lib/python3.13/site-packages/opensearchpy/client/__init__.py", line 484, in index
+2026-07-23T21:08:31.109482241Z     return self.transport.perform_request(
+2026-07-23T21:08:31.109483539Z            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+2026-07-23T21:08:31.109485036Z         "POST" if id in SKIP_IN_PATH else "PUT",
+2026-07-23T21:08:31.109486534Z         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-07-23T21:08:31.109487932Z     ...<3 lines>...
+2026-07-23T21:08:31.109489230Z         body=body,
+2026-07-23T21:08:31.109490428Z         ^^^^^^^^^^
+2026-07-23T21:08:31.109491726Z     )
+2026-07-23T21:08:31.109492924Z     ^
+2026-07-23T21:08:31.109494122Z   File "/usr/local/lib/python3.13/site-packages/opensearchpy/transport.py", line 457, in perform_request
+2026-07-23T21:08:31.109495619Z     raise e
+2026-07-23T21:08:31.109496917Z   File "/usr/local/lib/python3.13/site-packages/opensearchpy/transport.py", line 418, in perform_request
+2026-07-23T21:08:31.109498415Z     status, headers_response, data = connection.perform_request(
+2026-07-23T21:08:31.109499713Z                                      ~~~~~~~~~~~~~~~~~~~~~~~~~~^
+2026-07-23T21:08:31.109501111Z         method,
+2026-07-23T21:08:31.109502408Z         ^^^^^^^
+2026-07-23T21:08:31.109503607Z     ...<5 lines>...
+2026-07-23T21:08:31.109504904Z         timeout=timeout,
+2026-07-23T21:08:31.109506202Z         ^^^^^^^^^^^^^^^^
+2026-07-23T21:08:31.109507500Z     )
+2026-07-23T21:08:31.109508698Z     ^
+2026-07-23T21:08:31.109510495Z   File "/usr/local/lib/python3.13/site-packages/opensearchpy/connection/http_urllib3.py", line 308, in perform_request
+2026-07-23T21:08:31.109511993Z     self._raise_error(
+2026-07-23T21:08:31.109513191Z     ~~~~~~~~~~~~~~~~~^
+2026-07-23T21:08:31.109514489Z         response.status,
+2026-07-23T21:08:31.109515687Z         ^^^^^^^^^^^^^^^^
+2026-07-23T21:08:31.109517085Z         raw_data,
+2026-07-23T21:08:31.109518283Z         ^^^^^^^^^
+2026-07-23T21:08:31.109519581Z         self.get_response_headers(response).get("content-type"),
+2026-07-23T21:08:31.109520979Z         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-07-23T21:08:31.109522276Z     )
+2026-07-23T21:08:31.109523475Z     ^
+2026-07-23T21:08:31.109524772Z   File "/usr/local/lib/python3.13/site-packages/opensearchpy/connection/base.py", line 315, in _raise_error
+2026-07-23T21:08:31.109531661Z     raise HTTP_EXCEPTIONS.get(status_code, TransportError)(
+2026-07-23T21:08:31.109533259Z         status_code, error_message, additional_info
+2026-07-23T21:08:31.109534557Z     )
+2026-07-23T21:08:31.109535954Z opensearchpy.exceptions.RequestError: RequestError(400, 'illegal_argument_exception', 'Limit of total fields [1000] has been exceeded')
+2026-07-23T21:08:36.839252538Z 
+2026-07-23T21:08:36.839275088Z ======================================================================
+2026-07-23T21:08:36.839277782Z Correlation Engine
+2026-07-23T21:08:36.839279677Z ======================================================================
+2026-07-23T21:08:45.851760633Z 
+2026-07-23T21:08:45.851836331Z ========== SERVICE GRAPH ==========
+2026-07-23T21:08:45.851850792Z {'services': {'payment-service': {'requests': 1, 'errors': 0, 'error_rate': 0.0, 'avg_latency': 48.455206, 'max_latency': 48.455206}, 'order-service': {'requests': 2, 'errors': 0, 'error_rate': 0.0, 'avg_latency': 53.337732, 'max_latency': 55.345281}}, 'dependencies': [{'source': 'order-service', 'target': 'payment-service', 'calls': 1, 'errors': 0, 'avg_latency': 48.455206}]}
+2026-07-23T21:08:45.852521002Z 
+2026-07-23T21:08:45.852571567Z ========== TEMPORAL ==========
+2026-07-23T21:08:45.852606873Z {'services': {'order-service': {'score': 1.0, 'raw_score': 1.0, 'is_first_anomaly': False, 'is_first_failure': False, 'failure_order': -1, 'anomaly_started_at': None, 'lead_ms': None, 'failure_lead_time_ms': 0.0, 'rank': 1, 'latency_rank': 1, 'latency_rank_score': 1.0, 'span_count': 2, 'error_count': 0, 'max_duration_ms': 55.345281, 'total_duration_ms': 106.675464, 'earliest_start': datetime.datetime(2026, 7, 23, 21, 8, 28, 574311, tzinfo=datetime.timezone.utc), 'latest_end': datetime.datetime(2026, 7, 23, 21, 8, 28, 629657, tzinfo=datetime.timezone.utc), 'first_error_start': None, 'depth': 0, 'upstream_services': [], 'downstream_services': ['payment-service'], 'operations': ['POST /orders', 'POST'], 'score_components': {'first_failure': 0.0, 'error_presence': 0.0, 'latency_order': 1.0}, 'score_weights': {'first_failure': 0.6, 'error_presence': 0.25, 'latency_order': 0.15}, 'scoring_mode': 'latency_order_only', 'method': 'temporal-correlation-v1'}, 'payment-service': {'score': 0.0, 'raw_score': 0.0, 'is_first_anomaly': False, 'is_first_failure': False, 'failure_order': -1, 'anomaly_started_at': None, 'lead_ms': None, 'failure_lead_time_ms': 0.0, 'rank': 2, 'latency_rank': 2, 'latency_rank_score': 0.0, 'span_count': 1, 'error_count': 0, 'max_duration_ms': 48.455206, 'total_duration_ms': 48.455206, 'earliest_start': datetime.datetime(2026, 7, 23, 21, 8, 28, 578696, tzinfo=datetime.timezone.utc), 'latest_end': datetime.datetime(2026, 7, 23, 21, 8, 28, 627151, tzinfo=datetime.timezone.utc), 'first_error_start': None, 'depth': 2, 'upstream_services': ['order-service'], 'downstream_services': [], 'operations': ['POST /payments'], 'score_components': {'first_failure': 0.0, 'error_presence': 0.0, 'latency_order': 0.0}, 'score_weights': {'first_failure': 0.6, 'error_presence': 0.25, 'latency_order': 0.15}, 'scoring_mode': 'latency_order_only', 'method': 'temporal-correlation-v1'}}, 'timeline': [{'service': 'order-service', 'operation': 'POST /orders', 'span_id': '10a9f3a45607f7ec', 'parent': None, 'start': datetime.datetime(2026, 7, 23, 21, 8, 28, 574311, tzinfo=datetime.timezone.utc), 'end': datetime.datetime(2026, 7, 23, 21, 8, 28, 629657, tzinfo=datetime.timezone.utc), 'duration': 55.345281, 'error': False}, {'service': 'order-service', 'operation': 'POST', 'span_id': 'c8546552d2ac6e9c', 'parent': '10a9f3a45607f7ec', 'start': datetime.datetime(2026, 7, 23, 21, 8, 28, 575727, tzinfo=datetime.timezone.utc), 'end': datetime.datetime(2026, 7, 23, 21, 8, 28, 627058, tzinfo=datetime.timezone.utc), 'duration': 51.330183, 'error': False}, {'service': 'payment-service', 'operation': 'POST /payments', 'span_id': '808ad0d9d4ec3fb8', 'parent': 'c8546552d2ac6e9c', 'start': datetime.datetime(2026, 7, 23, 21, 8, 28, 578696, tzinfo=datetime.timezone.utc), 'end': datetime.datetime(2026, 7, 23, 21, 8, 28, 627151, tzinfo=datetime.timezone.utc), 'duration': 48.455206, 'error': False}], 'first_failure': None, 'latency_order': ['order-service', 'payment-service'], 'propagation': {'order-service': ['payment-service']}, 'service_depth': {'order-service': 0, 'payment-service': 2}, 'method': 'temporal-correlation-v1'}
+2026-07-23T21:08:45.853186724Z 
+2026-07-23T21:08:45.853297927Z ========== FEATURES ==========
+2026-07-23T21:08:45.853312887Z RCAFeature(service_name='order-service', request_count=2, error_count=0, error_rate=0.0, avg_latency_ms=53.337732, max_latency_ms=55.345281, incoming_dependencies=0, outgoing_dependencies=1, dependency_count=1, is_first_failure=False, failure_order=-1, failure_lead_time_ms=0.0, latency_zscore=0.0, anomaly_score=0.0, is_anomalous=False)
+2026-07-23T21:08:45.853321963Z RCAFeature(service_name='payment-service', request_count=1, error_count=0, error_rate=0.0, avg_latency_ms=48.455206, max_latency_ms=48.455206, incoming_dependencies=1, outgoing_dependencies=0, dependency_count=1, is_first_failure=False, failure_order=-1, failure_lead_time_ms=0.0, latency_zscore=0.0, anomaly_score=0.0, is_anomalous=False)
+2026-07-23T21:08:45.924821574Z 
+2026-07-23T21:08:45.924851893Z ========== RCA SUMMARY ==========
+2026-07-23T21:08:45.924853987Z rca_result_id=3bdcef9f-f8c9-45ce-89f8-4474f8dc3772
+2026-07-23T21:08:45.924855783Z trace_id=b0910f1b93639e04575b94e9ba9f1794
+2026-07-23T21:08:45.924856979Z confidence=0.200946
+2026-07-23T21:08:45.924858076Z evidence_count=10
+2026-07-23T21:08:45.924859273Z 
+2026-07-23T21:08:45.924860370Z ========== PREDICTIONS ==========
+2026-07-23T21:08:45.924861567Z - service=order-service | prediction=0 | confidence=0.002364
+2026-07-23T21:08:45.924862764Z - service=payment-service | prediction=0 | confidence=0.002364
+2026-07-23T21:08:45.924863861Z 
+2026-07-23T21:08:45.924864958Z ========== SHAP SUMMARY ==========
+2026-07-23T21:08:45.924866155Z type=list | items=2
+2026-07-23T21:08:45.924867252Z 
+2026-07-23T21:08:45.924868349Z ========== RANKING ==========
+2026-07-23T21:08:45.924869546Z 1. service=order-service | final_score=0.200946 | scores={'model_probability': 0.0023640133440494537, 'shap_support_score': 0.0, 'temporal_score': 1.0, 'graph_score': 0.0, 'anomaly_score': 0.0, 'final_score': 0.2009456053376198, 'component_weights': {'model_probability': 0.4, 'shap_support': 0.25, 'temporal': 0.2, 'graph': 0.15, 'anomaly': 0.0}, 'normalization_method': 'normalized_weighted_ranking_v1'}
+2026-07-23T21:08:45.924871241Z 2. service=payment-service | final_score=0.000946 | scores={'model_probability': 0.0023640133440494537, 'shap_support_score': 0.0, 'temporal_score': 0.0, 'graph_score': 0.0, 'anomaly_score': 0.0, 'final_score': 0.0009456053376197815, 'component_weights': {'model_probability': 0.4, 'shap_support': 0.25, 'temporal': 0.2, 'graph': 0.15, 'anomaly': 0.0}, 'normalization_method': 'normalized_weighted_ranking_v1'}
+2026-07-23T21:08:45.924883808Z 
+2026-07-23T21:08:45.924885304Z ========== EVIDENCE SUMMARY ==========
+2026-07-23T21:08:45.925182709Z - service=order-service | type=anomaly | count=1
+2026-07-23T21:08:45.925191386Z - service=order-service | type=graph | count=1
+2026-07-23T21:08:45.925192882Z - service=order-service | type=model | count=1
+2026-07-23T21:08:45.925194179Z - service=order-service | type=shap | count=1
+2026-07-23T21:08:45.925195874Z - service=order-service | type=temporal | count=1
+2026-07-23T21:08:45.925197071Z - service=payment-service | type=anomaly | count=1
+2026-07-23T21:08:45.925198467Z - service=payment-service | type=graph | count=1
+2026-07-23T21:08:45.925199764Z - service=payment-service | type=model | count=1
+2026-07-23T21:08:45.925201060Z - service=payment-service | type=shap | count=1
+2026-07-23T21:08:45.925202357Z - service=payment-service | type=temporal | count=1
+2026-07-23T21:08:45.925203653Z 
+2026-07-23T21:08:45.925204850Z ========== RELIABILITY ==========
+2026-07-23T21:08:45.925206147Z {'is_reliable': False, 'confidence': 0.2009456053376198, 'confidence_method': 'reliability-gate-v1', 'minimum_confidence': 0.5, 'margin_to_second': 0.2, 'minimum_margin': 0.05, 'passed_rules': ['ranking_present', 'minimum_margin', 'minimum_evidence_count', 'minimum_source_diversity'], 'failed_rules': ['minimum_confidence']}
+2026-07-23T21:08:45.938926697Z Traceback (most recent call last):
+2026-07-23T21:08:45.941111760Z   File "/app/app.py", line 18, in <module>
+2026-07-23T21:08:45.941162026Z     main()
+2026-07-23T21:08:45.941164319Z     ~~~~^^
+2026-07-23T21:08:45.941165815Z   File "/app/app.py", line 14, in main
+2026-07-23T21:08:45.941185264Z     consumer.consume()
+2026-07-23T21:08:45.941186560Z     ~~~~~~~~~~~~~~~~^^
+2026-07-23T21:08:45.941187657Z   File "/app/consumer/kafka_consumer.py", line 148, in consume
+2026-07-23T21:08:45.941189053Z     self.check_completed_traces()
+2026-07-23T21:08:45.941190150Z     ~~~~~~~~~~~~~~~~~~~~~~~~~~~^^
+2026-07-23T21:08:45.941191347Z   File "/app/consumer/kafka_consumer.py", line 212, in check_completed_traces
+2026-07-23T21:08:45.941192744Z     self.pipeline.process(
+2026-07-23T21:08:45.941193940Z     ~~~~~~~~~~~~~~~~~~~~~^
+2026-07-23T21:08:45.941195037Z         trace
+2026-07-23T21:08:45.941196334Z         ^^^^^
+2026-07-23T21:08:45.941197431Z     )
+2026-07-23T21:08:45.941199127Z     ^
+2026-07-23T21:08:45.941200323Z   File "/app/pipeline/rca_pipeline.py", line 133, in process
+2026-07-23T21:08:45.941201620Z     self.persist_trace(
+2026-07-23T21:08:45.941231640Z     ~~~~~~~~~~~~~~~~~~^
+2026-07-23T21:08:45.941233136Z         trace
+2026-07-23T21:08:45.941234233Z         ^^^^^
+2026-07-23T21:08:45.941235330Z     )
+2026-07-23T21:08:45.941236427Z     ^
+2026-07-23T21:08:45.941237524Z   File "/app/pipeline/rca_pipeline.py", line 319, in persist_trace
+2026-07-23T21:08:45.941238721Z     self.trace_repository.save(
+2026-07-23T21:08:45.941239818Z     ~~~~~~~~~~~~~~~~~~~~~~~~~~^
+2026-07-23T21:08:45.941240915Z         trace.to_dict()
+2026-07-23T21:08:45.941242012Z         ^^^^^^^^^^^^^^^
+2026-07-23T21:08:45.941243109Z     )
+2026-07-23T21:08:45.941244206Z     ^
+2026-07-23T21:08:45.941245303Z   File "/app/persistence/opensearch/trace_repository.py", line 31, in save
+2026-07-23T21:08:45.941246600Z     self.client.index(
+2026-07-23T21:08:45.941247697Z     ~~~~~~~~~~~~~~~~~^
+2026-07-23T21:08:45.941248794Z     
+2026-07-23T21:08:45.941249891Z     
+2026-07-23T21:08:45.941250988Z     ...<5 lines>...
+2026-07-23T21:08:45.941252185Z     
+2026-07-23T21:08:45.941253382Z     
+2026-07-23T21:08:45.941254479Z     )
+2026-07-23T21:08:45.941255576Z     ^
+2026-07-23T21:08:45.941256773Z   File "/usr/local/lib/python3.13/site-packages/opensearchpy/client/utils.py", line 176, in _wrapped
+2026-07-23T21:08:45.941258069Z     return func(*args, params=params, headers=headers, **kwargs)
+2026-07-23T21:08:45.941259266Z   File "/usr/local/lib/python3.13/site-packages/opensearchpy/client/__init__.py", line 484, in index
+2026-07-23T21:08:45.941260562Z     return self.transport.perform_request(
+2026-07-23T21:08:45.941261759Z            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+2026-07-23T21:08:45.941262956Z         "POST" if id in SKIP_IN_PATH else "PUT",
+2026-07-23T21:08:45.941264253Z         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-07-23T21:08:45.941265449Z     ...<3 lines>...
+2026-07-23T21:08:45.941266546Z         body=body,
+2026-07-23T21:08:45.941267643Z         ^^^^^^^^^^
+2026-07-23T21:08:45.941268741Z     )
+2026-07-23T21:08:45.941269838Z     ^
+2026-07-23T21:08:45.941270935Z   File "/usr/local/lib/python3.13/site-packages/opensearchpy/transport.py", line 457, in perform_request
+2026-07-23T21:08:45.941272231Z     raise e
+2026-07-23T21:08:45.941273328Z   File "/usr/local/lib/python3.13/site-packages/opensearchpy/transport.py", line 418, in perform_request
+2026-07-23T21:08:45.941274625Z     status, headers_response, data = connection.perform_request(
+2026-07-23T21:08:45.941275822Z                                      ~~~~~~~~~~~~~~~~~~~~~~~~~~^
+2026-07-23T21:08:45.941279213Z         method,
+2026-07-23T21:08:45.941280409Z         ^^^^^^^
+2026-07-23T21:08:45.941281506Z     ...<5 lines>...
+2026-07-23T21:08:45.941282604Z         timeout=timeout,
+2026-07-23T21:08:45.941283701Z         ^^^^^^^^^^^^^^^^
+2026-07-23T21:08:45.941284897Z     )
+2026-07-23T21:08:45.941285994Z     ^
+2026-07-23T21:08:45.941287490Z   File "/usr/local/lib/python3.13/site-packages/opensearchpy/connection/http_urllib3.py", line 308, in perform_request
+2026-07-23T21:08:45.941306739Z     self._raise_error(
+2026-07-23T21:08:45.941307936Z     ~~~~~~~~~~~~~~~~~^
+2026-07-23T21:08:45.941309033Z         response.status,
+2026-07-23T21:08:45.941310230Z         ^^^^^^^^^^^^^^^^
+2026-07-23T21:08:45.941311526Z         raw_data,
+2026-07-23T21:08:45.941312623Z         ^^^^^^^^^
+2026-07-23T21:08:45.941313820Z         self.get_response_headers(response).get("content-type"),
+2026-07-23T21:08:45.941315117Z         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-07-23T21:08:45.941316313Z     )
+2026-07-23T21:08:45.941317510Z     ^
+2026-07-23T21:08:45.941319804Z   File "/usr/local/lib/python3.13/site-packages/opensearchpy/connection/base.py", line 315, in _raise_error
+2026-07-23T21:08:45.941321101Z     raise HTTP_EXCEPTIONS.get(status_code, TransportError)(
+2026-07-23T21:08:45.941322397Z         status_code, error_message, additional_info
+2026-07-23T21:08:45.941323594Z     )
+2026-07-23T21:08:45.941324791Z opensearchpy.exceptions.RequestError: RequestError(400, 'illegal_argument_exception', 'Limit of total fields [1000] has been exceeded')
+2026-07-23T21:08:51.754979511Z 
+2026-07-23T21:08:51.755009568Z ======================================================================
+2026-07-23T21:08:51.755012473Z Correlation Engine
+2026-07-23T21:08:51.755014277Z ======================================================================

@@ -75,6 +75,16 @@ class Scenario:
 
     expected_incident: bool
 
+    fault_rate: float = 1.0
+
+    fault_delay_ms: int = 0
+
+    fault_seed: int = 42
+
+    expected_min_request_duration_ms: (
+        float | None
+    ) = None
+
 
 SCENARIOS = {
     "healthy": Scenario(
@@ -95,6 +105,18 @@ SCENARIOS = {
         ),
         expected_reliable=True,
         expected_incident=True,
+    ),
+    "payment_latency": Scenario(
+        name="payment_latency",
+        fault_mode="latency",
+        fault_rate=1.0,
+        fault_delay_ms=1500,
+        fault_seed=42,
+        expected_http_family=2,
+        expected_top_service="payment-service",
+        expected_reliable=True,
+        expected_incident=True,
+        expected_min_request_duration_ms=1200.0,
     ),
 }
 
@@ -149,6 +171,14 @@ class ScenarioResult:
     passed: bool = False
 
     failures: list[str] | None = None
+
+    fault_rate: float | None = None
+
+    fault_delay_ms: int | None = None
+
+    fault_seed: int | None = None
+
+    request_duration_ms: float | None = None
 
 
 def utc_now() -> datetime:
@@ -563,24 +593,21 @@ def wait_for_payment_service_ready(
     )
 
 def configure_fault(
+   *,
     mode: str,
+    rate: float,
+    delay_ms: int,
+    seed: int,
 ) -> None:
 
     environment = os.environ.copy()
 
     environment.update(
         {
-            "CAUSALODS_FAULT_MODE":
-                mode,
-
-            "CAUSALODS_FAULT_RATE":
-                "1.0",
-
-            "CAUSALODS_FAULT_DELAY_MS":
-                "1500",
-
-            "CAUSALODS_FAULT_SEED":
-                "42",
+            "CAUSALODS_FAULT_MODE": mode,
+            "CAUSALODS_FAULT_RATE": str(rate),
+            "CAUSALODS_FAULT_DELAY_MS": str(delay_ms),
+            "CAUSALODS_FAULT_SEED": str(seed),
         }
     )
 
@@ -955,7 +982,7 @@ def container_restart_count(
 def send_order_request(
     scenario_name: str,
     run_id: str,
-) -> int:
+) -> tuple[int, Any, float]:
 
     status, response = http_request(
         method="POST",
@@ -1148,7 +1175,10 @@ def run_scenario(
     try:
 
         configure_fault(
-            scenario.fault_mode
+            mode=scenario.fault_mode,
+            rate=scenario.fault_rate,
+            delay_ms=scenario.fault_delay_ms,
+            seed=scenario.fault_seed,
         )
 
         preparation_rca_count = (
@@ -1630,18 +1660,17 @@ def main() -> int:
         try:
 
             configure_fault(
-                "none"
+                mode="none",
+                rate=0.0,
+                delay_ms=0,
+                seed=42,
             )
 
         except Exception as exception:
 
             print(
-                (
-                    "Falha ao restaurar "
-                    "payment-service: "
-                    f"{exception}"
-                ),
-                file=sys.stderr,
+                "Falha ao restaurar payment-service: "
+                f"{exception}",
                 flush=True,
             )
 
