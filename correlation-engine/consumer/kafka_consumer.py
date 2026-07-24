@@ -39,11 +39,29 @@ from persistence.opensearch.incident_index_manager import (
     IncidentIndexManager
 )
 
-def is_noise_span(span):
+IGNORED_OPERATIONS = frozenset(
+    {
+        "GET /actuator/prometheus",
+        "GET /actuator/health",
+    }
+)
+
+def is_noise_span(
+    span,
+) -> bool:
+
+    operation_name = str(
+        getattr(
+            span,
+            "operation_name",
+            "",
+        )
+        or ""
+    ).strip()
 
     return (
-        span.operation_name
-        == "GET /actuator/prometheus"
+        operation_name
+        in IGNORED_OPERATIONS
     )
 
 

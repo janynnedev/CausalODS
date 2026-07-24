@@ -34,6 +34,10 @@ class RCAFeature:
 
     is_anomalous: bool
 
+    exclusive_latency_ms: float = 0.0
+
+    exclusive_latency_ratio: float = 0.0
+
 
 
     def to_dict(self):

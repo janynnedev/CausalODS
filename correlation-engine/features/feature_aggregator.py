@@ -174,6 +174,22 @@ class FeatureAggregator:
                         False,
                     )
                 ),
+
+                exclusive_latency_ms=float(
+                    temporal.get(
+                        "exclusive_latency_ms",
+                        0.0,
+                    )
+                    or 0.0
+                ),
+
+                exclusive_latency_ratio=float(
+                    temporal.get(
+                        "exclusive_latency_ratio",
+                        0.0,
+                    )
+                    or 0.0
+                ),
             )
 
             self._validate_feature(
@@ -208,6 +224,8 @@ class FeatureAggregator:
             "failure_lead_time_ms",
             "latency_zscore",
             "anomaly_score",
+            "exclusive_latency_ms",
+            "exclusive_latency_ratio",
         )
 
         for field_name in numeric_fields:
@@ -237,5 +255,21 @@ class FeatureAggregator:
                         "Campo numérico inválido em RCAFeature: "
                         f"{field_name}={value!r}. "
                         f"service={feature.service_name}"
+                    )
+                )
+
+            if not (
+                0.0
+                <= feature.exclusive_latency_ratio
+                <= 1.0
+            ):
+
+                raise ValueError(
+                    (
+                        "exclusive_latency_ratio deve "
+                        "estar entre 0 e 1. "
+                        f"service={feature.service_name}; "
+                        "value="
+                        f"{feature.exclusive_latency_ratio}"
                     )
                 )
