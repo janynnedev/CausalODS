@@ -64,7 +64,12 @@ FLOAT_FEATURE_COLUMNS = (
 
 
 METADATA_COLUMNS = (
+    "sample_id",
+    "scenario",
     "service_name",
+    "root_cause_service",
+    "fault_delay_ms",
+    "generation_seed",
 )
 
 

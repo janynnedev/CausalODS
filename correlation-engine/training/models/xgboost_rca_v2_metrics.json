@@ -1,0 +1,77 @@
+{
+  "accuracy": 0.998,
+  "classification_report": {
+    "0": {
+      "f1-score": 0.9985283296541575,
+      "precision": 0.9985283296541575,
+      "recall": 0.9985283296541575,
+      "support": 1359.0
+    },
+    "1": {
+      "f1-score": 0.9968798751950078,
+      "precision": 0.9968798751950078,
+      "recall": 0.9968798751950078,
+      "support": 641.0
+    },
+    "accuracy": 0.998,
+    "macro avg": {
+      "f1-score": 0.9977041024245826,
+      "precision": 0.9977041024245826,
+      "recall": 0.9977041024245826,
+      "support": 2000.0
+    },
+    "weighted avg": {
+      "f1-score": 0.998,
+      "precision": 0.998,
+      "recall": 0.998,
+      "support": 2000.0
+    }
+  },
+  "confusion_matrix": [
+    [
+      1357,
+      2
+    ],
+    [
+      2,
+      639
+    ]
+  ],
+  "dataset_rows": 10000,
+  "dataset_version": "rca-dataset-v2",
+  "f1": 0.9968798751950078,
+  "feature_columns": [
+    "request_count",
+    "error_count",
+    "error_rate",
+    "avg_latency_ms",
+    "max_latency_ms",
+    "incoming_dependencies",
+    "outgoing_dependencies",
+    "dependency_count",
+    "is_first_failure",
+    "failure_order",
+    "failure_lead_time_ms",
+    "latency_zscore",
+    "anomaly_score",
+    "is_anomalous",
+    "exclusive_latency_ms",
+    "exclusive_latency_ratio"
+  ],
+  "feature_schema_version": "rca-features-v2",
+  "model_version": "xgboost-rca-v2",
+  "n_estimators": 300,
+  "negative_test_rows": 1359,
+  "negative_train_rows": 5366,
+  "positive_test_rows": 641,
+  "positive_train_rows": 2634,
+  "precision": 0.9968798751950078,
+  "random_seed": 42,
+  "recall": 0.9968798751950078,
+  "roc_auc": 0.999991964358486,
+  "samples": 5000,
+  "scale_pos_weight": 2.0372057706909645,
+  "test_rows": 2000,
+  "test_size": 0.2,
+  "train_rows": 8000
+}

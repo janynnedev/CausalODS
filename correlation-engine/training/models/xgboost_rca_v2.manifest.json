@@ -1,0 +1,40 @@
+{
+  "feature_columns": [
+    "request_count",
+    "error_count",
+    "error_rate",
+    "avg_latency_ms",
+    "max_latency_ms",
+    "incoming_dependencies",
+    "outgoing_dependencies",
+    "dependency_count",
+    "is_first_failure",
+    "failure_order",
+    "failure_lead_time_ms",
+    "latency_zscore",
+    "anomaly_score",
+    "is_anomalous",
+    "exclusive_latency_ms",
+    "exclusive_latency_ratio"
+  ],
+  "feature_schema_version": "rca-features-v2",
+  "metrics": {
+    "accuracy": 0.998,
+    "f1": 0.9968798751950078,
+    "precision": 0.9968798751950078,
+    "recall": 0.9968798751950078,
+    "roc_auc": 0.999991964358486
+  },
+  "model_filename": "xgboost_rca_v2.pkl",
+  "model_version": "xgboost-rca-v2",
+  "trained_at": "2026-07-27T21:43:35.428327+00:00",
+  "training_metadata": {
+    "dataset_path": "/workspaces/CausalODS/correlation-engine/training/data/rca_dataset_v2.csv",
+    "dataset_rows": 10000,
+    "dataset_version": "rca-dataset-v2",
+    "random_seed": 42,
+    "samples": 5000,
+    "scale_pos_weight": 2.0372057706909645,
+    "test_size": 0.2
+  }
+}
