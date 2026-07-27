@@ -9,7 +9,7 @@ import sys
 import time
 import uuid
 
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -90,6 +90,9 @@ SCENARIOS = {
     "healthy": Scenario(
         name="healthy",
         fault_mode="none",
+        fault_rate=0.0,
+        fault_delay_ms=0,
+        fault_seed=42,
         expected_http_family=2,
         expected_top_service=None,
         expected_reliable=False,
@@ -125,61 +128,45 @@ SCENARIOS = {
 class ScenarioResult:
 
     run_id: str
-
     scenario: str
-
     iteration: int
-
     started_at: str
 
     finished_at: str | None = None
-
     duration_ms: float | None = None
 
     fault_mode: str | None = None
+    fault_rate: float | None = None
+    fault_delay_ms: int | None = None
+    fault_seed: int | None = None
 
     http_status: int | None = None
+    request_duration_ms: float | None = None
 
     rca_count_before: int | None = None
-
     rca_count_after: int | None = None
 
     incident_count_before: int | None = None
-
     incident_count_after: int | None = None
 
     rca_result_id: str | None = None
-
     trace_id: str | None = None
 
     top_service: str | None = None
-
     confidence: float | None = None
-
     is_reliable: bool | None = None
 
     incident_id: str | None = None
-
-    incident_root_cause: (
-        str | None
-    ) = None
+    incident_root_cause: str | None = None
 
     restart_count_before: int | None = None
-
     restart_count_after: int | None = None
 
     passed: bool = False
 
-    failures: list[str] | None = None
-
-    fault_rate: float | None = None
-
-    fault_delay_ms: int | None = None
-
-    fault_seed: int | None = None
-
-    request_duration_ms: float | None = None
-
+    failures: list[str] = field(
+        default_factory=list
+    )
 
 def utc_now() -> datetime:
 
@@ -982,7 +969,13 @@ def container_restart_count(
 def send_order_request(
     scenario_name: str,
     run_id: str,
-) -> tuple[int, Any, float]:
+    *,
+    timeout_seconds: float = 15.0,
+) -> tuple[int, float]:
+
+    request_started_at = (
+        time.monotonic()
+    )
 
     status, response = http_request(
         method="POST",
@@ -995,21 +988,30 @@ def send_order_request(
             "quantity": 2,
         },
         allow_http_error=True,
-        timeout_seconds=15.0,
+        timeout_seconds=timeout_seconds,
     )
+
+    request_duration_ms = (
+        time.monotonic()
+        - request_started_at
+    ) * 1000.0
 
     print(
         (
             "Order request"
             f" | scenario={scenario_name}"
             f" | http_status={status}"
+            f" | duration_ms="
+            f"{request_duration_ms:.3f}"
             f" | response={response}"
         ),
         flush=True,
     )
 
-    return status
-
+    return (
+        status,
+        request_duration_ms,
+    )
 
 def evaluate(
     *,
@@ -1104,17 +1106,25 @@ def evaluate(
 
     if (
         scenario.expected_incident
+
+        and incident_created
+
+        and scenario.expected_top_service
+        is not None
+
         and result.incident_root_cause
         != scenario.expected_top_service
     ):
 
         failures.append(
-            "Causa raiz do incidente incorreta: "
-            "esperado="
-            f"{scenario.expected_top_service}; "
-            "encontrado="
-            f"{result.incident_root_cause}."
-        )
+            (
+                "Causa raiz do incidente incorreta: "
+                "esperado="
+                f"{scenario.expected_top_service}; "
+                "encontrado="
+                f"{result.incident_root_cause}."
+            )
+    )
 
     if (
         result.restart_count_before
@@ -1134,24 +1144,29 @@ def evaluate(
 
 
 def run_scenario(
-    *,
     scenario: Scenario,
     iteration: int,
 ) -> ScenarioResult:
 
     run_id = uuid.uuid4().hex[:12]
 
-    started_datetime = utc_now()
+    started_at_datetime = (
+        datetime.now(
+            timezone.utc
+        )
+    )
 
     result = ScenarioResult(
         run_id=run_id,
         scenario=scenario.name,
         iteration=iteration,
         started_at=(
-            started_datetime.isoformat()
+            started_at_datetime.isoformat()
         ),
         fault_mode=scenario.fault_mode,
-        failures=[],
+        fault_rate=scenario.fault_rate,
+        fault_delay_ms=scenario.fault_delay_ms,
+        fault_seed=scenario.fault_seed,
     )
 
     print()
@@ -1228,13 +1243,22 @@ def run_scenario(
             iso_now()
         )
 
-        result.http_status = (
-            send_order_request(
-                scenario_name=(
-                    scenario.name
-                ),
-                run_id=run_id,
-            )
+        (
+            result.http_status,
+            result.request_duration_ms,
+        ) = send_order_request(
+            scenario_name=scenario.name,
+            run_id=run_id,
+            timeout_seconds=max(
+                15.0,
+                (
+                    (
+                        scenario.fault_delay_ms
+                        or 0
+                    )
+                    / 1000.0
+                ) + 5.0,
+            ),
         )
 
         result.trace_id = (
@@ -1337,13 +1361,16 @@ def run_scenario(
             )
         )
 
-        if scenario.expected_incident:
+        should_wait_for_incident = (
+            scenario.expected_incident
+            and result.is_reliable is True
+        )
+
+        if should_wait_for_incident:
 
             result.incident_count_after = (
                 wait_for_count_increase(
-                    index_name=(
-                        INCIDENT_INDEX
-                    ),
+                    index_name=INCIDENT_INDEX,
                     previous_count=(
                         result.incident_count_before
                     ),
@@ -1352,8 +1379,8 @@ def run_scenario(
 
         else:
 
-            # Dá tempo para uma criação indevida
-            # de incidente aparecer.
+            # Permite observar tanto uma criação
+            # indevida quanto a ausência de incidente.
             time.sleep(3.0)
 
             refresh_index(
@@ -1444,15 +1471,19 @@ def run_scenario(
 
     finally:
 
-        finished_datetime = utc_now()
+        finished_at_datetime = (
+            datetime.now(
+                timezone.utc
+            )
+        )
 
         result.finished_at = (
-            finished_datetime.isoformat()
+            finished_at_datetime.isoformat()
         )
 
         result.duration_ms = (
-            finished_datetime
-            - started_datetime
+            finished_at_datetime
+            - started_at_datetime
         ).total_seconds() * 1000.0
 
     status = (

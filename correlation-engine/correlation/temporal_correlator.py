@@ -31,6 +31,8 @@ class TemporalCorrelator:
 
     EXCLUSIVE_DOMINANCE_MIN_MARGIN = 0.20
 
+    EXCLUSIVE_DOMINANCE_MIN_LATENCY_MS = 500.0
+
     # Pesos usados somente quando o trace possui falhas explícitas.
     FIRST_FAILURE_WEIGHT = 0.60
     ERROR_PRESENCE_WEIGHT = 0.25
@@ -538,6 +540,17 @@ class TemporalCorrelator:
             else None
         )
 
+        top_latency_ms = (
+            float(
+                normalized.get(
+                    top_service,
+                    0.0,
+                )
+            )
+            if top_service
+            else 0.0
+        )
+
         top_share = (
             float(
                 ordered[0][1]
@@ -567,6 +580,9 @@ class TemporalCorrelator:
 
             and margin
             >= self.EXCLUSIVE_DOMINANCE_MIN_MARGIN
+
+            and top_latency_ms
+            >= self.EXCLUSIVE_DOMINANCE_MIN_LATENCY_MS
         )
 
         return {
@@ -579,6 +595,10 @@ class TemporalCorrelator:
             ],
 
             "top_service": top_service,
+
+            "top_latency_ms": top_latency_ms,
+
+            "minimum_latency_ms": self.EXCLUSIVE_DOMINANCE_MIN_LATENCY_MS,
 
             "top_share": top_share,
 
@@ -1316,6 +1336,28 @@ class TemporalCorrelator:
                 else 0.0
             )
 
+            exclusive_latency_ms = float(
+                exclusive_latency_by_service.get(
+                    service_name,
+                    0.0,
+                )
+                or 0.0
+            )
+
+            exclusive_latency_share = float(
+                dominance_shares.get(
+                    service_name,
+                    0.0,
+                )
+                or 0.0
+            )
+
+            is_dominant_service = (
+                dominance_is_meaningful
+                and service_name
+                == dominance_top_service
+            )
+
             if first_failure_service is not None:
 
                 temporal_score = (
@@ -1395,28 +1437,6 @@ class TemporalCorrelator:
                     0.0,
                 ),
                 1.0,
-            )
-
-            exclusive_latency_ms = float(
-                exclusive_latency_by_service.get(
-                    service_name,
-                    0.0,
-                )
-                or 0.0
-            )
-
-            exclusive_latency_share = float(
-                dominance_shares.get(
-                    service_name,
-                    0.0,
-                )
-                or 0.0
-            )
-
-            is_dominant_service = (
-                dominance_is_meaningful
-                and service_name
-                == dominance_top_service
             )
 
             results[service_name] = {

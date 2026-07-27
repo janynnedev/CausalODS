@@ -463,3 +463,37 @@ def test_analyze_suppresses_temporal_score_without_dominance():
     ] == (
         "exclusive_latency_no_dominance"
     )    
+
+def test_suppresses_relative_dominance_when_latency_is_low():
+
+    correlator = TemporalCorrelator()
+
+    result = (
+        correlator
+        .compute_exclusive_latency_dominance(
+            {
+                "order-service": 240.0,
+                "payment-service": 50.0,
+            }
+        )
+    )
+
+    assert result[
+        "top_service"
+    ] == "order-service"
+
+    assert result[
+        "top_share"
+    ] > 0.70
+
+    assert result[
+        "margin"
+    ] > 0.20
+
+    assert result[
+        "top_latency_ms"
+    ] < 500.0
+
+    assert result[
+        "is_meaningful"
+    ] is False    
