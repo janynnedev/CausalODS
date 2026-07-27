@@ -112,6 +112,10 @@ class TraceConsumer:
             client
         ).create_index()
 
+        RCAResultIndexManager(
+            client
+        ).create_index()
+
         trace_repository = (
             OpenSearchTraceRepository(
                 client
