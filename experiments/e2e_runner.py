@@ -1647,6 +1647,9 @@ def main() -> int:
             SCENARIOS[
                 "payment_failure"
             ],
+            SCENARIOS[
+                "payment_latency"
+            ],
         ]
 
     else:
