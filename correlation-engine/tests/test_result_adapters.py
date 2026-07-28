@@ -1,3 +1,4 @@
+import pytest
 from pipeline.rca_context_factory import (
     RCAContextFactory,
 )
@@ -6,6 +7,7 @@ from pipeline.result_adapters import (
     PredictionResultAdapter,
     TemporalResultAdapter,
     normalize_feature_vectors,
+    ShapResultAdapter,
 )
 
 
@@ -246,3 +248,268 @@ def test_builds_rca_context():
         ]["score"]
         == 1.0
     )
+
+def test_shap_adapter_accepts_v2_list_results():
+
+    raw_results = [
+        {
+            "service":
+                "order-service",
+
+            "service_name":
+                "order-service",
+
+            "support_score":
+                0.09604661999652761,
+
+            "raw_positive_support":
+                1.0144933330047934,
+
+            "raw_negative_support":
+                9.548016134183854,
+
+            "contributions": [
+                {
+                    "feature_name":
+                        "exclusive_latency_ratio",
+
+                    "feature_value":
+                        0.01,
+
+                    "shap_value":
+                        -4.5,
+
+                    "direction":
+                        "opposing",
+                },
+                {
+                    "feature_name":
+                        "max_latency_ms",
+
+                    "feature_value":
+                        1590.0,
+
+                    "shap_value":
+                        1.0144933330047934,
+
+                    "direction":
+                        "supporting",
+                },
+            ],
+        },
+        {
+            "service":
+                "payment-service",
+
+            "service_name":
+                "payment-service",
+
+            "support_score":
+                0.8936888450031673,
+
+            "raw_positive_support":
+                9.777010953461286,
+
+            "raw_negative_support":
+                1.163050577044487,
+
+            "contributions": [
+                {
+                    "feature_name":
+                        "exclusive_latency_ratio",
+
+                    "feature_value":
+                        0.99,
+
+                    "shap_value":
+                        7.5,
+
+                    "direction":
+                        "supporting",
+                },
+                {
+                    "feature_name":
+                        "exclusive_latency_ms",
+
+                    "feature_value":
+                        1575.0,
+
+                    "shap_value":
+                        2.277010953461286,
+
+                    "direction":
+                        "supporting",
+                },
+                {
+                    "feature_name":
+                        "failure_order",
+
+                    "feature_value":
+                        -1,
+
+                    "shap_value":
+                        -1.163050577044487,
+
+                    "direction":
+                        "opposing",
+                },
+            ],
+        },
+    ]
+
+    feature_vectors = {
+        "order-service": {
+            "exclusive_latency_ratio":
+                0.01,
+
+            "max_latency_ms":
+                1590.0,
+        },
+        "payment-service": {
+            "exclusive_latency_ratio":
+                0.99,
+
+            "exclusive_latency_ms":
+                1575.0,
+
+            "failure_order":
+                -1,
+        },
+    }
+
+    adapted = (
+        ShapResultAdapter()
+        .adapt(
+            raw=raw_results,
+            services=(
+                "order-service",
+                "payment-service",
+            ),
+            feature_vectors=(
+                feature_vectors
+            ),
+        )
+    )
+
+    assert (
+        adapted[
+            "order-service"
+        ][
+            "support_score"
+        ]
+        == pytest.approx(
+            0.09604661999652761
+        )
+    )
+
+    assert (
+        adapted[
+            "payment-service"
+        ][
+            "support_score"
+        ]
+        == pytest.approx(
+            0.8936888450031673
+        )
+    )
+
+    assert (
+        adapted[
+            "payment-service"
+        ][
+            "raw_positive_support"
+        ]
+        == pytest.approx(
+            9.777010953461286
+        )
+    )
+
+    assert (
+        adapted[
+            "payment-service"
+        ][
+            "raw_negative_support"
+        ]
+        == pytest.approx(
+            1.163050577044487
+        )
+    )
+
+    assert len(
+        adapted[
+            "payment-service"
+        ][
+            "contributions"
+        ]
+    ) == 3
+
+    assert (
+        adapted[
+            "payment-service"
+        ][
+            "support_normalization_method"
+        ]
+        == "explicit_shap_support_score"
+    )
+
+
+def test_shap_adapter_preserves_legacy_mapping():
+
+    raw_results = {
+        "order-service": {
+            "feature_a": -2.0,
+            "feature_b": 1.0,
+        },
+        "payment-service": {
+            "feature_a": 4.0,
+            "feature_b": -1.0,
+        },
+    }
+
+    adapted = (
+        ShapResultAdapter()
+        .adapt(
+            raw=raw_results,
+            services=(
+                "order-service",
+                "payment-service",
+            ),
+            feature_vectors={
+                "order-service": {},
+                "payment-service": {},
+            },
+        )
+    )
+
+    assert (
+        adapted[
+            "order-service"
+        ][
+            "support_score"
+        ]
+        == pytest.approx(
+            0.25
+        )
+    )
+
+    assert (
+        adapted[
+            "payment-service"
+        ][
+            "support_score"
+        ]
+        == pytest.approx(
+            1.0
+        )
+    )
+
+    assert (
+        adapted[
+            "payment-service"
+        ][
+            "support_normalization_method"
+        ]
+        == (
+            "max_normalized_positive_support"
+        )
+    )    

@@ -280,6 +280,12 @@ services:
 
       MODEL_PATH: /app/training/models/xgboost_rca.pkl
 
+      RCA_MODEL_VERSION: ${RCA_MODEL_VERSION:-v1}
+
+      MODEL_PATH_V2: ${MODEL_PATH_V2:-training/models/xgboost_rca_v2.pkl}
+
+      MODEL_MANIFEST_PATH_V2: ${MODEL_MANIFEST_PATH_V2:-training/models/xgboost_rca_v2.manifest.json}
+
     volumes:
       - ./correlation-engine/output:/app/output
 

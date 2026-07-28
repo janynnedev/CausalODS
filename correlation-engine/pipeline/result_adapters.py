@@ -439,23 +439,26 @@ class ShapResultAdapter:
         ],
     ) -> dict[str, dict[str, Any]]:
 
-        raw_mapping = object_to_dict(raw)
-
-        nested = get_first(
-            raw_mapping,
-            (
-                "services",
-                "results",
-                "explanations",
-            ),
+        raw_mapping = (
+            self._normalize_service_mapping(
+                raw
+            )
         )
 
-        if isinstance(nested, Mapping):
-            raw_mapping = dict(nested)
+        result: dict[
+            str,
+            dict[str, Any],
+        ] = {}
 
-        result = {}
+        fallback_positive_support: dict[
+            str,
+            float,
+        ] = {}
 
-        raw_support_scores = {}
+        explicit_support_scores: dict[
+            str,
+            float,
+        ] = {}
 
         for service in services:
 
@@ -463,7 +466,9 @@ class ShapResultAdapter:
                 service
             )
 
-            payload = object_to_dict(current)
+            payload = object_to_dict(
+                current
+            )
 
             contributions = (
                 self._extract_contributions(
@@ -477,41 +482,225 @@ class ShapResultAdapter:
                 )
             )
 
-            positive_support = sum(
+            calculated_positive_support = sum(
                 max(
                     contribution[
                         "shap_value"
                     ],
                     0.0,
                 )
-                for contribution in contributions
+                for contribution
+                in contributions
             )
 
-            raw_support_scores[
-                service
-            ] = positive_support
+            calculated_negative_support = sum(
+                abs(
+                    min(
+                        contribution[
+                            "shap_value"
+                        ],
+                        0.0,
+                    )
+                )
+                for contribution
+                in contributions
+            )
+
+            explicit_support = get_first(
+                payload,
+                (
+                    "support_score",
+                    "shap_support_score",
+                    "shap_score",
+                    "score",
+                ),
+                default=None,
+            )
+
+            if explicit_support is not None:
+
+                explicit_support_scores[
+                    service
+                ] = clamp_score(
+                    explicit_support
+                )
+
+            else:
+
+                fallback_positive_support[
+                    service
+                ] = (
+                    calculated_positive_support
+                )
+
+            raw_positive_support = get_first(
+                payload,
+                (
+                    "raw_positive_support",
+                    "positive_support",
+                ),
+                default=(
+                    calculated_positive_support
+                ),
+            )
+
+            raw_negative_support = get_first(
+                payload,
+                (
+                    "raw_negative_support",
+                    "negative_support",
+                ),
+                default=(
+                    calculated_negative_support
+                ),
+            )
 
             result[service] = {
                 **payload,
-                "raw_positive_support": (
-                    positive_support
-                ),
-                "contributions": contributions,
+
+                "raw_positive_support":
+                    to_float(
+                        raw_positive_support
+                    ),
+
+                "raw_negative_support":
+                    to_float(
+                        raw_negative_support
+                    ),
+
+                "contributions":
+                    contributions,
             }
 
-        normalized = self._normalize_support(
-            raw_support_scores
+        fallback_normalized = (
+            self._normalize_support(
+                fallback_positive_support
+            )
         )
 
         for service in services:
+
+            if service in explicit_support_scores:
+
+                support_score = (
+                    explicit_support_scores[
+                        service
+                    ]
+                )
+
+                normalization_method = (
+                    "explicit_shap_support_score"
+                )
+
+            else:
+
+                support_score = (
+                    fallback_normalized.get(
+                        service,
+                        0.0,
+                    )
+                )
+
+                normalization_method = (
+                    "max_normalized_positive_support"
+                )
+
             result[service][
                 "support_score"
-            ] = normalized.get(
-                service,
-                0.0,
-            )
+            ] = support_score
+
+            result[service][
+                "support_normalization_method"
+            ] = normalization_method
 
         return result
+
+    def _normalize_service_mapping(
+        self,
+        raw: Any,
+    ) -> dict[str, Any]:
+
+        if raw is None:
+            return {}
+
+        if isinstance(
+            raw,
+            Mapping,
+        ):
+
+            raw_mapping = dict(
+                raw
+            )
+
+            nested = get_first(
+                raw_mapping,
+                (
+                    "services",
+                    "results",
+                    "explanations",
+                ),
+            )
+
+            if nested is not None:
+
+                return (
+                    self
+                    ._normalize_service_mapping(
+                        nested
+                    )
+                )
+
+            # Já está no formato:
+            #
+            # {
+            #     "order-service": {...},
+            #     "payment-service": {...},
+            # }
+            return raw_mapping
+
+        if isinstance(
+            raw,
+            Sequence,
+        ) and not isinstance(
+            raw,
+            (
+                str,
+                bytes,
+                bytearray,
+            ),
+        ):
+
+            result = {}
+
+            for item in raw:
+
+                service_name = (
+                    extract_service_name(
+                        item
+                    )
+                )
+
+                if not service_name:
+                    continue
+
+                result[
+                    service_name
+                ] = item
+
+            return result
+
+        service_name = (
+            extract_service_name(
+                raw
+            )
+        )
+
+        if not service_name:
+            return {}
+
+        return {
+            service_name: raw
+        }
 
     def _extract_contributions(
         self,

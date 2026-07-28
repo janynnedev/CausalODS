@@ -1,0 +1,52 @@
+{
+  "samples": 1000,
+  "overall_sample_accuracy": 0.996,
+  "fault_samples": 641,
+  "fault_detection_rate": 0.9968798751950078,
+  "fault_top1_localization_accuracy": 1.0,
+  "fault_end_to_end_accuracy": 0.9968798751950078,
+  "healthy_samples": 359,
+  "healthy_true_negative_rate": 0.9944289693593314,
+  "healthy_false_positive_rate": 0.005571030640668524,
+  "mean_root_cause_rank": 1.0,
+  "scenario_metrics": {
+    "healthy": {
+      "samples": 359,
+      "sample_accuracy": 0.9944289693593314,
+      "top1_localization_accuracy": 1.0,
+      "mean_top_probability": 0.00544802014335593
+    },
+    "order_failure": {
+      "samples": 170,
+      "sample_accuracy": 1.0,
+      "top1_localization_accuracy": 1.0,
+      "mean_top_probability": 0.9996137731215533
+    },
+    "order_latency": {
+      "samples": 158,
+      "sample_accuracy": 0.9873417721518988,
+      "top1_localization_accuracy": 1.0,
+      "mean_top_probability": 0.9877861981527715
+    },
+    "payment_failure": {
+      "samples": 151,
+      "sample_accuracy": 1.0,
+      "top1_localization_accuracy": 1.0,
+      "mean_top_probability": 0.9997381757426735
+    },
+    "payment_latency": {
+      "samples": 162,
+      "sample_accuracy": 1.0,
+      "top1_localization_accuracy": 1.0,
+      "mean_top_probability": 0.9997880072505386
+    }
+  },
+  "evaluation_scope": "held_out_sample_ids",
+  "test_size": 0.2,
+  "random_seed": 42,
+  "test_rows": 2000,
+  "test_samples": 1000,
+  "model_version": "xgboost-rca-v2",
+  "feature_schema_version": "rca-features-v2",
+  "decision_threshold": 0.5
+}

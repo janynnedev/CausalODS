@@ -52,6 +52,31 @@ class Settings:
         ),
     )
 
+    RCA_MODEL_VERSION = (
+        os.getenv(
+            "RCA_MODEL_VERSION",
+            "v1",
+        )
+        .strip()
+        .lower()
+    )
+
+    MODEL_PATH_V2 = os.getenv(
+        "MODEL_PATH_V2",
+        (
+            "training/models/"
+            "xgboost_rca_v2.pkl"
+        ),
+    )
+
+    MODEL_MANIFEST_PATH_V2 = os.getenv(
+        "MODEL_MANIFEST_PATH_V2",
+        (
+            "training/models/"
+            "xgboost_rca_v2.manifest.json"
+        ),
+    )
+
     SHAP_CACHE = os.getenv(
         "SHAP_CACHE",
         "training/models/shap.pkl"

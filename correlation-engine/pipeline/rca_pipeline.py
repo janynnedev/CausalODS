@@ -17,6 +17,11 @@ from ranking.ranking_service import RCARankingService
 from storage.incident_service import IncidentService
 from models.rca_result import RCAResult
 from pprint import pprint
+from config.settings import Settings
+
+from pipeline.prediction_pipeline_v2 import (
+    PredictionPipelineV2,
+)
 
 class RCAPipeline:
 
@@ -37,9 +42,46 @@ class RCAPipeline:
             FeaturePipeline()
         )
 
-        self.prediction_pipeline = (
-            PredictionPipeline()
+        self.model_runtime_version = (
+            Settings.RCA_MODEL_VERSION
         )
+
+        if (
+            self.model_runtime_version
+            == "v1"
+        ):
+
+            self.prediction_pipeline = (
+                PredictionPipeline()
+            )
+
+        elif (
+            self.model_runtime_version
+            == "v2"
+        ):
+
+            self.prediction_pipeline = (
+                PredictionPipelineV2(
+                    model_path=(
+                        Settings.MODEL_PATH_V2
+                    ),
+                    manifest_path=(
+                        Settings
+                        .MODEL_MANIFEST_PATH_V2
+                    ),
+                )
+            )
+
+        else:
+
+            raise ValueError(
+                (
+                    "RCA_MODEL_VERSION inválida. "
+                    "Valores permitidos: v1, v2. "
+                    "Valor recebido: "
+                    f"{self.model_runtime_version!r}."
+                )
+            )
 
         self.context_factory = (
             RCAContextFactory()
@@ -284,7 +326,7 @@ class RCAPipeline:
                     self._get_model_version()
                 ),
                 pipeline_version=(
-                    "causalods-rca-v1"
+                    self._get_pipeline_version()
                 ),
             )
         )
@@ -686,3 +728,20 @@ class RCAPipeline:
                 return str(value)
 
         return "xgboost-rca-v1"    
+
+    def _get_pipeline_version(
+        self,
+    ) -> str:
+
+        if (
+            self.model_runtime_version
+            == "v2"
+        ):
+
+            return (
+                "causalods-rca-v2"
+            )
+
+        return (
+            "causalods-rca-v1"
+        )
