@@ -1,0 +1,9 @@
+NAME                   IMAGE                                          COMMAND                  SERVICE              CREATED        STATUS                  PORTS
+causalods-opensearch   opensearchproject/opensearch:2.19.0            "./opensearch-docker…"   opensearch           35 hours ago   Up 14 hours (healthy)   0.0.0.0:9200->9200/tcp, [::]:9200->9200/tcp, 9300/tcp, 0.0.0.0:9600->9600/tcp, [::]:9600->9600/tcp, 9650/tcp
+correlation-engine     causalods-correlation-engine                   "python app.py"          correlation-engine   7 hours ago    Up 7 hours              
+jaeger                 jaegertracing/all-in-one:1.66.0                "/go/bin/all-in-one-…"   jaeger               35 hours ago   Up 14 hours             4317-4318/tcp, 9411/tcp, 0.0.0.0:14250->14250/tcp, [::]:14250->14250/tcp, 14268/tcp, 0.0.0.0:16686->16686/tcp, [::]:16686->16686/tcp
+kafka                  confluentinc/cp-kafka:7.8.0                    "/etc/confluent/dock…"   kafka                35 hours ago   Up 14 hours (healthy)   0.0.0.0:9092->9092/tcp, [::]:9092->9092/tcp
+order-service          causalods-order-service                        "java -jar app.jar"      order-service        14 hours ago   Up 14 hours             0.0.0.0:8081->8081/tcp, [::]:8081->8081/tcp
+otel-collector         otel/opentelemetry-collector-contrib:0.130.0   "/otelcol-contrib --…"   otel-collector       35 hours ago   Up 14 hours             0.0.0.0:4317-4318->4317-4318/tcp, [::]:4317-4318->4317-4318/tcp, 55678-55679/tcp
+payment-service        causalods-payment-service                      "java -jar app.jar"      payment-service      5 hours ago    Up 5 hours              0.0.0.0:8082->8082/tcp, [::]:8082->8082/tcp
+prometheus             prom/prometheus:v3.5.0                         "/bin/prometheus --c…"   prometheus           35 hours ago   Up 14 hours             0.0.0.0:9090->9090/tcp, [::]:9090->9090/tcp
