@@ -727,7 +727,14 @@ class RCAPipeline:
             if value:
                 return str(value)
 
-        return "xgboost-rca-v1"    
+        if (
+            self.model_runtime_version
+            == "v2"
+        ):
+
+            return "xgboost-rca-v2"
+
+        return "xgboost-rca-v1"
 
     def _get_pipeline_version(
         self,

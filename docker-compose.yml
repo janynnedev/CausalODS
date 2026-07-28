@@ -1,5 +1,3 @@
-version: '3.9'
-
 services:
 
   order-service:
@@ -22,6 +20,11 @@ services:
       SERVER_PORT: 8081
 
       PAYMENT_SERVICE_URL: http://payment-service:8082
+
+      CAUSALODS_FAULT_MODE: ${CAUSALODS_ORDER_FAULT_MODE:-none}
+      CAUSALODS_FAULT_RATE: ${CAUSALODS_ORDER_FAULT_RATE:-1.0}
+      CAUSALODS_FAULT_DELAY_MS: ${CAUSALODS_ORDER_FAULT_DELAY_MS:-1500}
+      CAUSALODS_FAULT_SEED: ${CAUSALODS_ORDER_FAULT_SEED:-42}
 
       JAVA_TOOL_OPTIONS: >
         -javaagent:/otel/opentelemetry-javaagent.jar
@@ -83,10 +86,10 @@ services:
 
       OTEL_RESOURCE_ATTRIBUTES: deployment.environment=development  
 
-      CAUSALODS_FAULT_MODE: ${CAUSALODS_FAULT_MODE:-none}
-      CAUSALODS_FAULT_RATE: ${CAUSALODS_FAULT_RATE:-1.0}
-      CAUSALODS_FAULT_DELAY_MS: ${CAUSALODS_FAULT_DELAY_MS:-1500}
-      CAUSALODS_FAULT_SEED: ${CAUSALODS_FAULT_SEED:-42}
+      CAUSALODS_FAULT_MODE: ${CAUSALODS_PAYMENT_FAULT_MODE:-none}
+      CAUSALODS_FAULT_RATE: ${CAUSALODS_PAYMENT_FAULT_RATE:-1.0}
+      CAUSALODS_FAULT_DELAY_MS: ${CAUSALODS_PAYMENT_FAULT_DELAY_MS:-1500}
+      CAUSALODS_FAULT_SEED: ${CAUSALODS_PAYMENT_FAULT_SEED:-42}
 
     depends_on:
       - otel-collector
@@ -280,7 +283,7 @@ services:
 
       MODEL_PATH: /app/training/models/xgboost_rca.pkl
 
-      RCA_MODEL_VERSION: ${RCA_MODEL_VERSION:-v1}
+      RCA_MODEL_VERSION: ${RCA_MODEL_VERSION:-v2}
 
       MODEL_PATH_V2: ${MODEL_PATH_V2:-training/models/xgboost_rca_v2.pkl}
 

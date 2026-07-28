@@ -1,0 +1,233 @@
+$ docker compose logs --no-color --since=30m correlation-engine
+exit_code=0
+
+STDOUT
+correlation-engine  | 
+correlation-engine  | ======================================================================
+correlation-engine  | Correlation Engine
+correlation-engine  | ======================================================================
+correlation-engine  | 
+correlation-engine  | ========== SERVICE GRAPH ==========
+correlation-engine  | {'services': {'payment-service': {'requests': 1, 'errors': 0, 'error_rate': 0.0, 'avg_latency': 14.917793, 'max_latency': 14.917793}, 'order-service': {'requests': 2, 'errors': 0, 'error_rate': 0.0, 'avg_latency': 187.5025905, 'max_latency': 232.603883}}, 'dependencies': [{'source': 'order-service', 'target': 'payment-service', 'calls': 1, 'errors': 0, 'avg_latency': 14.917793}]}
+correlation-engine  | 
+correlation-engine  | ========== TEMPORAL ==========
+correlation-engine  | {'services': {'order-service': {'score': 0.0, 'raw_score': 0.0, 'is_first_anomaly': False, 'is_first_failure': False, 'failure_order': -1, 'anomaly_started_at': None, 'lead_ms': None, 'failure_lead_time_ms': 0.0, 'rank': 1, 'latency_rank': 1, 'latency_rank_score': 1.0, 'exclusive_latency_share': 0.9358658481798171, 'exclusive_latency_dominance_margin': 0.8717316963596342, 'exclusive_latency_dominance_detected': False, 'is_exclusive_latency_dominant': False, 'latency_order_method': 'exclusive_latency_order', 'exclusive_latency_ms': 217.68515841699218, 'span_count': 2, 'error_count': 0, 'max_duration_ms': 232.603883, 'total_duration_ms': 375.005181, 'earliest_start': datetime.datetime(2026, 7, 28, 21, 27, 24, 569637, tzinfo=datetime.timezone.utc), 'latest_end': datetime.datetime(2026, 7, 28, 21, 27, 24, 802241, tzinfo=datetime.timezone.utc), 'first_error_start': None, 'depth': 0, 'upstream_services': [], 'downstream_services': ['payment-service'], 'operations': ['POST /orders', 'POST'], 'score_components': {'first_failure': 0.0, 'error_presence': 0.0, 'latency_order': 0.0}, 'score_weights': {'first_failure': 0.0, 'error_presence': 0.0, 'latency_order': 1.0}, 'scoring_mode': 'exclusive_latency_no_dominance', 'method': 'temporal-correlation-v2'}, 'payment-service': {'score': 0.0, 'raw_score': 0.0, 'is_first_anomaly': False, 'is_first_failure': False, 'failure_order': -1, 'anomaly_started_at': None, 'lead_ms': None, 'failure_lead_time_ms': 0.0, 'rank': 2, 'latency_rank': 2, 'latency_rank_score': 0.0, 'exclusive_latency_share': 0.06413415182018288, 'exclusive_latency_dominance_margin': 0.8717316963596342, 'exclusive_latency_dominance_detected': False, 'is_exclusive_latency_dominant': False, 'latency_order_method': 'exclusive_latency_order', 'exclusive_latency_ms': 14.917793, 'span_count': 1, 'error_count': 0, 'max_duration_ms': 14.917793, 'total_duration_ms': 14.917793, 'earliest_start': datetime.datetime(2026, 7, 28, 21, 27, 24, 739727, tzinfo=datetime.timezone.utc), 'latest_end': datetime.datetime(2026, 7, 28, 21, 27, 24, 754645, tzinfo=datetime.timezone.utc), 'first_error_start': None, 'depth': 2, 'upstream_services': ['order-service'], 'downstream_services': [], 'operations': ['POST /payments'], 'score_components': {'first_failure': 0.0, 'error_presence': 0.0, 'latency_order': 0.0}, 'score_weights': {'first_failure': 0.0, 'error_presence': 0.0, 'latency_order': 1.0}, 'scoring_mode': 'exclusive_latency_no_dominance', 'method': 'temporal-correlation-v2'}}, 'timeline': [{'service': 'order-service', 'operation': 'POST /orders', 'span_id': 'ecbc7843464d63a6', 'parent': None, 'start': datetime.datetime(2026, 7, 28, 21, 27, 24, 569637, tzinfo=datetime.timezone.utc), 'end': datetime.datetime(2026, 7, 28, 21, 27, 24, 802241, tzinfo=datetime.timezone.utc), 'duration': 232.603883, 'error': False}, {'service': 'order-service', 'operation': 'POST', 'span_id': '359b17d23eb8d93c', 'parent': 'ecbc7843464d63a6', 'start': datetime.datetime(2026, 7, 28, 21, 27, 24, 648188, tzinfo=datetime.timezone.utc), 'end': datetime.datetime(2026, 7, 28, 21, 27, 24, 790590, tzinfo=datetime.timezone.utc), 'duration': 142.401298, 'error': False}, {'service': 'payment-service', 'operation': 'POST /payments', 'span_id': 'd685469981ef84f4', 'parent': '359b17d23eb8d93c', 'start': datetime.datetime(2026, 7, 28, 21, 27, 24, 739727, tzinfo=datetime.timezone.utc), 'end': datetime.datetime(2026, 7, 28, 21, 27, 24, 754645, tzinfo=datetime.timezone.utc), 'duration': 14.917793, 'error': False}], 'first_failure': None, 'latency_order': ['order-service', 'payment-service'], 'latency_order_method': 'exclusive_latency_order', 'exclusive_latency_by_service': {'payment-service': 14.917793, 'order-service': 217.68515841699218}, 'exclusive_latency_dominance': {'shares': {'payment-service': 0.06413415182018288, 'order-service': 0.9358658481798171}, 'ordered_services': ['order-service', 'payment-service'], 'top_service': 'order-service', 'top_latency_ms': 217.68515841699218, 'minimum_latency_ms': 500.0, 'top_share': 0.9358658481798171, 'second_share': 0.06413415182018288, 'margin': 0.8717316963596342, 'is_meaningful': False, 'minimum_share': 0.7, 'minimum_margin': 0.2, 'total_exclusive_latency_ms': 232.60295141699217}, 'trace_duration_ms': 232.604, 'propagation': {'order-service': ['payment-service']}, 'service_depth': {'order-service': 0, 'payment-service': 2}, 'method': 'temporal-correlation-v2'}
+correlation-engine  | 
+correlation-engine  | ========== FEATURES ==========
+correlation-engine  | RCAFeature(service_name='order-service', request_count=2, error_count=0, error_rate=0.0, avg_latency_ms=187.5025905, max_latency_ms=232.603883, incoming_dependencies=0, outgoing_dependencies=1, dependency_count=1, is_first_failure=False, failure_order=-1, failure_lead_time_ms=0.0, latency_zscore=0.0, anomaly_score=0.0, is_anomalous=False, exclusive_latency_ms=217.68515841699218, exclusive_latency_ratio=0.9358616292797723)
+correlation-engine  | RCAFeature(service_name='payment-service', request_count=1, error_count=0, error_rate=0.0, avg_latency_ms=14.917793, max_latency_ms=14.917793, incoming_dependencies=1, outgoing_dependencies=0, dependency_count=1, is_first_failure=False, failure_order=-1, failure_lead_time_ms=0.0, latency_zscore=0.0, anomaly_score=0.0, is_anomalous=False, exclusive_latency_ms=14.917793, exclusive_latency_ratio=0.06413386270227511)
+correlation-engine  | 
+correlation-engine  | ========== RCA SUMMARY ==========
+correlation-engine  | rca_result_id=f8f71b01-067e-4f2e-a000-264ae651f8cb
+correlation-engine  | trace_id=42ce2be4f6aa1f21f5ae226f1b3a9df1
+correlation-engine  | confidence=0.019218
+correlation-engine  | evidence_count=18
+correlation-engine  | 
+correlation-engine  | ========== PREDICTIONS ==========
+correlation-engine  | - service=order-service | prediction=0 | confidence=0.000350
+correlation-engine  | - service=payment-service | prediction=0 | confidence=0.000117
+correlation-engine  | 
+correlation-engine  | ========== SHAP SUMMARY ==========
+correlation-engine  | type=list | items=2
+correlation-engine  | 
+correlation-engine  | ========== RANKING ==========
+correlation-engine  | 1. service=order-service | final_score=0.019218 | scores={'model_probability': 0.0003503488842397928, 'shap_support_score': 0.07631202222273167, 'temporal_score': 0.0, 'graph_score': 0.0, 'anomaly_score': 0.0, 'final_score': 0.019218145109378835, 'component_weights': {'model_probability': 0.4, 'shap_support': 0.25, 'temporal': 0.2, 'graph': 0.15, 'anomaly': 0.0}, 'normalization_method': 'normalized_weighted_ranking_v1'}
+correlation-engine  | 2. service=payment-service | final_score=0.015637 | scores={'model_probability': 0.00011672528489725664, 'shap_support_score': 0.06236010349185146, 'temporal_score': 0.0, 'graph_score': 0.0, 'anomaly_score': 0.0, 'final_score': 0.01563671598692177, 'component_weights': {'model_probability': 0.4, 'shap_support': 0.25, 'temporal': 0.2, 'graph': 0.15, 'anomaly': 0.0}, 'normalization_method': 'normalized_weighted_ranking_v1'}
+correlation-engine  | 
+correlation-engine  | ========== EVIDENCE SUMMARY ==========
+correlation-engine  | - service=order-service | type=anomaly | count=1
+correlation-engine  | - service=order-service | type=graph | count=1
+correlation-engine  | - service=order-service | type=model | count=1
+correlation-engine  | - service=order-service | type=shap | count=5
+correlation-engine  | - service=order-service | type=temporal | count=1
+correlation-engine  | - service=payment-service | type=anomaly | count=1
+correlation-engine  | - service=payment-service | type=graph | count=1
+correlation-engine  | - service=payment-service | type=model | count=1
+correlation-engine  | - service=payment-service | type=shap | count=5
+correlation-engine  | - service=payment-service | type=temporal | count=1
+correlation-engine  | 
+correlation-engine  | ========== RELIABILITY ==========
+correlation-engine  | {'is_reliable': False, 'confidence': 0.019218145109378835, 'confidence_method': 'reliability-gate-v1', 'minimum_confidence': 0.5, 'margin_to_second': 0.003581429122457066, 'minimum_margin': 0.05, 'passed_rules': ['ranking_present', 'minimum_evidence_count', 'minimum_source_diversity'], 'failed_rules': ['minimum_confidence', 'minimum_margin']}
+correlation-engine  | RCAResult persisted | rca_result_id=f8f71b01-067e-4f2e-a000-264ae651f8cb | trace_id=42ce2be4f6aa1f21f5ae226f1b3a9df1
+correlation-engine  | 
+correlation-engine  | ========== INCIDENT ==========
+correlation-engine  | created=False | reason=RCA result not reliable
+correlation-engine  | 
+correlation-engine  | ========== SERVICE GRAPH ==========
+correlation-engine  | {'services': {'payment-service': {'requests': 2, 'errors': 1, 'error_rate': 0.5, 'avg_latency': 33.020162, 'max_latency': 65.76498}, 'order-service': {'requests': 2, 'errors': 2, 'error_rate': 1.0, 'avg_latency': 86.940187, 'max_latency': 103.412837}}, 'dependencies': [{'source': 'order-service', 'target': 'payment-service', 'calls': 1, 'errors': 1, 'avg_latency': 65.76498}]}
+correlation-engine  | 
+correlation-engine  | ========== TEMPORAL ==========
+correlation-engine  | {'services': {'order-service': {'score': 0.4, 'raw_score': 0.4, 'is_first_anomaly': False, 'is_first_failure': False, 'failure_order': 2, 'anomaly_started_at': datetime.datetime(2026, 7, 28, 21, 27, 58, 482032, tzinfo=datetime.timezone.utc), 'lead_ms': 6.4590000000000005, 'failure_lead_time_ms': 6.4590000000000005, 'rank': 1, 'latency_rank': 1, 'latency_rank_score': 1.0, 'exclusive_latency_share': 0.3640620888055062, 'exclusive_latency_dominance_margin': 0.2718758223889876, 'exclusive_latency_dominance_detected': False, 'is_exclusive_latency_dominant': False, 'latency_order_method': 'inclusive_latency_order', 'exclusive_latency_ms': 37.649428412841786, 'span_count': 2, 'error_count': 2, 'max_duration_ms': 103.412837, 'total_duration_ms': 173.880374, 'earliest_start': datetime.datetime(2026, 7, 28, 21, 27, 58, 482032, tzinfo=datetime.timezone.utc), 'latest_end': datetime.datetime(2026, 7, 28, 21, 27, 58, 585445, tzinfo=datetime.timezone.utc), 'first_error_start': datetime.datetime(2026, 7, 28, 21, 27, 58, 482032, tzinfo=datetime.timezone.utc), 'depth': 0, 'upstream_services': [], 'downstream_services': ['payment-service'], 'operations': ['POST /orders', 'POST'], 'score_components': {'first_failure': 0.0, 'error_presence': 1.0, 'latency_order': 1.0}, 'score_weights': {'first_failure': 0.6, 'error_presence': 0.25, 'latency_order': 0.15}, 'scoring_mode': 'failure_precedence_and_latency', 'method': 'temporal-correlation-v2'}, 'payment-service': {'score': 0.85, 'raw_score': 0.85, 'is_first_anomaly': True, 'is_first_failure': True, 'failure_order': 1, 'anomaly_started_at': datetime.datetime(2026, 7, 28, 21, 27, 58, 488491, tzinfo=datetime.timezone.utc), 'lead_ms': None, 'failure_lead_time_ms': 0.0, 'rank': 2, 'latency_rank': 2, 'latency_rank_score': 0.0, 'exclusive_latency_share': 0.6359379111944938, 'exclusive_latency_dominance_margin': 0.2718758223889876, 'exclusive_latency_dominance_detected': False, 'is_exclusive_latency_dominant': False, 'latency_order_method': 'inclusive_latency_order', 'exclusive_latency_ms': 65.7654273782959, 'span_count': 2, 'error_count': 1, 'max_duration_ms': 65.76498, 'total_duration_ms': 66.040324, 'earliest_start': datetime.datetime(2026, 7, 28, 21, 27, 58, 488491, tzinfo=datetime.timezone.utc), 'latest_end': datetime.datetime(2026, 7, 28, 21, 27, 58, 554255, tzinfo=datetime.timezone.utc), 'first_error_start': datetime.datetime(2026, 7, 28, 21, 27, 58, 488491, tzinfo=datetime.timezone.utc), 'depth': 2, 'upstream_services': ['order-service'], 'downstream_services': [], 'operations': ['POST /payments', 'ResponseFacade.sendError'], 'score_components': {'first_failure': 1.0, 'error_presence': 1.0, 'latency_order': 0.0}, 'score_weights': {'first_failure': 0.6, 'error_presence': 0.25, 'latency_order': 0.15}, 'scoring_mode': 'failure_precedence_and_latency', 'method': 'temporal-correlation-v2'}}, 'timeline': [{'service': 'order-service', 'operation': 'POST /orders', 'span_id': 'cb43fb79f2a25d3c', 'parent': None, 'start': datetime.datetime(2026, 7, 28, 21, 27, 58, 482032, tzinfo=datetime.timezone.utc), 'end': datetime.datetime(2026, 7, 28, 21, 27, 58, 585445, tzinfo=datetime.timezone.utc), 'duration': 103.412837, 'error': True}, {'service': 'order-service', 'operation': 'POST', 'span_id': 'c708513d33f2fd56', 'parent': 'cb43fb79f2a25d3c', 'start': datetime.datetime(2026, 7, 28, 21, 27, 58, 484468, tzinfo=datetime.timezone.utc), 'end': datetime.datetime(2026, 7, 28, 21, 27, 58, 554935, tzinfo=datetime.timezone.utc), 'duration': 70.467537, 'error': True}, {'service': 'payment-service', 'operation': 'POST /payments', 'span_id': '0991939f38a0ad3b', 'parent': 'c708513d33f2fd56', 'start': datetime.datetime(2026, 7, 28, 21, 27, 58, 488491, tzinfo=datetime.timezone.utc), 'end': datetime.datetime(2026, 7, 28, 21, 27, 58, 554255, tzinfo=datetime.timezone.utc), 'duration': 65.76498, 'error': True}, {'service': 'payment-service', 'operation': 'ResponseFacade.sendError', 'span_id': '352be751e07fcf4b', 'parent': '0991939f38a0ad3b', 'start': datetime.datetime(2026, 7, 28, 21, 27, 58, 536937, tzinfo=datetime.timezone.utc), 'end': datetime.datetime(2026, 7, 28, 21, 27, 58, 537212, tzinfo=datetime.timezone.utc), 'duration': 0.275344, 'error': False}], 'first_failure': {'service': 'payment-service', 'operation': 'POST /payments', 'span_id': '0991939f38a0ad3b', 'parent': 'c708513d33f2fd56', 'start': datetime.datetime(2026, 7, 28, 21, 27, 58, 488491, tzinfo=datetime.timezone.utc), 'end': datetime.datetime(2026, 7, 28, 21, 27, 58, 554255, tzinfo=datetime.timezone.utc), 'duration': 65.76498, 'error': True, 'detection_method': 'downstream_error_leaf'}, 'latency_order': ['order-service', 'payment-service'], 'latency_order_method': 'inclusive_latency_order', 'exclusive_latency_by_service': {'payment-service': 65.7654273782959, 'order-service': 37.649428412841786}, 'exclusive_latency_dominance': {'shares': {'payment-service': 0.6359379111944938, 'order-service': 0.3640620888055062}, 'ordered_services': ['payment-service', 'order-service'], 'top_service': 'payment-service', 'top_latency_ms': 65.7654273782959, 'minimum_latency_ms': 500.0, 'top_share': 0.6359379111944938, 'second_share': 0.3640620888055062, 'margin': 0.2718758223889876, 'is_meaningful': False, 'minimum_share': 0.7, 'minimum_margin': 0.2, 'total_exclusive_latency_ms': 103.41485579113768}, 'trace_duration_ms': 103.41300000000001, 'propagation': {'order-service': ['payment-service']}, 'service_depth': {'order-service': 0, 'payment-service': 2}, 'method': 'temporal-correlation-v2'}
+correlation-engine  | 
+correlation-engine  | ========== FEATURES ==========
+correlation-engine  | RCAFeature(service_name='order-service', request_count=2, error_count=2, error_rate=1.0, avg_latency_ms=86.940187, max_latency_ms=103.412837, incoming_dependencies=0, outgoing_dependencies=1, dependency_count=1, is_first_failure=False, failure_order=2, failure_lead_time_ms=6.4590000000000005, latency_zscore=0.0, anomaly_score=0.0, is_anomalous=False, exclusive_latency_ms=37.649428412841786, exclusive_latency_ratio=0.3640686220575922)
+correlation-engine  | RCAFeature(service_name='payment-service', request_count=2, error_count=1, error_rate=0.5, avg_latency_ms=33.020162, max_latency_ms=65.76498, incoming_dependencies=1, outgoing_dependencies=0, dependency_count=1, is_first_failure=True, failure_order=1, failure_lead_time_ms=0.0, latency_zscore=0.0, anomaly_score=0.0, is_anomalous=False, exclusive_latency_ms=65.7654273782959, exclusive_latency_ratio=0.6359493233761315)
+correlation-engine  | 
+correlation-engine  | ========== RCA SUMMARY ==========
+correlation-engine  | rca_result_id=5b88c81c-4913-423f-ae77-5dbffc76d6c3
+correlation-engine  | trace_id=dcafb5c254a0af96a185f9e50206ccf2
+correlation-engine  | confidence=0.771631
+correlation-engine  | evidence_count=18
+correlation-engine  | 
+correlation-engine  | ========== PREDICTIONS ==========
+correlation-engine  | - service=order-service | prediction=0 | confidence=0.000229
+correlation-engine  | - service=payment-service | prediction=1 | confidence=0.999774
+correlation-engine  | 
+correlation-engine  | ========== SHAP SUMMARY ==========
+correlation-engine  | type=list | items=2
+correlation-engine  | 
+correlation-engine  | ========== RANKING ==========
+correlation-engine  | 1. service=payment-service | final_score=0.771631 | scores={'model_probability': 0.9997735619544983, 'shap_support_score': 0.8068876420602353, 'temporal_score': 0.85, 'graph_score': 0.0, 'anomaly_score': 0.0, 'final_score': 0.7716313352968582, 'component_weights': {'model_probability': 0.4, 'shap_support': 0.25, 'temporal': 0.2, 'graph': 0.15, 'anomaly': 0.0}, 'normalization_method': 'normalized_weighted_ranking_v1'}
+correlation-engine  | 2. service=order-service | final_score=0.088726 | scores={'model_probability': 0.00022896946757100523, 'shap_support_score': 0.03453784274606242, 'temporal_score': 0.4, 'graph_score': 0.0, 'anomaly_score': 0.0, 'final_score': 0.08872604847354403, 'component_weights': {'model_probability': 0.4, 'shap_support': 0.25, 'temporal': 0.2, 'graph': 0.15, 'anomaly': 0.0}, 'normalization_method': 'normalized_weighted_ranking_v1'}
+correlation-engine  | 
+correlation-engine  | ========== EVIDENCE SUMMARY ==========
+correlation-engine  | - service=order-service | type=anomaly | count=1
+correlation-engine  | - service=order-service | type=graph | count=1
+correlation-engine  | - service=order-service | type=model | count=1
+correlation-engine  | - service=order-service | type=shap | count=5
+correlation-engine  | - service=order-service | type=temporal | count=1
+correlation-engine  | - service=payment-service | type=anomaly | count=1
+correlation-engine  | - service=payment-service | type=graph | count=1
+correlation-engine  | - service=payment-service | type=model | count=1
+correlation-engine  | - service=payment-service | type=shap | count=5
+correlation-engine  | - service=payment-service | type=temporal | count=1
+correlation-engine  | 
+correlation-engine  | ========== RELIABILITY ==========
+correlation-engine  | {'is_reliable': True, 'confidence': 0.7716313352968582, 'confidence_method': 'reliability-gate-v1', 'minimum_confidence': 0.5, 'margin_to_second': 0.6829052868233142, 'minimum_margin': 0.05, 'passed_rules': ['ranking_present', 'minimum_confidence', 'minimum_margin', 'minimum_evidence_count', 'minimum_source_diversity'], 'failed_rules': []}
+correlation-engine  | RCAResult persisted | rca_result_id=5b88c81c-4913-423f-ae77-5dbffc76d6c3 | trace_id=dcafb5c254a0af96a185f9e50206ccf2
+correlation-engine  | 
+correlation-engine  | ========== INCIDENT ==========
+correlation-engine  | created=True | incident_id=7d6fa753-9575-456d-ba66-7717f1ef4fde | root_cause_service=payment-service | confidence=0.771631
+correlation-engine  | 
+correlation-engine  | ========== SERVICE GRAPH ==========
+correlation-engine  | {'services': {'order-service': {'requests': 2, 'errors': 0, 'error_rate': 0.0, 'avg_latency': 1561.092742, 'max_latency': 1564.026366}, 'payment-service': {'requests': 1, 'errors': 0, 'error_rate': 0.0, 'avg_latency': 1553.77018, 'max_latency': 1553.77018}}, 'dependencies': [{'source': 'order-service', 'target': 'payment-service', 'calls': 1, 'errors': 0, 'avg_latency': 1553.77018}]}
+correlation-engine  | 
+correlation-engine  | ========== TEMPORAL ==========
+correlation-engine  | {'services': {'order-service': {'score': 0.006557629206060137, 'raw_score': 0.006557629206060137, 'is_first_anomaly': False, 'is_first_failure': False, 'failure_order': -1, 'anomaly_started_at': None, 'lead_ms': None, 'failure_lead_time_ms': 0.0, 'rank': 2, 'latency_rank': 2, 'latency_rank_score': 0.0, 'exclusive_latency_share': 0.006557629206060137, 'exclusive_latency_dominance_margin': 0.9868847415878796, 'exclusive_latency_dominance_detected': True, 'is_exclusive_latency_dominant': False, 'latency_order_method': 'exclusive_latency_order', 'exclusive_latency_ms': 10.256305762085049, 'span_count': 2, 'error_count': 0, 'max_duration_ms': 1564.026366, 'total_duration_ms': 3122.185484, 'earliest_start': datetime.datetime(2026, 7, 28, 21, 28, 30, 993546, tzinfo=datetime.timezone.utc), 'latest_end': datetime.datetime(2026, 7, 28, 21, 28, 32, 557572, tzinfo=datetime.timezone.utc), 'first_error_start': None, 'depth': 0, 'upstream_services': [], 'downstream_services': ['payment-service'], 'operations': ['POST /orders', 'POST'], 'score_components': {'first_failure': 0.0, 'error_presence': 0.0, 'latency_order': 0.006557629206060137}, 'score_weights': {'first_failure': 0.0, 'error_presence': 0.0, 'latency_order': 1.0}, 'scoring_mode': 'exclusive_latency_dominance', 'method': 'temporal-correlation-v2'}, 'payment-service': {'score': 0.9934423707939398, 'raw_score': 0.9934423707939398, 'is_first_anomaly': False, 'is_first_failure': False, 'failure_order': -1, 'anomaly_started_at': None, 'lead_ms': None, 'failure_lead_time_ms': 0.0, 'rank': 1, 'latency_rank': 1, 'latency_rank_score': 1.0, 'exclusive_latency_share': 0.9934423707939398, 'exclusive_latency_dominance_margin': 0.9868847415878796, 'exclusive_latency_dominance_detected': True, 'is_exclusive_latency_dominant': True, 'latency_order_method': 'exclusive_latency_order', 'exclusive_latency_ms': 1553.77018, 'span_count': 1, 'error_count': 0, 'max_duration_ms': 1553.77018, 'total_duration_ms': 1553.77018, 'earliest_start': datetime.datetime(2026, 7, 28, 21, 28, 31, 340, tzinfo=datetime.timezone.utc), 'latest_end': datetime.datetime(2026, 7, 28, 21, 28, 32, 554110, tzinfo=datetime.timezone.utc), 'first_error_start': None, 'depth': 2, 'upstream_services': ['order-service'], 'downstream_services': [], 'operations': ['POST /payments'], 'score_components': {'first_failure': 0.0, 'error_presence': 0.0, 'latency_order': 0.9934423707939398}, 'score_weights': {'first_failure': 0.0, 'error_presence': 0.0, 'latency_order': 1.0}, 'scoring_mode': 'exclusive_latency_dominance', 'method': 'temporal-correlation-v2'}}, 'timeline': [{'service': 'order-service', 'operation': 'POST /orders', 'span_id': 'd4777c5dfcc7e2cf', 'parent': None, 'start': datetime.datetime(2026, 7, 28, 21, 28, 30, 993546, tzinfo=datetime.timezone.utc), 'end': datetime.datetime(2026, 7, 28, 21, 28, 32, 557572, tzinfo=datetime.timezone.utc), 'duration': 1564.026366, 'error': False}, {'service': 'order-service', 'operation': 'POST', 'span_id': 'e0f6332028dc514b', 'parent': 'd4777c5dfcc7e2cf', 'start': datetime.datetime(2026, 7, 28, 21, 28, 30, 996233, tzinfo=datetime.timezone.utc), 'end': datetime.datetime(2026, 7, 28, 21, 28, 32, 554392, tzinfo=datetime.timezone.utc), 'duration': 1558.159118, 'error': False}, {'service': 'payment-service', 'operation': 'POST /payments', 'span_id': '709dd1abcc4678fe', 'parent': 'e0f6332028dc514b', 'start': datetime.datetime(2026, 7, 28, 21, 28, 31, 340, tzinfo=datetime.timezone.utc), 'end': datetime.datetime(2026, 7, 28, 21, 28, 32, 554110, tzinfo=datetime.timezone.utc), 'duration': 1553.77018, 'error': False}], 'first_failure': None, 'latency_order': ['payment-service', 'order-service'], 'latency_order_method': 'exclusive_latency_order', 'exclusive_latency_by_service': {'order-service': 10.256305762085049, 'payment-service': 1553.77018}, 'exclusive_latency_dominance': {'shares': {'order-service': 0.006557629206060137, 'payment-service': 0.9934423707939398}, 'ordered_services': ['payment-service', 'order-service'], 'top_service': 'payment-service', 'top_latency_ms': 1553.77018, 'minimum_latency_ms': 500.0, 'top_share': 0.9934423707939398, 'second_share': 0.006557629206060137, 'margin': 0.9868847415878796, 'is_meaningful': True, 'minimum_share': 0.7, 'minimum_margin': 0.2, 'total_exclusive_latency_ms': 1564.026485762085}, 'trace_duration_ms': 1564.0259999999998, 'propagation': {'order-service': ['payment-service']}, 'service_depth': {'order-service': 0, 'payment-service': 2}, 'method': 'temporal-correlation-v2'}
+correlation-engine  | 
+correlation-engine  | ========== FEATURES ==========
+correlation-engine  | RCAFeature(service_name='order-service', request_count=2, error_count=0, error_rate=0.0, avg_latency_ms=1561.092742, max_latency_ms=1564.026366, incoming_dependencies=0, outgoing_dependencies=1, dependency_count=1, is_first_failure=False, failure_order=-1, failure_lead_time_ms=0.0, latency_zscore=0.0, anomaly_score=0.0, is_anomalous=False, exclusive_latency_ms=10.256305762085049, exclusive_latency_ratio=0.0065576312427575055)
+correlation-engine  | RCAFeature(service_name='payment-service', request_count=1, error_count=0, error_rate=0.0, avg_latency_ms=1553.77018, max_latency_ms=1553.77018, incoming_dependencies=1, outgoing_dependencies=0, dependency_count=1, is_first_failure=False, failure_order=-1, failure_lead_time_ms=0.0, latency_zscore=0.0, anomaly_score=0.0, is_anomalous=False, exclusive_latency_ms=1553.77018, exclusive_latency_ratio=0.9934426793416479)
+correlation-engine  | 
+correlation-engine  | ========== RCA SUMMARY ==========
+correlation-engine  | rca_result_id=cf8f8b42-e5ab-4100-968a-8f238817b271
+correlation-engine  | trace_id=cebd788d9c8f0a7dd3a2df012240153f
+correlation-engine  | confidence=0.822782
+correlation-engine  | evidence_count=18
+correlation-engine  | 
+correlation-engine  | ========== PREDICTIONS ==========
+correlation-engine  | - service=order-service | prediction=0 | confidence=0.000214
+correlation-engine  | - service=payment-service | prediction=1 | confidence=0.999848
+correlation-engine  | 
+correlation-engine  | ========== SHAP SUMMARY ==========
+correlation-engine  | type=list | items=2
+correlation-engine  | 
+correlation-engine  | ========== RANKING ==========
+correlation-engine  | 1. service=payment-service | final_score=0.822782 | scores={'model_probability': 0.999848484992981, 'shap_support_score': 0.896616290063154, 'temporal_score': 0.9934423707939398, 'graph_score': 0.0, 'anomaly_score': 0.0, 'final_score': 0.8227819406717689, 'component_weights': {'model_probability': 0.4, 'shap_support': 0.25, 'temporal': 0.2, 'graph': 0.15, 'anomaly': 0.0}, 'normalization_method': 'normalized_weighted_ranking_v1'}
+correlation-engine  | 2. service=order-service | final_score=0.025363 | scores={'model_probability': 0.00021408096654340625, 'shap_support_score': 0.09586372741048739, 'temporal_score': 0.006557629206060137, 'graph_score': 0.0, 'anomaly_score': 0.0, 'final_score': 0.025363090080451237, 'component_weights': {'model_probability': 0.4, 'shap_support': 0.25, 'temporal': 0.2, 'graph': 0.15, 'anomaly': 0.0}, 'normalization_method': 'normalized_weighted_ranking_v1'}
+correlation-engine  | 
+correlation-engine  | ========== EVIDENCE SUMMARY ==========
+correlation-engine  | - service=order-service | type=anomaly | count=1
+correlation-engine  | - service=order-service | type=graph | count=1
+correlation-engine  | - service=order-service | type=model | count=1
+correlation-engine  | - service=order-service | type=shap | count=5
+correlation-engine  | - service=order-service | type=temporal | count=1
+correlation-engine  | - service=payment-service | type=anomaly | count=1
+correlation-engine  | - service=payment-service | type=graph | count=1
+correlation-engine  | - service=payment-service | type=model | count=1
+correlation-engine  | - service=payment-service | type=shap | count=5
+correlation-engine  | - service=payment-service | type=temporal | count=1
+correlation-engine  | 
+correlation-engine  | ========== RELIABILITY ==========
+correlation-engine  | {'is_reliable': True, 'confidence': 0.8227819406717689, 'confidence_method': 'reliability-gate-v1', 'minimum_confidence': 0.5, 'margin_to_second': 0.7974188505913177, 'minimum_margin': 0.05, 'passed_rules': ['ranking_present', 'minimum_confidence', 'minimum_margin', 'minimum_evidence_count', 'minimum_source_diversity'], 'failed_rules': []}
+correlation-engine  | RCAResult persisted | rca_result_id=cf8f8b42-e5ab-4100-968a-8f238817b271 | trace_id=cebd788d9c8f0a7dd3a2df012240153f
+correlation-engine  | 
+correlation-engine  | ========== INCIDENT ==========
+correlation-engine  | created=True | incident_id=644d9e52-7a84-4d2f-9a4f-ca76d07ae3fc | root_cause_service=payment-service | confidence=0.822782
+correlation-engine  | 
+correlation-engine  | ========== SERVICE GRAPH ==========
+correlation-engine  | {'services': {'order-service': {'requests': 2, 'errors': 1, 'error_rate': 0.5, 'avg_latency': 39.282578, 'max_latency': 78.205153}}, 'dependencies': []}
+correlation-engine  | 
+correlation-engine  | ========== TEMPORAL ==========
+correlation-engine  | {'services': {'order-service': {'score': 1.0, 'raw_score': 1.0, 'is_first_anomaly': True, 'is_first_failure': True, 'failure_order': 1, 'anomaly_started_at': datetime.datetime(2026, 7, 28, 21, 29, 14, 902916, tzinfo=datetime.timezone.utc), 'lead_ms': None, 'failure_lead_time_ms': 0.0, 'rank': 1, 'latency_rank': 1, 'latency_rank_score': 1.0, 'exclusive_latency_share': 1.0, 'exclusive_latency_dominance_margin': 1.0, 'exclusive_latency_dominance_detected': False, 'is_exclusive_latency_dominant': False, 'latency_order_method': 'inclusive_latency_order', 'exclusive_latency_ms': 78.20514394555664, 'span_count': 2, 'error_count': 1, 'max_duration_ms': 78.205153, 'total_duration_ms': 78.565156, 'earliest_start': datetime.datetime(2026, 7, 28, 21, 29, 14, 902916, tzinfo=datetime.timezone.utc), 'latest_end': datetime.datetime(2026, 7, 28, 21, 29, 14, 981122, tzinfo=datetime.timezone.utc), 'first_error_start': datetime.datetime(2026, 7, 28, 21, 29, 14, 902916, tzinfo=datetime.timezone.utc), 'depth': 0, 'upstream_services': [], 'downstream_services': [], 'operations': ['POST /orders', 'ResponseFacade.sendError'], 'score_components': {'first_failure': 1.0, 'error_presence': 1.0, 'latency_order': 1.0}, 'score_weights': {'first_failure': 0.6, 'error_presence': 0.25, 'latency_order': 0.15}, 'scoring_mode': 'failure_precedence_and_latency', 'method': 'temporal-correlation-v2'}}, 'timeline': [{'service': 'order-service', 'operation': 'POST /orders', 'span_id': '1a9bd1bc5a9dd3d7', 'parent': None, 'start': datetime.datetime(2026, 7, 28, 21, 29, 14, 902916, tzinfo=datetime.timezone.utc), 'end': datetime.datetime(2026, 7, 28, 21, 29, 14, 981122, tzinfo=datetime.timezone.utc), 'duration': 78.205153, 'error': True}, {'service': 'order-service', 'operation': 'ResponseFacade.sendError', 'span_id': '1242130fb6a68436', 'parent': '1a9bd1bc5a9dd3d7', 'start': datetime.datetime(2026, 7, 28, 21, 29, 14, 962298, tzinfo=datetime.timezone.utc), 'end': datetime.datetime(2026, 7, 28, 21, 29, 14, 962658, tzinfo=datetime.timezone.utc), 'duration': 0.360003, 'error': False}], 'first_failure': {'service': 'order-service', 'operation': 'POST /orders', 'span_id': '1a9bd1bc5a9dd3d7', 'parent': None, 'start': datetime.datetime(2026, 7, 28, 21, 29, 14, 902916, tzinfo=datetime.timezone.utc), 'end': datetime.datetime(2026, 7, 28, 21, 29, 14, 981122, tzinfo=datetime.timezone.utc), 'duration': 78.205153, 'error': True, 'detection_method': 'downstream_error_leaf'}, 'latency_order': ['order-service'], 'latency_order_method': 'inclusive_latency_order', 'exclusive_latency_by_service': {'order-service': 78.20514394555664}, 'exclusive_latency_dominance': {'shares': {'order-service': 1.0}, 'ordered_services': ['order-service'], 'top_service': 'order-service', 'top_latency_ms': 78.20514394555664, 'minimum_latency_ms': 500.0, 'top_share': 1.0, 'second_share': 0.0, 'margin': 1.0, 'is_meaningful': False, 'minimum_share': 0.7, 'minimum_margin': 0.2, 'total_exclusive_latency_ms': 78.20514394555664}, 'trace_duration_ms': 78.206, 'propagation': {}, 'service_depth': {'order-service': 0}, 'method': 'temporal-correlation-v2'}
+correlation-engine  | 
+correlation-engine  | ========== FEATURES ==========
+correlation-engine  | RCAFeature(service_name='order-service', request_count=2, error_count=1, error_rate=0.5, avg_latency_ms=39.282578, max_latency_ms=78.205153, incoming_dependencies=0, outgoing_dependencies=0, dependency_count=0, is_first_failure=True, failure_order=1, failure_lead_time_ms=0.0, latency_zscore=0.0, anomaly_score=0.0, is_anomalous=False, exclusive_latency_ms=78.20514394555664, exclusive_latency_ratio=0.9999890538520911)
+correlation-engine  | 
+correlation-engine  | ========== RCA SUMMARY ==========
+correlation-engine  | rca_result_id=33f96884-35e0-4280-9ab9-db8b1d1bcb39
+correlation-engine  | trace_id=b4c79fcdc092298520552497e6434a84
+correlation-engine  | confidence=0.800034
+correlation-engine  | evidence_count=9
+correlation-engine  | 
+correlation-engine  | ========== PREDICTIONS ==========
+correlation-engine  | - service=order-service | prediction=1 | confidence=0.999593
+correlation-engine  | 
+correlation-engine  | ========== SHAP SUMMARY ==========
+correlation-engine  | type=list | items=1
+correlation-engine  | 
+correlation-engine  | ========== RANKING ==========
+correlation-engine  | 1. service=order-service | final_score=0.800034 | scores={'model_probability': 0.9995930790901184, 'shap_support_score': 0.8007863876901465, 'temporal_score': 1.0, 'graph_score': 0.0, 'anomaly_score': 0.0, 'final_score': 0.800033828558584, 'component_weights': {'model_probability': 0.4, 'shap_support': 0.25, 'temporal': 0.2, 'graph': 0.15, 'anomaly': 0.0}, 'normalization_method': 'normalized_weighted_ranking_v1'}
+correlation-engine  | 
+correlation-engine  | ========== EVIDENCE SUMMARY ==========
+correlation-engine  | - service=order-service | type=anomaly | count=1
+correlation-engine  | - service=order-service | type=graph | count=1
+correlation-engine  | - service=order-service | type=model | count=1
+correlation-engine  | - service=order-service | type=shap | count=5
+correlation-engine  | - service=order-service | type=temporal | count=1
+correlation-engine  | 
+correlation-engine  | ========== RELIABILITY ==========
+correlation-engine  | {'is_reliable': True, 'confidence': 0.800033828558584, 'confidence_method': 'reliability-gate-v1', 'minimum_confidence': 0.5, 'margin_to_second': None, 'minimum_margin': 0.05, 'passed_rules': ['ranking_present', 'minimum_confidence', 'single_candidate', 'minimum_evidence_count', 'minimum_source_diversity'], 'failed_rules': []}
+correlation-engine  | RCAResult persisted | rca_result_id=33f96884-35e0-4280-9ab9-db8b1d1bcb39 | trace_id=b4c79fcdc092298520552497e6434a84
+correlation-engine  | 
+correlation-engine  | ========== INCIDENT ==========
+correlation-engine  | created=True | incident_id=0e255ae7-9e5d-45fa-96c7-82a79ff999c3 | root_cause_service=order-service | confidence=0.800034
+correlation-engine  | 
+correlation-engine  | ========== SERVICE GRAPH ==========
+correlation-engine  | {'services': {'payment-service': {'requests': 1, 'errors': 0, 'error_rate': 0.0, 'avg_latency': 55.451069, 'max_latency': 55.451069}, 'order-service': {'requests': 2, 'errors': 0, 'error_rate': 0.0, 'avg_latency': 970.1147465, 'max_latency': 1783.896405}}, 'dependencies': [{'source': 'order-service', 'target': 'payment-service', 'calls': 1, 'errors': 0, 'avg_latency': 55.451069}]}
+correlation-engine  | 
+correlation-engine  | ========== TEMPORAL ==========
+correlation-engine  | {'services': {'order-service': {'score': 0.9689157577590064, 'raw_score': 0.9689157577590064, 'is_first_anomaly': False, 'is_first_failure': False, 'failure_order': -1, 'anomaly_started_at': None, 'lead_ms': None, 'failure_lead_time_ms': 0.0, 'rank': 1, 'latency_rank': 1, 'latency_rank_score': 1.0, 'exclusive_latency_share': 0.9689157577590064, 'exclusive_latency_dominance_margin': 0.9378315155180128, 'exclusive_latency_dominance_detected': True, 'is_exclusive_latency_dominant': True, 'latency_order_method': 'exclusive_latency_order', 'exclusive_latency_ms': 1728.4453686256104, 'span_count': 2, 'error_count': 0, 'max_duration_ms': 1783.896405, 'total_duration_ms': 1940.229493, 'earliest_start': datetime.datetime(2026, 7, 28, 21, 29, 43, 813021, tzinfo=datetime.timezone.utc), 'latest_end': datetime.datetime(2026, 7, 28, 21, 29, 45, 596917, tzinfo=datetime.timezone.utc), 'first_error_start': None, 'depth': 0, 'upstream_services': [], 'downstream_services': ['payment-service'], 'operations': ['POST /orders', 'POST'], 'score_components': {'first_failure': 0.0, 'error_presence': 0.0, 'latency_order': 0.9689157577590064}, 'score_weights': {'first_failure': 0.0, 'error_presence': 0.0, 'latency_order': 1.0}, 'scoring_mode': 'exclusive_latency_dominance', 'method': 'temporal-correlation-v2'}, 'payment-service': {'score': 0.031084242240993598, 'raw_score': 0.031084242240993598, 'is_first_anomaly': False, 'is_first_failure': False, 'failure_order': -1, 'anomaly_started_at': None, 'lead_ms': None, 'failure_lead_time_ms': 0.0, 'rank': 2, 'latency_rank': 2, 'latency_rank_score': 0.0, 'exclusive_latency_share': 0.031084242240993598, 'exclusive_latency_dominance_margin': 0.9378315155180128, 'exclusive_latency_dominance_detected': True, 'is_exclusive_latency_dominant': False, 'latency_order_method': 'exclusive_latency_order', 'exclusive_latency_ms': 55.451069, 'span_count': 1, 'error_count': 0, 'max_duration_ms': 55.451069, 'total_duration_ms': 55.451069, 'earliest_start': datetime.datetime(2026, 7, 28, 21, 29, 45, 508969, tzinfo=datetime.timezone.utc), 'latest_end': datetime.datetime(2026, 7, 28, 21, 29, 45, 564420, tzinfo=datetime.timezone.utc), 'first_error_start': None, 'depth': 2, 'upstream_services': ['order-service'], 'downstream_services': [], 'operations': ['POST /payments'], 'score_components': {'first_failure': 0.0, 'error_presence': 0.0, 'latency_order': 0.031084242240993598}, 'score_weights': {'first_failure': 0.0, 'error_presence': 0.0, 'latency_order': 1.0}, 'scoring_mode': 'exclusive_latency_dominance', 'method': 'temporal-correlation-v2'}}, 'timeline': [{'service': 'order-service', 'operation': 'POST /orders', 'span_id': 'b256a37047a5c71f', 'parent': None, 'start': datetime.datetime(2026, 7, 28, 21, 29, 43, 813021, tzinfo=datetime.timezone.utc), 'end': datetime.datetime(2026, 7, 28, 21, 29, 45, 596917, tzinfo=datetime.timezone.utc), 'duration': 1783.896405, 'error': False}, {'service': 'order-service', 'operation': 'POST', 'span_id': '0cb9d2684ece88fa', 'parent': 'b256a37047a5c71f', 'start': datetime.datetime(2026, 7, 28, 21, 29, 45, 430148, tzinfo=datetime.timezone.utc), 'end': datetime.datetime(2026, 7, 28, 21, 29, 45, 586481, tzinfo=datetime.timezone.utc), 'duration': 156.333088, 'error': False}, {'service': 'payment-service', 'operation': 'POST /payments', 'span_id': 'b9348ed19e959fbb', 'parent': '0cb9d2684ece88fa', 'start': datetime.datetime(2026, 7, 28, 21, 29, 45, 508969, tzinfo=datetime.timezone.utc), 'end': datetime.datetime(2026, 7, 28, 21, 29, 45, 564420, tzinfo=datetime.timezone.utc), 'duration': 55.451069, 'error': False}], 'first_failure': None, 'latency_order': ['order-service', 'payment-service'], 'latency_order_method': 'exclusive_latency_order', 'exclusive_latency_by_service': {'payment-service': 55.451069, 'order-service': 1728.4453686256104}, 'exclusive_latency_dominance': {'shares': {'payment-service': 0.031084242240993598, 'order-service': 0.9689157577590064}, 'ordered_services': ['order-service', 'payment-service'], 'top_service': 'order-service', 'top_latency_ms': 1728.4453686256104, 'minimum_latency_ms': 500.0, 'top_share': 0.9689157577590064, 'second_share': 0.031084242240993598, 'margin': 0.9378315155180128, 'is_meaningful': True, 'minimum_share': 0.7, 'minimum_margin': 0.2, 'total_exclusive_latency_ms': 1783.8964376256104}, 'trace_duration_ms': 1783.896, 'propagation': {'order-service': ['payment-service']}, 'service_depth': {'order-service': 0, 'payment-service': 2}, 'method': 'temporal-correlation-v2'}
+correlation-engine  | 
+correlation-engine  | ========== FEATURES ==========
+correlation-engine  | RCAFeature(service_name='order-service', request_count=2, error_count=0, error_rate=0.0, avg_latency_ms=970.1147465, max_latency_ms=1783.896405, incoming_dependencies=0, outgoing_dependencies=1, dependency_count=1, is_first_failure=False, failure_order=-1, failure_lead_time_ms=0.0, latency_zscore=0.0, anomaly_score=0.0, is_anomalous=False, exclusive_latency_ms=1728.4453686256104, exclusive_latency_ratio=0.9689159954535524)
+correlation-engine  | RCAFeature(service_name='payment-service', request_count=1, error_count=0, error_rate=0.0, avg_latency_ms=55.451069, max_latency_ms=55.451069, incoming_dependencies=1, outgoing_dependencies=0, dependency_count=1, is_first_failure=False, failure_order=-1, failure_lead_time_ms=0.0, latency_zscore=0.0, anomaly_score=0.0, is_anomalous=False, exclusive_latency_ms=55.451069, exclusive_latency_ratio=0.03108424986658415)
+correlation-engine  | 
+correlation-engine  | ========== RCA SUMMARY ==========
+correlation-engine  | rca_result_id=1b766719-fea4-4065-9101-d58c4550a8df
+correlation-engine  | trace_id=bec190cf62cd70df81cfb3cebeb923cc
+correlation-engine  | confidence=0.815696
+correlation-engine  | evidence_count=18
+correlation-engine  | 
+correlation-engine  | ========== PREDICTIONS ==========
+correlation-engine  | - service=order-service | prediction=1 | confidence=0.999823
+correlation-engine  | - service=payment-service | prediction=0 | confidence=0.000117
+correlation-engine  | 
+correlation-engine  | ========== SHAP SUMMARY ==========
+correlation-engine  | type=list | items=2
+correlation-engine  | 
+correlation-engine  | ========== RANKING ==========
+correlation-engine  | 1. service=order-service | final_score=0.815696 | scores={'model_probability': 0.9998229146003723, 'shap_support_score': 0.8879354523753267, 'temporal_score': 0.9689157577590064, 'graph_score': 0.0, 'anomaly_score': 0.0, 'final_score': 0.8156961804857819, 'component_weights': {'model_probability': 0.4, 'shap_support': 0.25, 'temporal': 0.2, 'graph': 0.15, 'anomaly': 0.0}, 'normalization_method': 'normalized_weighted_ranking_v1'}
+correlation-engine  | 2. service=payment-service | final_score=0.021854 | scores={'model_probability': 0.00011672528489725664, 'shap_support_score': 0.06236010349185146, 'temporal_score': 0.031084242240993598, 'graph_score': 0.0, 'anomaly_score': 0.0, 'final_score': 0.021853564435120487, 'component_weights': {'model_probability': 0.4, 'shap_support': 0.25, 'temporal': 0.2, 'graph': 0.15, 'anomaly': 0.0}, 'normalization_method': 'normalized_weighted_ranking_v1'}
+correlation-engine  | 
+correlation-engine  | ========== EVIDENCE SUMMARY ==========
+correlation-engine  | - service=order-service | type=anomaly | count=1
+correlation-engine  | - service=order-service | type=graph | count=1
+correlation-engine  | - service=order-service | type=model | count=1
+correlation-engine  | - service=order-service | type=shap | count=5
+correlation-engine  | - service=order-service | type=temporal | count=1
+correlation-engine  | - service=payment-service | type=anomaly | count=1
+correlation-engine  | - service=payment-service | type=graph | count=1
+correlation-engine  | - service=payment-service | type=model | count=1
+correlation-engine  | - service=payment-service | type=shap | count=5
+correlation-engine  | - service=payment-service | type=temporal | count=1
+correlation-engine  | 
+correlation-engine  | ========== RELIABILITY ==========
+correlation-engine  | {'is_reliable': True, 'confidence': 0.8156961804857819, 'confidence_method': 'reliability-gate-v1', 'minimum_confidence': 0.5, 'margin_to_second': 0.7938426160506613, 'minimum_margin': 0.05, 'passed_rules': ['ranking_present', 'minimum_confidence', 'minimum_margin', 'minimum_evidence_count', 'minimum_source_diversity'], 'failed_rules': []}
+correlation-engine  | RCAResult persisted | rca_result_id=1b766719-fea4-4065-9101-d58c4550a8df | trace_id=bec190cf62cd70df81cfb3cebeb923cc
+correlation-engine  | 
+correlation-engine  | ========== INCIDENT ==========
+correlation-engine  | created=True | incident_id=51187486-8e0c-498f-81ba-ac3cbd66025d | root_cause_service=order-service | confidence=0.815696
+
+STDERR
+

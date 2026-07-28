@@ -1,0 +1,14 @@
+$ sh -lc find correlation-engine/training/models -maxdepth 1 -type f \( -name 'xgboost_rca*.pkl' -o -name 'xgboost_rca*.json' -o -name 'xgboost_rca*.manifest.json' \) -print0 | sort -z | xargs -0 -r sha256sum
+exit_code=0
+
+STDOUT
+f0160972e4f977fd6cea2a9bf4819b75f2cc7265b8a75d6fe9ce7ed8b355c4c6  correlation-engine/training/models/xgboost_rca.pkl
+3b4267ca55f011daf47a5f1dbaca70480b82be8345ce77b2fa0fe7defc3f4f05  correlation-engine/training/models/xgboost_rca_legacy_v0.pkl
+e6701da41e63d58b99790f7c81acec0b37abec54d9a794921e6248ce2887277e  correlation-engine/training/models/xgboost_rca_metrics.json
+b9fff2f06aa162acd00228860d5e9910ef303d585dc80bc0e80dc968e5221523  correlation-engine/training/models/xgboost_rca_v2.manifest.json
+f418d45f92d91f338092768c1ee9e2dc257047b422d98a24b0be65cae01379d8  correlation-engine/training/models/xgboost_rca_v2.pkl
+4bd9c6c352fa8504dd33cdd7d53a1611191d64582415ee5f68b50888c7316859  correlation-engine/training/models/xgboost_rca_v2_metrics.json
+63fc1218874cc609e6f9dc52c36bce8abcb0e1b7cc5bedf214435a277adae9e0  correlation-engine/training/models/xgboost_rca_v2_sample_metrics.json
+
+STDERR
+

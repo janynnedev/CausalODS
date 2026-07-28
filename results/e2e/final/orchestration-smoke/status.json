@@ -1,0 +1,132 @@
+{
+  "campaign_id": "orchestration-smoke",
+  "state": "completed",
+  "started_at": "2026-07-28T21:23:28.884856+00:00",
+  "finished_at": "2026-07-28T21:30:33.700910+00:00",
+  "repeat": 1,
+  "versions": [
+    "v1",
+    "v2"
+  ],
+  "current_version": null,
+  "current_step": "finished",
+  "repository_root": "/home/palhetajso/projects/CausalODS",
+  "campaign_root": "/home/palhetajso/projects/CausalODS/results/e2e/final/orchestration-smoke",
+  "phases": {
+    "v1": {
+      "version": "v1",
+      "repeat": 1,
+      "expected_rows": 5,
+      "actual_rows": 5,
+      "passed_count": 3,
+      "failed_count": 2,
+      "scenario_counts": {
+        "healthy": 1,
+        "payment_failure": 1,
+        "payment_latency": 1,
+        "order_failure": 1,
+        "order_latency": 1
+      },
+      "confidence_by_scenario": {
+        "healthy": {
+          "count": 1,
+          "mean": 0.0009456053376197815,
+          "minimum": 0.0009456053376197815,
+          "maximum": 0.0009456053376197815
+        },
+        "payment_failure": {
+          "count": 1,
+          "mean": 0.5690543842315674,
+          "minimum": 0.5690543842315674,
+          "maximum": 0.5690543842315674
+        },
+        "payment_latency": {
+          "count": 1,
+          "mean": 0.19953868791157947,
+          "minimum": 0.19953868791157947,
+          "maximum": 0.19953868791157947
+        },
+        "order_failure": {
+          "count": 1,
+          "mean": 0.5990543842315674,
+          "minimum": 0.5990543842315674,
+          "maximum": 0.5990543842315674
+        },
+        "order_latency": {
+          "count": 1,
+          "mean": 0.19367154007558748,
+          "minimum": 0.19367154007558748,
+          "maximum": 0.19367154007558748
+        }
+      },
+      "completed_at": "2026-07-28T21:26:54.433939+00:00",
+      "runner_return_code": 1,
+      "runner_completed": true,
+      "scenario_failures_present": true,
+      "state": "completed_with_scenario_failures",
+      "json": "/home/palhetajso/projects/CausalODS/results/e2e/final/orchestration-smoke/v1/all-repeat1.json",
+      "csv": "/home/palhetajso/projects/CausalODS/results/e2e/final/orchestration-smoke/v1/all-repeat1.csv",
+      "log": "/home/palhetajso/projects/CausalODS/results/e2e/final/orchestration-smoke/v1/runner.log",
+      "finished_at": "2026-07-28T21:26:54.720799+00:00"
+    },
+    "v2": {
+      "version": "v2",
+      "repeat": 1,
+      "expected_rows": 5,
+      "actual_rows": 5,
+      "passed_count": 5,
+      "failed_count": 0,
+      "scenario_counts": {
+        "healthy": 1,
+        "payment_failure": 1,
+        "payment_latency": 1,
+        "order_failure": 1,
+        "order_latency": 1
+      },
+      "confidence_by_scenario": {
+        "healthy": {
+          "count": 1,
+          "mean": 0.019218145109378835,
+          "minimum": 0.019218145109378835,
+          "maximum": 0.019218145109378835
+        },
+        "payment_failure": {
+          "count": 1,
+          "mean": 0.7716313352968582,
+          "minimum": 0.7716313352968582,
+          "maximum": 0.7716313352968582
+        },
+        "payment_latency": {
+          "count": 1,
+          "mean": 0.8227819406717689,
+          "minimum": 0.8227819406717689,
+          "maximum": 0.8227819406717689
+        },
+        "order_failure": {
+          "count": 1,
+          "mean": 0.800033828558584,
+          "minimum": 0.800033828558584,
+          "maximum": 0.800033828558584
+        },
+        "order_latency": {
+          "count": 1,
+          "mean": 0.8156961804857819,
+          "minimum": 0.8156961804857819,
+          "maximum": 0.8156961804857819
+        }
+      },
+      "completed_at": "2026-07-28T21:30:11.413045+00:00",
+      "runner_return_code": 0,
+      "runner_completed": true,
+      "scenario_failures_present": false,
+      "state": "completed",
+      "json": "/home/palhetajso/projects/CausalODS/results/e2e/final/orchestration-smoke/v2/all-repeat1.json",
+      "csv": "/home/palhetajso/projects/CausalODS/results/e2e/final/orchestration-smoke/v2/all-repeat1.csv",
+      "log": "/home/palhetajso/projects/CausalODS/results/e2e/final/orchestration-smoke/v2/runner.log",
+      "finished_at": "2026-07-28T21:30:11.734032+00:00"
+    }
+  },
+  "errors": [],
+  "original_runtime": "v2",
+  "final_runtime": "v2"
+}

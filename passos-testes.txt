@@ -1,0 +1,368 @@
+Primeiro, pare o consumidor para impedir uma recriação automática durante a operação:
+
+docker compose stop \
+  correlation-engine
+
+Opcionalmente, preserve uma cópia dos registros antigos:
+
+curl -s -X POST \
+  "http://localhost:9200/causalods-incidents/_search?size=1000" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "query": {
+      "match_all": {}
+    }
+  }' \
+  > /tmp/causalods-incidents-backup.json
+  
+  
+Apague somente o índice de incidentes:
+
+curl -X DELETE \
+  "http://localhost:9200/causalods-incidents?pretty"  
+  
+  
+1. Ative o modo de erro
+
+Na raiz onde está o docker-compose.yml:
+
+CAUSALODS_FAULT_MODE=error \
+CAUSALODS_FAULT_RATE=1.0 \
+CAUSALODS_FAULT_DELAY_MS=1500 \
+CAUSALODS_FAULT_SEED=42 \
+docker compose up -d \
+  --force-recreate \
+  --no-deps \
+  payment-service
+
+Isso pressupõe que o docker-compose.yml tenha:
+
+environment:
+  CAUSALODS_FAULT_MODE: ${CAUSALODS_FAULT_MODE:-none}
+  CAUSALODS_FAULT_RATE: ${CAUSALODS_FAULT_RATE:-1.0}
+  CAUSALODS_FAULT_DELAY_MS: ${CAUSALODS_FAULT_DELAY_MS:-1500}
+  CAUSALODS_FAULT_SEED: ${CAUSALODS_FAULT_SEED:-42}
+2. Confirme dentro do container
+docker compose exec \
+  payment-service \
+  sh -lc 'env | sort | grep CAUSALODS_FAULT'
+
+O resultado esperado é:
+
+CAUSALODS_FAULT_DELAY_MS=1500
+CAUSALODS_FAULT_MODE=error
+CAUSALODS_FAULT_RATE=1.0
+CAUSALODS_FAULT_SEED=42
+
+Confira também o log de inicialização:
+
+docker compose logs \
+  --tail=100 \
+  payment-service \
+  | grep CAUSALODS_FAULT
+
+Esperado:
+
+CAUSALODS_FAULT_CONFIG mode=error rate=1.0 delayMs=1500 seed=42  
+
+
+O resultado esperado é:
+
+CAUSALODS_FAULT_DELAY_MS=1500
+CAUSALODS_FAULT_MODE=error
+CAUSALODS_FAULT_RATE=1.0
+CAUSALODS_FAULT_SEED=42
+
+Confira também o log de inicialização:
+
+docker compose logs \
+  --tail=100 \
+  payment-service \
+  | grep CAUSALODS_FAULT
+
+Esperado:
+
+CAUSALODS_FAULT_CONFIG mode=error rate=1.0 delayMs=1500 seed=42
+3. Teste diretamente o pagamento
+curl -i -X POST \
+  http://localhost:8082/payments \
+  -H "Content-Type: application/json" \
+  -d '{
+    "orderId": 999999,
+    "amount": 100.0
+  }'
+
+Deve retornar:
+
+HTTP/1.1 503
+4. Teste pelo order-service
+curl -i -X POST \
+  http://localhost:8081/orders \
+  -H "Content-Type: application/json" \
+  -d '{
+    "product": "Notebook-fault-test",
+    "quantity": 2
+  }'
+
+Deve retornar erro, provavelmente:
+
+HTTP 500
+
+Aguarde o fechamento do trace:
+
+sleep 8
+
+Depois consulte:
+
+docker compose logs \
+  --since=3m \
+  correlation-engine \
+  | grep -E \
+    "RCAFeature|RANKING|RELIABILITY|INCIDENT|is_reliable|created=|Traceback"
+
+O resultado esperado é:
+
+payment-service is_first_failure=True
+payment-service failure_order=1
+payment-service no topo do ranking
+is_reliable=True
+created=True
+Para desativar depois
+CAUSALODS_FAULT_MODE=none \
+docker compose up -d \
+  --force-recreate \
+  --no-deps \
+  payment-service
+
+Confirme:
+
+docker compose exec \
+  payment-service \
+  printenv CAUSALODS_FAULT_MODE
+
+Esperado:
+
+none
+
+Registre as contagens atuais:
+
+curl -s \
+  "http://localhost:9200/causalods-rca-results/_count?pretty"
+
+curl -s \
+  "http://localhost:9200/causalods-incidents/_count?pretty"
+
+Faça um pedido saudável:
+
+curl -i -X POST \
+  http://localhost:8081/orders \
+  -H "Content-Type: application/json" \
+  -d '{
+    "product": "Notebook-healthy-regression",
+    "quantity": 2
+  }'
+  
+  
+--- testando os cenários 
+
+7. Valide antes de executar
+
+Primeiro:
+
+python3 -m py_compile \
+  experiments/e2e_runner.py
+
+Depois confira o healthcheck:
+
+curl -i \
+  http://localhost:8082/actuator/health
+
+O esperado:
+
+{"status":"UP"}
+
+Por fim:
+
+python3 \
+  experiments/e2e_runner.py \
+  --scenario healthy
+
+  Execute sem alterar mais nada:
+
+python3 \
+  experiments/e2e_runner.py \
+  --scenario payment_failure
+Resultado esperado
+
+O início deve ser semelhante a:
+
+Scenario: payment_failure | iteration=1 | run_id=...
+
+payment-service ready | attempts=... | check=http | status=200 | application_status=UP
+Fault configured | mode=error
+Preparation traces settled | rca_count=...
+
+A requisição deve retornar algum status da família 5xx, provavelmente 500:
+
+Order request
+| scenario=payment_failure
+| http_status=500
+
+E o resultado final esperado é:
+
+Result: PASSED
+| scenario=payment_failure
+| top_service=payment-service
+| reliable=True
+| confidence=...
+| incident=payment-service
+
+Além disso:
+
+Passed: 1/1
+
+
+Passed: 10/10
+JSON: /home/palhetajso/projects/obs-platform/results/e2e/e2e-20260723T210141Z.json
+CSV:  /home/palhetajso/projects/obs-platform/results/e2e/e2e-20260723T210141Z.csv
+
+criando falha na order-service
+CAUSALODS_ORDER_FAULT_MODE=error \
+CAUSALODS_PAYMENT_FAULT_MODE=none \
+docker compose up -d \
+  --force-recreate \
+  --no-deps \
+  order-service
+
+
+requisição com falha:
+
+curl -i \
+  -X POST \
+  http://localhost:8081/orders \
+  -H "Content-Type: application/json" \
+  -d '{
+    "product": "validation-order-failure",
+    "quantity": 2
+  }'
+consultar logs:
+docker compose logs \
+  --since=2m \
+  order-service  
+  
+conferir se ativou a falha:
+docker compose exec order-service \
+  printenv CAUSALODS_FAULT_MODE
+
+conferir se pagamento está saldável:
+docker compose exec payment-service \
+  printenv CAUSALODS_FAULT_MODE  
+  
+restaurar a falha:
+CAUSALODS_ORDER_FAULT_MODE=none \
+CAUSALODS_PAYMENT_FAULT_MODE=none \
+docker compose up -d \
+  --force-recreate \
+  --no-deps \
+  payment-service \
+  order-service  
+  
+conferir order-service latency error:
+CAUSALODS_ORDER_FAULT_MODE=latency \
+CAUSALODS_ORDER_FAULT_RATE=1.0 \
+CAUSALODS_ORDER_FAULT_DELAY_MS=1500 \
+CAUSALODS_ORDER_FAULT_SEED=42 \
+CAUSALODS_PAYMENT_FAULT_MODE=none \
+docker compose up -d \
+  --force-recreate \
+  --no-deps \
+  order-service
+  
+ requisição:
+ until curl -fsS \
+  http://localhost:8081/actuator/health \
+  >/dev/null; do
+  sleep 1
+done
+
+curl -sS \
+  -o /tmp/order-latency-response.json \
+  -w 'HTTP=%{http_code}\nDURATION=%{time_total}s\n' \
+  -X POST \
+  http://localhost:8081/orders \
+  -H "Content-Type: application/json" \
+  -d '{
+    "product": "validation-order-latency",
+    "quantity": 2
+  }'
+
+cat /tmp/order-latency-response.json
+
+
+Próximo passo: alterar o e2e_runner.py
+
+O próximo passo é automatizar exatamente o que você acabou de executar manualmente.
+
+O runner deverá:
+
+1. receber o cenário;
+2. determinar qual serviço será o alvo;
+3. configurar order-service e payment-service separadamente;
+4. recriar apenas os serviços necessários;
+5. aguardar os serviços ficarem disponíveis;
+6. enviar o pedido;
+7. medir request_duration_ms;
+8. localizar o trace correspondente;
+9. consultar o RCA;
+10. validar o serviço previsto;
+11. validar reliability e incidente;
+12. restaurar os dois serviços para mode=none.
+
+Cenário	Alvo	Modo	HTTP esperado	Causa raiz
+healthy	nenhum	none	200	nenhuma
+payment_failure	payment	error	5xx	payment-service
+payment_latency	payment	latency	200	payment-service
+order_failure	order	error	503	order-service
+order_latency	order	latency	200	order-service
+
+Antes de alterar o runner, preserve a versão atual:
+
+cp \
+  experiments/e2e_runner.py \
+  experiments/e2e_runner.before-order-scenarios.py
+
+Confira:
+
+ls -lh \
+  experiments/e2e_runner*.py
+  
+  
+3. Campanha final
+
+Para uma comparação atualizada entre v1 e v2:
+
+5 cenários
+× 50 repetições
+× 2 versões
+= 500 execuções
+
+A campanha precisa ser executada separadamente para cada versão:
+
+python3 experiments/e2e_runner.py \
+  --scenario all \
+  --repeat 50 \
+  --expected-runtime-version v1
+
+Depois:
+
+python3 experiments/e2e_runner.py \
+  --scenario all \
+  --repeat 50 \
+  --expected-runtime-version v2
+
+Não recomendo iniciar essas 500 execuções manualmente antes de criar o orquestrador, porque erros de versão, diretório ou restauração podem invalidar a comparação.  
+  
+  
+./experiments/run_e2e_campaign.sh \
+  start \
+  --campaign-id final-v1-v2-50  

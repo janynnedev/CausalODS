@@ -33,13 +33,14 @@ ORDER_URL = (
     "http://localhost:8081/orders"
 )
 
-PAYMENT_HOST = "127.0.0.1"
-
-PAYMENT_PORT = 8082
-
-PAYMENT_BASE_URL = (
-    "http://localhost:8082"
-)
+SERVICE_BASE_URLS = {
+    "order-service": (
+        "http://localhost:8081"
+    ),
+    "payment-service": (
+        "http://localhost:8082"
+    ),
+}
 
 OPENSEARCH_URL = (
     "http://localhost:9200"
@@ -62,6 +63,10 @@ CORRELATION_CONTAINER = (
 class Scenario:
 
     name: str
+
+    fault_target: (
+        str | None
+    )
 
     fault_mode: str
 
@@ -89,6 +94,7 @@ class Scenario:
 SCENARIOS = {
     "healthy": Scenario(
         name="healthy",
+        fault_target=None,
         fault_mode="none",
         fault_rate=0.0,
         fault_delay_ms=0,
@@ -101,7 +107,13 @@ SCENARIOS = {
 
     "payment_failure": Scenario(
         name="payment_failure",
+        fault_target=(
+            "payment-service"
+        ),
         fault_mode="error",
+        fault_rate=1.0,
+        fault_delay_ms=0,
+        fault_seed=42,
         expected_http_family=5,
         expected_top_service=(
             "payment-service"
@@ -109,17 +121,62 @@ SCENARIOS = {
         expected_reliable=True,
         expected_incident=True,
     ),
+
     "payment_latency": Scenario(
         name="payment_latency",
+        fault_target=(
+            "payment-service"
+        ),
         fault_mode="latency",
         fault_rate=1.0,
         fault_delay_ms=1500,
         fault_seed=42,
         expected_http_family=2,
-        expected_top_service="payment-service",
+        expected_top_service=(
+            "payment-service"
+        ),
         expected_reliable=True,
         expected_incident=True,
-        expected_min_request_duration_ms=1200.0,
+        expected_min_request_duration_ms=(
+            1200.0
+        ),
+    ),
+
+    "order_failure": Scenario(
+        name="order_failure",
+        fault_target=(
+            "order-service"
+        ),
+        fault_mode="error",
+        fault_rate=1.0,
+        fault_delay_ms=0,
+        fault_seed=42,
+        expected_http_family=5,
+        expected_top_service=(
+            "order-service"
+        ),
+        expected_reliable=True,
+        expected_incident=True,
+    ),
+
+    "order_latency": Scenario(
+        name="order_latency",
+        fault_target=(
+            "order-service"
+        ),
+        fault_mode="latency",
+        fault_rate=1.0,
+        fault_delay_ms=1500,
+        fault_seed=42,
+        expected_http_family=2,
+        expected_top_service=(
+            "order-service"
+        ),
+        expected_reliable=True,
+        expected_incident=True,
+        expected_min_request_duration_ms=(
+            1200.0
+        ),
     ),
 }
 
@@ -135,6 +192,11 @@ class ScenarioResult:
     finished_at: str | None = None
     duration_ms: float | None = None
 
+    runtime_model_version: str | None = None
+    model_version: str | None = None
+    pipeline_version: str | None = None
+
+    fault_target: str | None = None
     fault_mode: str | None = None
     fault_rate: float | None = None
     fault_delay_ms: int | None = None
@@ -223,6 +285,35 @@ def run_command(
         )
 
     return completed.stdout.strip()
+
+
+def read_rca_runtime_version() -> str:
+
+    value = run_command(
+        [
+            "docker",
+            "compose",
+            "exec",
+            "-T",
+            CORRELATION_CONTAINER,
+            "printenv",
+            "RCA_MODEL_VERSION",
+        ]
+    ).strip()
+
+    if value not in {
+        "v1",
+        "v2",
+    }:
+
+        raise RuntimeError(
+            "RCA_MODEL_VERSION inválida no "
+            f"{CORRELATION_CONTAINER}: "
+            f"{value!r}."
+        )
+
+    return value
+
 
 def container_logs_since(
     container_name: str,
@@ -481,22 +572,28 @@ def wait_for_container_running(
         f"Último estado={last_state!r}."
     )
 
-def wait_for_payment_service_ready(
-    payment_base_url: str = PAYMENT_BASE_URL,
+def wait_for_service_ready(
+    service_name: str,
     *,
     max_attempts: int = 60,
     interval_seconds: float = 1.0,
     request_timeout_seconds: float = 2.0,
 ) -> None:
     """
-    Aguarda o payment-service responder semanticamente como UP.
+    Aguarda o serviço responder semanticamente como UP.
 
-    Diferentemente do teste TCP, esta verificação confirma que
-    o Spring Boot e o endpoint Actuator estão operacionais.
+    A verificação usa o endpoint Actuator do próprio serviço.
     """
 
+    if service_name not in SERVICE_BASE_URLS:
+
+        raise ValueError(
+            "Serviço não configurado para readiness: "
+            f"{service_name!r}."
+        )
+
     health_url = (
-        f"{payment_base_url.rstrip('/')}"
+        f"{SERVICE_BASE_URLS[service_name].rstrip('/')}"
         "/actuator/health"
     )
 
@@ -539,7 +636,7 @@ def wait_for_payment_service_ready(
 
                 print(
                     (
-                        "payment-service ready"
+                        f"{service_name} ready"
                         f" | attempts={attempt}"
                         " | check=http"
                         f" | status={status}"
@@ -570,7 +667,7 @@ def wait_for_payment_service_ready(
         )
 
     raise TimeoutError(
-        "payment-service não ficou "
+        f"{service_name} não ficou "
         "funcionalmente pronto. "
         f"url={health_url}; "
         f"tentativas={max_attempts}; "
@@ -579,24 +676,60 @@ def wait_for_payment_service_ready(
         f"último_erro={last_error!r}."
     )
 
-def configure_fault(
-   *,
-    mode: str,
-    rate: float,
-    delay_ms: int,
-    seed: int,
+
+def read_fault_configuration(
+    service_name: str,
+) -> dict[str, str] | None:
+    """
+    Lê a configuração interna CAUSALODS_FAULT_* do container.
+
+    Os nomes externos ORDER/PAYMENT existem apenas no Compose.
+    Dentro de cada container os nomes permanecem genéricos.
+    """
+
+    try:
+
+        output = run_command(
+            [
+                "docker",
+                "compose",
+                "exec",
+                "-T",
+                service_name,
+                "sh",
+                "-lc",
+                (
+                    "printf '%s|%s|%s|%s' "
+                    "\"$CAUSALODS_FAULT_MODE\" "
+                    "\"$CAUSALODS_FAULT_RATE\" "
+                    "\"$CAUSALODS_FAULT_DELAY_MS\" "
+                    "\"$CAUSALODS_FAULT_SEED\""
+                ),
+            ]
+        )
+
+    except RuntimeError:
+
+        return None
+
+    parts = output.split("|")
+
+    if len(parts) != 4:
+        return None
+
+    return {
+        "mode": parts[0],
+        "rate": parts[1],
+        "delay_ms": parts[2],
+        "seed": parts[3],
+    }
+
+
+def recreate_service(
+    *,
+    service_name: str,
+    environment: dict[str, str],
 ) -> None:
-
-    environment = os.environ.copy()
-
-    environment.update(
-        {
-            "CAUSALODS_FAULT_MODE": mode,
-            "CAUSALODS_FAULT_RATE": str(rate),
-            "CAUSALODS_FAULT_DELAY_MS": str(delay_ms),
-            "CAUSALODS_FAULT_SEED": str(seed),
-        }
-    )
 
     run_command(
         [
@@ -606,47 +739,228 @@ def configure_fault(
             "-d",
             "--force-recreate",
             "--no-deps",
-            "payment-service",
+            service_name,
         ],
         environment=environment,
     )
 
     wait_for_container_running(
-        "payment-service"
+        service_name
     )
 
-    configured_mode = run_command(
-        [
-            "docker",
-            "compose",
-            "exec",
-            "-T",
-            "payment-service",
-            "printenv",
-            "CAUSALODS_FAULT_MODE",
-        ]
+    wait_for_service_ready(
+        service_name
     )
 
-    if configured_mode != mode:
 
-        raise RuntimeError(
-            "Modo de falha incorreto no "
-            "payment-service. "
-            f"Esperado={mode!r}; "
-            f"encontrado={configured_mode!r}."
+def configure_faults(
+    *,
+    target: str | None,
+    mode: str,
+    rate: float,
+    delay_ms: int,
+    seed: int,
+) -> None:
+    """
+    Configura a falha em somente um serviço e mantém o outro em none.
+
+    O Compose mapeia:
+      CAUSALODS_ORDER_FAULT_*   -> order-service/CAUSALODS_FAULT_*
+      CAUSALODS_PAYMENT_FAULT_* -> payment-service/CAUSALODS_FAULT_*
+    """
+
+    allowed_targets = {
+        None,
+        "order-service",
+        "payment-service",
+    }
+
+    if target not in allowed_targets:
+
+        raise ValueError(
+            "Alvo de falha inválido: "
+            f"{target!r}."
         )
 
-    wait_for_payment_service_ready(
-        PAYMENT_BASE_URL
+    allowed_modes = {
+        "none",
+        "latency",
+        "error",
+        "latency_error",
+    }
+
+    if mode not in allowed_modes:
+
+        raise ValueError(
+            "Modo de falha inválido: "
+            f"{mode!r}."
+        )
+
+    if target is None and mode != "none":
+
+        raise ValueError(
+            "Cenário sem alvo deve usar "
+            "fault_mode='none'."
+        )
+
+    order_mode = (
+        mode
+        if target == "order-service"
+        else "none"
     )
+
+    payment_mode = (
+        mode
+        if target == "payment-service"
+        else "none"
+    )
+
+    order_rate = (
+        rate
+        if target == "order-service"
+        else 0.0
+    )
+
+    order_delay_ms = (
+        delay_ms
+        if target == "order-service"
+        else 0
+    )
+
+    payment_rate = (
+        rate
+        if target == "payment-service"
+        else 0.0
+    )
+
+    payment_delay_ms = (
+        delay_ms
+        if target == "payment-service"
+        else 0
+    )
+
+    environment = os.environ.copy()
+
+    environment.update(
+        {
+            "CAUSALODS_ORDER_FAULT_MODE":
+                order_mode,
+            "CAUSALODS_ORDER_FAULT_RATE":
+                str(order_rate),
+            "CAUSALODS_ORDER_FAULT_DELAY_MS":
+                str(order_delay_ms),
+            "CAUSALODS_ORDER_FAULT_SEED":
+                str(seed),
+
+            "CAUSALODS_PAYMENT_FAULT_MODE":
+                payment_mode,
+            "CAUSALODS_PAYMENT_FAULT_RATE":
+                str(payment_rate),
+            "CAUSALODS_PAYMENT_FAULT_DELAY_MS":
+                str(payment_delay_ms),
+            "CAUSALODS_PAYMENT_FAULT_SEED":
+                str(seed),
+        }
+    )
+
+    desired_configurations = {
+        "payment-service": {
+            "mode": payment_mode,
+            "rate": str(payment_rate),
+            "delay_ms": str(payment_delay_ms),
+            "seed": str(seed),
+        },
+        "order-service": {
+            "mode": order_mode,
+            "rate": str(order_rate),
+            "delay_ms": str(order_delay_ms),
+            "seed": str(seed),
+        },
+    }
+
+    changed_services: list[str] = []
+
+    # payment-service vem primeiro para que o order-service
+    # nunca seja liberado antes do downstream necessário.
+    for service_name in (
+        "payment-service",
+        "order-service",
+    ):
+
+        current_configuration = (
+            read_fault_configuration(
+                service_name
+            )
+        )
+
+        desired_configuration = (
+            desired_configurations[
+                service_name
+            ]
+        )
+
+        if (
+            current_configuration
+            == desired_configuration
+        ):
+
+            print(
+                (
+                    "Fault configuration unchanged"
+                    f" | service={service_name}"
+                    f" | mode="
+                    f"{desired_configuration['mode']}"
+                ),
+                flush=True,
+            )
+
+            continue
+
+        recreate_service(
+            service_name=service_name,
+            environment=environment,
+        )
+
+        changed_services.append(
+            service_name
+        )
+
+    for (
+        service_name,
+        expected_configuration,
+    ) in desired_configurations.items():
+
+        configured = (
+            read_fault_configuration(
+                service_name
+            )
+        )
+
+        if configured != expected_configuration:
+
+            raise RuntimeError(
+                "Configuração de falha incorreta "
+                f"no {service_name}. "
+                f"Esperado={expected_configuration}; "
+                f"encontrado={configured}."
+            )
 
     print(
         (
-            "Fault configured"
-            f" | mode={configured_mode}"
+            "Faults configured"
+            f" | target={target}"
+            f" | requested_mode={mode}"
+            f" | order_mode={order_mode}"
+            f" | payment_mode={payment_mode}"
+            f" | target_rate={rate}"
+            f" | target_delay_ms={delay_ms}"
+            f" | seed={seed}"
+            " | recreated="
+            f"{changed_services or ['none']}"
         ),
         flush=True,
     )
+
 
 def refresh_index(
     index_name: str,
@@ -1041,6 +1355,31 @@ def evaluate(
         )
 
     if (
+        scenario.expected_min_request_duration_ms
+        is not None
+    ):
+
+        if result.request_duration_ms is None:
+
+            failures.append(
+                "A duração da requisição não foi "
+                "registrada."
+            )
+
+        elif (
+            result.request_duration_ms
+            < scenario.expected_min_request_duration_ms
+        ):
+
+            failures.append(
+                "Latência HTTP abaixo do mínimo "
+                "esperado: observado="
+                f"{result.request_duration_ms:.3f} ms; "
+                "mínimo="
+                f"{scenario.expected_min_request_duration_ms:.3f} ms."
+            )
+
+    if (
         result.rca_count_before is not None
         and result.rca_count_after is not None
     ):
@@ -1146,6 +1485,7 @@ def evaluate(
 def run_scenario(
     scenario: Scenario,
     iteration: int,
+    runtime_model_version: str,
 ) -> ScenarioResult:
 
     run_id = uuid.uuid4().hex[:12]
@@ -1163,6 +1503,10 @@ def run_scenario(
         started_at=(
             started_at_datetime.isoformat()
         ),
+        runtime_model_version=(
+            runtime_model_version
+        ),
+        fault_target=scenario.fault_target,
         fault_mode=scenario.fault_mode,
         fault_rate=scenario.fault_rate,
         fault_delay_ms=scenario.fault_delay_ms,
@@ -1189,7 +1533,8 @@ def run_scenario(
 
     try:
 
-        configure_fault(
+        configure_faults(
+            target=scenario.fault_target,
             mode=scenario.fault_mode,
             rate=scenario.fault_rate,
             delay_ms=scenario.fault_delay_ms,
@@ -1315,6 +1660,39 @@ def run_scenario(
                 "rca_result_id"
             )
         )
+
+        result.model_version = (
+            rca_document.get(
+                "model_version"
+            )
+        )
+
+        result.pipeline_version = (
+            rca_document.get(
+                "pipeline_version"
+            )
+        )
+
+        expected_pipeline_version = (
+            "causalods-rca-"
+            f"{runtime_model_version}"
+        )
+
+        if (
+            result.pipeline_version
+            != expected_pipeline_version
+        ):
+
+            raise RuntimeError(
+                "A versão persistida da pipeline "
+                "não corresponde ao runtime do "
+                "correlation-engine. "
+                f"Runtime={runtime_model_version!r}; "
+                "pipeline_version="
+                f"{result.pipeline_version!r}; "
+                "esperado="
+                f"{expected_pipeline_version!r}."
+            )
 
         document_trace_id = (
             rca_document.get(
@@ -1504,6 +1882,12 @@ def run_scenario(
             f"{result.confidence}"
             f" | incident="
             f"{result.incident_root_cause}"
+            f" | runtime="
+            f"{result.runtime_model_version}"
+            f" | model_version="
+            f"{result.model_version}"
+            f" | pipeline_version="
+            f"{result.pipeline_version}"
         ),
         flush=True,
     )
@@ -1626,6 +2010,20 @@ def parse_arguments():
         default=1,
     )
 
+    parser.add_argument(
+        "--expected-runtime-version",
+        choices=[
+            "v1",
+            "v2",
+        ],
+        default=None,
+        help=(
+            "Interrompe a execução se o "
+            "correlation-engine estiver usando "
+            "outra RCA_MODEL_VERSION."
+        ),
+    )
+
     return parser.parse_args()
 
 
@@ -1640,17 +2038,38 @@ def main() -> int:
             "que zero."
         )
 
+    runtime_model_version = (
+        read_rca_runtime_version()
+    )
+
+    if (
+        arguments.expected_runtime_version
+        is not None
+        and runtime_model_version
+        != arguments.expected_runtime_version
+    ):
+
+        raise RuntimeError(
+            "Versão RCA inesperada. "
+            "correlation-engine="
+            f"{runtime_model_version!r}; "
+            "esperado="
+            f"{arguments.expected_runtime_version!r}."
+        )
+
+    print(
+        (
+            "RCA runtime verified"
+            f" | version={runtime_model_version}"
+        ),
+        flush=True,
+    )
+
     if arguments.scenario == "all":
 
-        selected_scenarios = [
-            SCENARIOS["healthy"],
-            SCENARIOS[
-                "payment_failure"
-            ],
-            SCENARIOS[
-                "payment_latency"
-            ],
-        ]
+        selected_scenarios = list(
+            SCENARIOS.values()
+        )
 
     else:
 
@@ -1679,6 +2098,9 @@ def main() -> int:
                     run_scenario(
                         scenario=scenario,
                         iteration=iteration,
+                        runtime_model_version=(
+                            runtime_model_version
+                        ),
                     )
                 )
 
@@ -1686,14 +2108,18 @@ def main() -> int:
 
         print()
         print(
-            "Restoring payment-service "
-            "to fault_mode=none...",
+            (
+                "Restoring order-service and "
+                "payment-service to "
+                "fault_mode=none..."
+            ),
             flush=True,
         )
 
         try:
 
-            configure_fault(
+            configure_faults(
+                target=None,
                 mode="none",
                 rate=0.0,
                 delay_ms=0,
@@ -1703,8 +2129,11 @@ def main() -> int:
         except Exception as exception:
 
             print(
-                "Falha ao restaurar payment-service: "
-                f"{exception}",
+                (
+                    "Falha ao restaurar os serviços "
+                    "para fault_mode=none: "
+                    f"{exception}"
+                ),
                 flush=True,
             )
 

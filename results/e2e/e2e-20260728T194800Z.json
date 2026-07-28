@@ -1,0 +1,35 @@
+[
+  {
+    "run_id": "e81ac30a64ca",
+    "scenario": "payment_latency",
+    "iteration": 1,
+    "started_at": "2026-07-28T19:47:13.958660+00:00",
+    "finished_at": "2026-07-28T19:47:51.199605+00:00",
+    "duration_ms": 37240.94500000001,
+    "fault_target": "payment-service",
+    "fault_mode": "latency",
+    "fault_rate": 1.0,
+    "fault_delay_ms": 1500,
+    "fault_seed": 42,
+    "http_status": 200,
+    "request_duration_ms": 1560.2277430007234,
+    "rca_count_before": 158,
+    "rca_count_after": 159,
+    "incident_count_before": 53,
+    "incident_count_after": 53,
+    "rca_result_id": "b5d30431-fed0-46d7-84dd-80d37e67201d",
+    "trace_id": "4a756aba391a017789d1b406117375dd",
+    "top_service": "payment-service",
+    "confidence": 0.19966096872138697,
+    "is_reliable": false,
+    "incident_id": null,
+    "incident_root_cause": null,
+    "restart_count_before": 0,
+    "restart_count_after": 0,
+    "passed": false,
+    "failures": [
+      "Decisão de confiabilidade incorreta: esperado=True; encontrado=False.",
+      "Criação de incidente incorreta: esperado=True; encontrado=False."
+    ]
+  }
+]

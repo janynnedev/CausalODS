@@ -1,0 +1,28 @@
+{
+  "campaign_id": "orchestration-smoke",
+  "state": "failed",
+  "started_at": "2026-07-28T21:18:06.716167+00:00",
+  "finished_at": "2026-07-28T21:18:07.236663+00:00",
+  "repeat": 1,
+  "versions": [
+    "v1",
+    "v2"
+  ],
+  "current_version": null,
+  "current_step": "finished",
+  "repository_root": "/workspaces/CausalODS",
+  "campaign_root": "/workspaces/CausalODS/results/e2e/final/orchestration-smoke",
+  "phases": {},
+  "errors": [
+    {
+      "type": "RuntimeError",
+      "message": "Comando falhou:\ndocker compose exec -T correlation-engine printenv RCA_MODEL_VERSION\n\nSTDOUT:\n\n\nSTDERR:\npermission denied while trying to connect to the docker API at unix:///var/run/docker.sock\n",
+      "at": "2026-07-28T21:18:06.987550+00:00"
+    },
+    {
+      "type": "RuntimeError",
+      "message": "Falha ao configurar runtime final: Comando falhou:\ndocker compose up -d --force-recreate --no-deps correlation-engine\n\nSTDOUT:\n\n\nSTDERR:\nunable to get image 'causalods-correlation-engine': permission denied while trying to connect to the docker API at unix:///var/run/docker.sock\n",
+      "at": "2026-07-28T21:18:07.132617+00:00"
+    }
+  ]
+}

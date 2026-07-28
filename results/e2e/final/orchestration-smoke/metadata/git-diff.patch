@@ -1,0 +1,1265 @@
+$ git diff --binary
+exit_code=0
+
+STDOUT
+diff --git a/correlation-engine/pipeline/rca_pipeline.py b/correlation-engine/pipeline/rca_pipeline.py
+index 2ffde58..3ab8195 100644
+--- a/correlation-engine/pipeline/rca_pipeline.py
++++ b/correlation-engine/pipeline/rca_pipeline.py
+@@ -727,7 +727,14 @@ class RCAPipeline:
+             if value:
+                 return str(value)
+ 
+-        return "xgboost-rca-v1"    
++        if (
++            self.model_runtime_version
++            == "v2"
++        ):
++
++            return "xgboost-rca-v2"
++
++        return "xgboost-rca-v1"
+ 
+     def _get_pipeline_version(
+         self,
+diff --git a/docker-compose.yml b/docker-compose.yml
+index 3dda78b..b6e5f21 100644
+--- a/docker-compose.yml
++++ b/docker-compose.yml
+@@ -1,5 +1,3 @@
+-version: '3.9'
+-
+ services:
+ 
+   order-service:
+@@ -23,6 +21,11 @@ services:
+ 
+       PAYMENT_SERVICE_URL: http://payment-service:8082
+ 
++      CAUSALODS_FAULT_MODE: ${CAUSALODS_ORDER_FAULT_MODE:-none}
++      CAUSALODS_FAULT_RATE: ${CAUSALODS_ORDER_FAULT_RATE:-1.0}
++      CAUSALODS_FAULT_DELAY_MS: ${CAUSALODS_ORDER_FAULT_DELAY_MS:-1500}
++      CAUSALODS_FAULT_SEED: ${CAUSALODS_ORDER_FAULT_SEED:-42}
++
+       JAVA_TOOL_OPTIONS: >
+         -javaagent:/otel/opentelemetry-javaagent.jar
+ 
+@@ -83,10 +86,10 @@ services:
+ 
+       OTEL_RESOURCE_ATTRIBUTES: deployment.environment=development  
+ 
+-      CAUSALODS_FAULT_MODE: ${CAUSALODS_FAULT_MODE:-none}
+-      CAUSALODS_FAULT_RATE: ${CAUSALODS_FAULT_RATE:-1.0}
+-      CAUSALODS_FAULT_DELAY_MS: ${CAUSALODS_FAULT_DELAY_MS:-1500}
+-      CAUSALODS_FAULT_SEED: ${CAUSALODS_FAULT_SEED:-42}
++      CAUSALODS_FAULT_MODE: ${CAUSALODS_PAYMENT_FAULT_MODE:-none}
++      CAUSALODS_FAULT_RATE: ${CAUSALODS_PAYMENT_FAULT_RATE:-1.0}
++      CAUSALODS_FAULT_DELAY_MS: ${CAUSALODS_PAYMENT_FAULT_DELAY_MS:-1500}
++      CAUSALODS_FAULT_SEED: ${CAUSALODS_PAYMENT_FAULT_SEED:-42}
+ 
+     depends_on:
+       - otel-collector
+@@ -280,7 +283,7 @@ services:
+ 
+       MODEL_PATH: /app/training/models/xgboost_rca.pkl
+ 
+-      RCA_MODEL_VERSION: ${RCA_MODEL_VERSION:-v1}
++      RCA_MODEL_VERSION: ${RCA_MODEL_VERSION:-v2}
+ 
+       MODEL_PATH_V2: ${MODEL_PATH_V2:-training/models/xgboost_rca_v2.pkl}
+ 
+diff --git a/experiments/e2e_runner.py b/experiments/e2e_runner.py
+index 337b7ca..c21bb01 100644
+--- a/experiments/e2e_runner.py
++++ b/experiments/e2e_runner.py
+@@ -33,13 +33,14 @@ ORDER_URL = (
+     "http://localhost:8081/orders"
+ )
+ 
+-PAYMENT_HOST = "127.0.0.1"
+-
+-PAYMENT_PORT = 8082
+-
+-PAYMENT_BASE_URL = (
+-    "http://localhost:8082"
+-)
++SERVICE_BASE_URLS = {
++    "order-service": (
++        "http://localhost:8081"
++    ),
++    "payment-service": (
++        "http://localhost:8082"
++    ),
++}
+ 
+ OPENSEARCH_URL = (
+     "http://localhost:9200"
+@@ -63,6 +64,10 @@ class Scenario:
+ 
+     name: str
+ 
++    fault_target: (
++        str | None
++    )
++
+     fault_mode: str
+ 
+     expected_http_family: int
+@@ -89,6 +94,7 @@ class Scenario:
+ SCENARIOS = {
+     "healthy": Scenario(
+         name="healthy",
++        fault_target=None,
+         fault_mode="none",
+         fault_rate=0.0,
+         fault_delay_ms=0,
+@@ -101,7 +107,13 @@ SCENARIOS = {
+ 
+     "payment_failure": Scenario(
+         name="payment_failure",
++        fault_target=(
++            "payment-service"
++        ),
+         fault_mode="error",
++        fault_rate=1.0,
++        fault_delay_ms=0,
++        fault_seed=42,
+         expected_http_family=5,
+         expected_top_service=(
+             "payment-service"
+@@ -109,17 +121,62 @@ SCENARIOS = {
+         expected_reliable=True,
+         expected_incident=True,
+     ),
++
+     "payment_latency": Scenario(
+         name="payment_latency",
++        fault_target=(
++            "payment-service"
++        ),
++        fault_mode="latency",
++        fault_rate=1.0,
++        fault_delay_ms=1500,
++        fault_seed=42,
++        expected_http_family=2,
++        expected_top_service=(
++            "payment-service"
++        ),
++        expected_reliable=True,
++        expected_incident=True,
++        expected_min_request_duration_ms=(
++            1200.0
++        ),
++    ),
++
++    "order_failure": Scenario(
++        name="order_failure",
++        fault_target=(
++            "order-service"
++        ),
++        fault_mode="error",
++        fault_rate=1.0,
++        fault_delay_ms=0,
++        fault_seed=42,
++        expected_http_family=5,
++        expected_top_service=(
++            "order-service"
++        ),
++        expected_reliable=True,
++        expected_incident=True,
++    ),
++
++    "order_latency": Scenario(
++        name="order_latency",
++        fault_target=(
++            "order-service"
++        ),
+         fault_mode="latency",
+         fault_rate=1.0,
+         fault_delay_ms=1500,
+         fault_seed=42,
+         expected_http_family=2,
+-        expected_top_service="payment-service",
++        expected_top_service=(
++            "order-service"
++        ),
+         expected_reliable=True,
+         expected_incident=True,
+-        expected_min_request_duration_ms=1200.0,
++        expected_min_request_duration_ms=(
++            1200.0
++        ),
+     ),
+ }
+ 
+@@ -135,6 +192,11 @@ class ScenarioResult:
+     finished_at: str | None = None
+     duration_ms: float | None = None
+ 
++    runtime_model_version: str | None = None
++    model_version: str | None = None
++    pipeline_version: str | None = None
++
++    fault_target: str | None = None
+     fault_mode: str | None = None
+     fault_rate: float | None = None
+     fault_delay_ms: int | None = None
+@@ -224,6 +286,35 @@ def run_command(
+ 
+     return completed.stdout.strip()
+ 
++
++def read_rca_runtime_version() -> str:
++
++    value = run_command(
++        [
++            "docker",
++            "compose",
++            "exec",
++            "-T",
++            CORRELATION_CONTAINER,
++            "printenv",
++            "RCA_MODEL_VERSION",
++        ]
++    ).strip()
++
++    if value not in {
++        "v1",
++        "v2",
++    }:
++
++        raise RuntimeError(
++            "RCA_MODEL_VERSION inválida no "
++            f"{CORRELATION_CONTAINER}: "
++            f"{value!r}."
++        )
++
++    return value
++
++
+ def container_logs_since(
+     container_name: str,
+     since: str,
+@@ -481,22 +572,28 @@ def wait_for_container_running(
+         f"Último estado={last_state!r}."
+     )
+ 
+-def wait_for_payment_service_ready(
+-    payment_base_url: str = PAYMENT_BASE_URL,
++def wait_for_service_ready(
++    service_name: str,
+     *,
+     max_attempts: int = 60,
+     interval_seconds: float = 1.0,
+     request_timeout_seconds: float = 2.0,
+ ) -> None:
+     """
+-    Aguarda o payment-service responder semanticamente como UP.
++    Aguarda o serviço responder semanticamente como UP.
+ 
+-    Diferentemente do teste TCP, esta verificação confirma que
+-    o Spring Boot e o endpoint Actuator estão operacionais.
++    A verificação usa o endpoint Actuator do próprio serviço.
+     """
+ 
++    if service_name not in SERVICE_BASE_URLS:
++
++        raise ValueError(
++            "Serviço não configurado para readiness: "
++            f"{service_name!r}."
++        )
++
+     health_url = (
+-        f"{payment_base_url.rstrip('/')}"
++        f"{SERVICE_BASE_URLS[service_name].rstrip('/')}"
+         "/actuator/health"
+     )
+ 
+@@ -539,7 +636,7 @@ def wait_for_payment_service_ready(
+ 
+                 print(
+                     (
+-                        "payment-service ready"
++                        f"{service_name} ready"
+                         f" | attempts={attempt}"
+                         " | check=http"
+                         f" | status={status}"
+@@ -570,7 +667,7 @@ def wait_for_payment_service_ready(
+         )
+ 
+     raise TimeoutError(
+-        "payment-service não ficou "
++        f"{service_name} não ficou "
+         "funcionalmente pronto. "
+         f"url={health_url}; "
+         f"tentativas={max_attempts}; "
+@@ -579,24 +676,60 @@ def wait_for_payment_service_ready(
+         f"último_erro={last_error!r}."
+     )
+ 
+-def configure_fault(
+-   *,
+-    mode: str,
+-    rate: float,
+-    delay_ms: int,
+-    seed: int,
+-) -> None:
+ 
+-    environment = os.environ.copy()
++def read_fault_configuration(
++    service_name: str,
++) -> dict[str, str] | None:
++    """
++    Lê a configuração interna CAUSALODS_FAULT_* do container.
+ 
+-    environment.update(
+-        {
+-            "CAUSALODS_FAULT_MODE": mode,
+-            "CAUSALODS_FAULT_RATE": str(rate),
+-            "CAUSALODS_FAULT_DELAY_MS": str(delay_ms),
+-            "CAUSALODS_FAULT_SEED": str(seed),
+-        }
+-    )
++    Os nomes externos ORDER/PAYMENT existem apenas no Compose.
++    Dentro de cada container os nomes permanecem genéricos.
++    """
++
++    try:
++
++        output = run_command(
++            [
++                "docker",
++                "compose",
++                "exec",
++                "-T",
++                service_name,
++                "sh",
++                "-lc",
++                (
++                    "printf '%s|%s|%s|%s' "
++                    "\"$CAUSALODS_FAULT_MODE\" "
++                    "\"$CAUSALODS_FAULT_RATE\" "
++                    "\"$CAUSALODS_FAULT_DELAY_MS\" "
++                    "\"$CAUSALODS_FAULT_SEED\""
++                ),
++            ]
++        )
++
++    except RuntimeError:
++
++        return None
++
++    parts = output.split("|")
++
++    if len(parts) != 4:
++        return None
++
++    return {
++        "mode": parts[0],
++        "rate": parts[1],
++        "delay_ms": parts[2],
++        "seed": parts[3],
++    }
++
++
++def recreate_service(
++    *,
++    service_name: str,
++    environment: dict[str, str],
++) -> None:
+ 
+     run_command(
+         [
+@@ -606,48 +739,229 @@ def configure_fault(
+             "-d",
+             "--force-recreate",
+             "--no-deps",
+-            "payment-service",
++            service_name,
+         ],
+         environment=environment,
+     )
+ 
+     wait_for_container_running(
+-        "payment-service"
++        service_name
+     )
+ 
+-    configured_mode = run_command(
+-        [
+-            "docker",
+-            "compose",
+-            "exec",
+-            "-T",
+-            "payment-service",
+-            "printenv",
+-            "CAUSALODS_FAULT_MODE",
+-        ]
++    wait_for_service_ready(
++        service_name
+     )
+ 
+-    if configured_mode != mode:
+ 
+-        raise RuntimeError(
+-            "Modo de falha incorreto no "
+-            "payment-service. "
+-            f"Esperado={mode!r}; "
+-            f"encontrado={configured_mode!r}."
++def configure_faults(
++    *,
++    target: str | None,
++    mode: str,
++    rate: float,
++    delay_ms: int,
++    seed: int,
++) -> None:
++    """
++    Configura a falha em somente um serviço e mantém o outro em none.
++
++    O Compose mapeia:
++      CAUSALODS_ORDER_FAULT_*   -> order-service/CAUSALODS_FAULT_*
++      CAUSALODS_PAYMENT_FAULT_* -> payment-service/CAUSALODS_FAULT_*
++    """
++
++    allowed_targets = {
++        None,
++        "order-service",
++        "payment-service",
++    }
++
++    if target not in allowed_targets:
++
++        raise ValueError(
++            "Alvo de falha inválido: "
++            f"{target!r}."
++        )
++
++    allowed_modes = {
++        "none",
++        "latency",
++        "error",
++        "latency_error",
++    }
++
++    if mode not in allowed_modes:
++
++        raise ValueError(
++            "Modo de falha inválido: "
++            f"{mode!r}."
++        )
++
++    if target is None and mode != "none":
++
++        raise ValueError(
++            "Cenário sem alvo deve usar "
++            "fault_mode='none'."
+         )
+ 
+-    wait_for_payment_service_ready(
+-        PAYMENT_BASE_URL
++    order_mode = (
++        mode
++        if target == "order-service"
++        else "none"
++    )
++
++    payment_mode = (
++        mode
++        if target == "payment-service"
++        else "none"
++    )
++
++    order_rate = (
++        rate
++        if target == "order-service"
++        else 0.0
++    )
++
++    order_delay_ms = (
++        delay_ms
++        if target == "order-service"
++        else 0
++    )
++
++    payment_rate = (
++        rate
++        if target == "payment-service"
++        else 0.0
++    )
++
++    payment_delay_ms = (
++        delay_ms
++        if target == "payment-service"
++        else 0
+     )
+ 
++    environment = os.environ.copy()
++
++    environment.update(
++        {
++            "CAUSALODS_ORDER_FAULT_MODE":
++                order_mode,
++            "CAUSALODS_ORDER_FAULT_RATE":
++                str(order_rate),
++            "CAUSALODS_ORDER_FAULT_DELAY_MS":
++                str(order_delay_ms),
++            "CAUSALODS_ORDER_FAULT_SEED":
++                str(seed),
++
++            "CAUSALODS_PAYMENT_FAULT_MODE":
++                payment_mode,
++            "CAUSALODS_PAYMENT_FAULT_RATE":
++                str(payment_rate),
++            "CAUSALODS_PAYMENT_FAULT_DELAY_MS":
++                str(payment_delay_ms),
++            "CAUSALODS_PAYMENT_FAULT_SEED":
++                str(seed),
++        }
++    )
++
++    desired_configurations = {
++        "payment-service": {
++            "mode": payment_mode,
++            "rate": str(payment_rate),
++            "delay_ms": str(payment_delay_ms),
++            "seed": str(seed),
++        },
++        "order-service": {
++            "mode": order_mode,
++            "rate": str(order_rate),
++            "delay_ms": str(order_delay_ms),
++            "seed": str(seed),
++        },
++    }
++
++    changed_services: list[str] = []
++
++    # payment-service vem primeiro para que o order-service
++    # nunca seja liberado antes do downstream necessário.
++    for service_name in (
++        "payment-service",
++        "order-service",
++    ):
++
++        current_configuration = (
++            read_fault_configuration(
++                service_name
++            )
++        )
++
++        desired_configuration = (
++            desired_configurations[
++                service_name
++            ]
++        )
++
++        if (
++            current_configuration
++            == desired_configuration
++        ):
++
++            print(
++                (
++                    "Fault configuration unchanged"
++                    f" | service={service_name}"
++                    f" | mode="
++                    f"{desired_configuration['mode']}"
++                ),
++                flush=True,
++            )
++
++            continue
++
++        recreate_service(
++            service_name=service_name,
++            environment=environment,
++        )
++
++        changed_services.append(
++            service_name
++        )
++
++    for (
++        service_name,
++        expected_configuration,
++    ) in desired_configurations.items():
++
++        configured = (
++            read_fault_configuration(
++                service_name
++            )
++        )
++
++        if configured != expected_configuration:
++
++            raise RuntimeError(
++                "Configuração de falha incorreta "
++                f"no {service_name}. "
++                f"Esperado={expected_configuration}; "
++                f"encontrado={configured}."
++            )
++
+     print(
+         (
+-            "Fault configured"
+-            f" | mode={configured_mode}"
++            "Faults configured"
++            f" | target={target}"
++            f" | requested_mode={mode}"
++            f" | order_mode={order_mode}"
++            f" | payment_mode={payment_mode}"
++            f" | target_rate={rate}"
++            f" | target_delay_ms={delay_ms}"
++            f" | seed={seed}"
++            " | recreated="
++            f"{changed_services or ['none']}"
+         ),
+         flush=True,
+     )
+ 
++
+ def refresh_index(
+     index_name: str,
+ ) -> None:
+@@ -1040,6 +1354,31 @@ def evaluate(
+             f"{scenario.expected_http_family}xx."
+         )
+ 
++    if (
++        scenario.expected_min_request_duration_ms
++        is not None
++    ):
++
++        if result.request_duration_ms is None:
++
++            failures.append(
++                "A duração da requisição não foi "
++                "registrada."
++            )
++
++        elif (
++            result.request_duration_ms
++            < scenario.expected_min_request_duration_ms
++        ):
++
++            failures.append(
++                "Latência HTTP abaixo do mínimo "
++                "esperado: observado="
++                f"{result.request_duration_ms:.3f} ms; "
++                "mínimo="
++                f"{scenario.expected_min_request_duration_ms:.3f} ms."
++            )
++
+     if (
+         result.rca_count_before is not None
+         and result.rca_count_after is not None
+@@ -1146,6 +1485,7 @@ def evaluate(
+ def run_scenario(
+     scenario: Scenario,
+     iteration: int,
++    runtime_model_version: str,
+ ) -> ScenarioResult:
+ 
+     run_id = uuid.uuid4().hex[:12]
+@@ -1163,6 +1503,10 @@ def run_scenario(
+         started_at=(
+             started_at_datetime.isoformat()
+         ),
++        runtime_model_version=(
++            runtime_model_version
++        ),
++        fault_target=scenario.fault_target,
+         fault_mode=scenario.fault_mode,
+         fault_rate=scenario.fault_rate,
+         fault_delay_ms=scenario.fault_delay_ms,
+@@ -1189,7 +1533,8 @@ def run_scenario(
+ 
+     try:
+ 
+-        configure_fault(
++        configure_faults(
++            target=scenario.fault_target,
+             mode=scenario.fault_mode,
+             rate=scenario.fault_rate,
+             delay_ms=scenario.fault_delay_ms,
+@@ -1316,6 +1661,39 @@ def run_scenario(
+             )
+         )
+ 
++        result.model_version = (
++            rca_document.get(
++                "model_version"
++            )
++        )
++
++        result.pipeline_version = (
++            rca_document.get(
++                "pipeline_version"
++            )
++        )
++
++        expected_pipeline_version = (
++            "causalods-rca-"
++            f"{runtime_model_version}"
++        )
++
++        if (
++            result.pipeline_version
++            != expected_pipeline_version
++        ):
++
++            raise RuntimeError(
++                "A versão persistida da pipeline "
++                "não corresponde ao runtime do "
++                "correlation-engine. "
++                f"Runtime={runtime_model_version!r}; "
++                "pipeline_version="
++                f"{result.pipeline_version!r}; "
++                "esperado="
++                f"{expected_pipeline_version!r}."
++            )
++
+         document_trace_id = (
+             rca_document.get(
+                 "trace_id"
+@@ -1504,6 +1882,12 @@ def run_scenario(
+             f"{result.confidence}"
+             f" | incident="
+             f"{result.incident_root_cause}"
++            f" | runtime="
++            f"{result.runtime_model_version}"
++            f" | model_version="
++            f"{result.model_version}"
++            f" | pipeline_version="
++            f"{result.pipeline_version}"
+         ),
+         flush=True,
+     )
+@@ -1626,6 +2010,20 @@ def parse_arguments():
+         default=1,
+     )
+ 
++    parser.add_argument(
++        "--expected-runtime-version",
++        choices=[
++            "v1",
++            "v2",
++        ],
++        default=None,
++        help=(
++            "Interrompe a execução se o "
++            "correlation-engine estiver usando "
++            "outra RCA_MODEL_VERSION."
++        ),
++    )
++
+     return parser.parse_args()
+ 
+ 
+@@ -1640,17 +2038,38 @@ def main() -> int:
+             "que zero."
+         )
+ 
++    runtime_model_version = (
++        read_rca_runtime_version()
++    )
++
++    if (
++        arguments.expected_runtime_version
++        is not None
++        and runtime_model_version
++        != arguments.expected_runtime_version
++    ):
++
++        raise RuntimeError(
++            "Versão RCA inesperada. "
++            "correlation-engine="
++            f"{runtime_model_version!r}; "
++            "esperado="
++            f"{arguments.expected_runtime_version!r}."
++        )
++
++    print(
++        (
++            "RCA runtime verified"
++            f" | version={runtime_model_version}"
++        ),
++        flush=True,
++    )
++
+     if arguments.scenario == "all":
+ 
+-        selected_scenarios = [
+-            SCENARIOS["healthy"],
+-            SCENARIOS[
+-                "payment_failure"
+-            ],
+-            SCENARIOS[
+-                "payment_latency"
+-            ],
+-        ]
++        selected_scenarios = list(
++            SCENARIOS.values()
++        )
+ 
+     else:
+ 
+@@ -1679,6 +2098,9 @@ def main() -> int:
+                     run_scenario(
+                         scenario=scenario,
+                         iteration=iteration,
++                        runtime_model_version=(
++                            runtime_model_version
++                        ),
+                     )
+                 )
+ 
+@@ -1686,14 +2108,18 @@ def main() -> int:
+ 
+         print()
+         print(
+-            "Restoring payment-service "
+-            "to fault_mode=none...",
++            (
++                "Restoring order-service and "
++                "payment-service to "
++                "fault_mode=none..."
++            ),
+             flush=True,
+         )
+ 
+         try:
+ 
+-            configure_fault(
++            configure_faults(
++                target=None,
+                 mode="none",
+                 rate=0.0,
+                 delay_ms=0,
+@@ -1703,8 +2129,11 @@ def main() -> int:
+         except Exception as exception:
+ 
+             print(
+-                "Falha ao restaurar payment-service: "
+-                f"{exception}",
++                (
++                    "Falha ao restaurar os serviços "
++                    "para fault_mode=none: "
++                    f"{exception}"
++                ),
+                 flush=True,
+             )
+ 
+diff --git a/services/order-service/Dockerfile b/services/order-service/Dockerfile
+index 244745a..b3d5e61 100644
+--- a/services/order-service/Dockerfile
++++ b/services/order-service/Dockerfile
+@@ -10,7 +10,7 @@ COPY pom.xml .
+ 
+ COPY src ./src
+ 
+-RUN mvn clean package -DskipTests
++RUN mvn clean package
+ 
+ # ==========================================================
+ # RUNTIME STAGE
+diff --git a/services/order-service/mvnw.cmd b/services/order-service/mvnw.cmd
+index 92450f9..5761d94 100644
+--- a/services/order-service/mvnw.cmd
++++ b/services/order-service/mvnw.cmd
+@@ -1,189 +1,189 @@
+-<# : batch portion
+-@REM ----------------------------------------------------------------------------
+-@REM Licensed to the Apache Software Foundation (ASF) under one
+-@REM or more contributor license agreements.  See the NOTICE file
+-@REM distributed with this work for additional information
+-@REM regarding copyright ownership.  The ASF licenses this file
+-@REM to you under the Apache License, Version 2.0 (the
+-@REM "License"); you may not use this file except in compliance
+-@REM with the License.  You may obtain a copy of the License at
+-@REM
+-@REM    http://www.apache.org/licenses/LICENSE-2.0
+-@REM
+-@REM Unless required by applicable law or agreed to in writing,
+-@REM software distributed under the License is distributed on an
+-@REM "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+-@REM KIND, either express or implied.  See the License for the
+-@REM specific language governing permissions and limitations
+-@REM under the License.
+-@REM ----------------------------------------------------------------------------
+-
+-@REM ----------------------------------------------------------------------------
+-@REM Apache Maven Wrapper startup batch script, version 3.3.4
+-@REM
+-@REM Optional ENV vars
+-@REM   MVNW_REPOURL - repo url base for downloading maven distribution
+-@REM   MVNW_USERNAME/MVNW_PASSWORD - user and password for downloading maven
+-@REM   MVNW_VERBOSE - true: enable verbose log; others: silence the output
+-@REM ----------------------------------------------------------------------------
+-
+-@IF "%__MVNW_ARG0_NAME__%"=="" (SET __MVNW_ARG0_NAME__=%~nx0)
+-@SET __MVNW_CMD__=
+-@SET __MVNW_ERROR__=
+-@SET __MVNW_PSMODULEP_SAVE=%PSModulePath%
+-@SET PSModulePath=
+-@FOR /F "usebackq tokens=1* delims==" %%A IN (`powershell -noprofile "& {$scriptDir='%~dp0'; $script='%__MVNW_ARG0_NAME__%'; icm -ScriptBlock ([Scriptblock]::Create((Get-Content -Raw '%~f0'))) -NoNewScope}"`) DO @(
+-  IF "%%A"=="MVN_CMD" (set __MVNW_CMD__=%%B) ELSE IF "%%B"=="" (echo %%A) ELSE (echo %%A=%%B)
+-)
+-@SET PSModulePath=%__MVNW_PSMODULEP_SAVE%
+-@SET __MVNW_PSMODULEP_SAVE=
+-@SET __MVNW_ARG0_NAME__=
+-@SET MVNW_USERNAME=
+-@SET MVNW_PASSWORD=
+-@IF NOT "%__MVNW_CMD__%"=="" ("%__MVNW_CMD__%" %*)
+-@echo Cannot start maven from wrapper >&2 && exit /b 1
+-@GOTO :EOF
+-: end batch / begin powershell #>
+-
+-$ErrorActionPreference = "Stop"
+-if ($env:MVNW_VERBOSE -eq "true") {
+-  $VerbosePreference = "Continue"
+-}
+-
+-# calculate distributionUrl, requires .mvn/wrapper/maven-wrapper.properties
+-$distributionUrl = (Get-Content -Raw "$scriptDir/.mvn/wrapper/maven-wrapper.properties" | ConvertFrom-StringData).distributionUrl
+-if (!$distributionUrl) {
+-  Write-Error "cannot read distributionUrl property in $scriptDir/.mvn/wrapper/maven-wrapper.properties"
+-}
+-
+-switch -wildcard -casesensitive ( $($distributionUrl -replace '^.*/','') ) {
+-  "maven-mvnd-*" {
+-    $USE_MVND = $true
+-    $distributionUrl = $distributionUrl -replace '-bin\.[^.]*$',"-windows-amd64.zip"
+-    $MVN_CMD = "mvnd.cmd"
+-    break
+-  }
+-  default {
+-    $USE_MVND = $false
+-    $MVN_CMD = $script -replace '^mvnw','mvn'
+-    break
+-  }
+-}
+-
+-# apply MVNW_REPOURL and calculate MAVEN_HOME
+-# maven home pattern: ~/.m2/wrapper/dists/{apache-maven-<version>,maven-mvnd-<version>-<platform>}/<hash>
+-if ($env:MVNW_REPOURL) {
+-  $MVNW_REPO_PATTERN = if ($USE_MVND -eq $False) { "/org/apache/maven/" } else { "/maven/mvnd/" }
+-  $distributionUrl = "$env:MVNW_REPOURL$MVNW_REPO_PATTERN$($distributionUrl -replace "^.*$MVNW_REPO_PATTERN",'')"
+-}
+-$distributionUrlName = $distributionUrl -replace '^.*/',''
+-$distributionUrlNameMain = $distributionUrlName -replace '\.[^.]*$','' -replace '-bin$',''
+-
+-$MAVEN_M2_PATH = "$HOME/.m2"
+-if ($env:MAVEN_USER_HOME) {
+-  $MAVEN_M2_PATH = "$env:MAVEN_USER_HOME"
+-}
+-
+-if (-not (Test-Path -Path $MAVEN_M2_PATH)) {
+-    New-Item -Path $MAVEN_M2_PATH -ItemType Directory | Out-Null
+-}
+-
+-$MAVEN_WRAPPER_DISTS = $null
+-if ((Get-Item $MAVEN_M2_PATH).Target[0] -eq $null) {
+-  $MAVEN_WRAPPER_DISTS = "$MAVEN_M2_PATH/wrapper/dists"
+-} else {
+-  $MAVEN_WRAPPER_DISTS = (Get-Item $MAVEN_M2_PATH).Target[0] + "/wrapper/dists"
+-}
+-
+-$MAVEN_HOME_PARENT = "$MAVEN_WRAPPER_DISTS/$distributionUrlNameMain"
+-$MAVEN_HOME_NAME = ([System.Security.Cryptography.SHA256]::Create().ComputeHash([byte[]][char[]]$distributionUrl) | ForEach-Object {$_.ToString("x2")}) -join ''
+-$MAVEN_HOME = "$MAVEN_HOME_PARENT/$MAVEN_HOME_NAME"
+-
+-if (Test-Path -Path "$MAVEN_HOME" -PathType Container) {
+-  Write-Verbose "found existing MAVEN_HOME at $MAVEN_HOME"
+-  Write-Output "MVN_CMD=$MAVEN_HOME/bin/$MVN_CMD"
+-  exit $?
+-}
+-
+-if (! $distributionUrlNameMain -or ($distributionUrlName -eq $distributionUrlNameMain)) {
+-  Write-Error "distributionUrl is not valid, must end with *-bin.zip, but found $distributionUrl"
+-}
+-
+-# prepare tmp dir
+-$TMP_DOWNLOAD_DIR_HOLDER = New-TemporaryFile
+-$TMP_DOWNLOAD_DIR = New-Item -Itemtype Directory -Path "$TMP_DOWNLOAD_DIR_HOLDER.dir"
+-$TMP_DOWNLOAD_DIR_HOLDER.Delete() | Out-Null
+-trap {
+-  if ($TMP_DOWNLOAD_DIR.Exists) {
+-    try { Remove-Item $TMP_DOWNLOAD_DIR -Recurse -Force | Out-Null }
+-    catch { Write-Warning "Cannot remove $TMP_DOWNLOAD_DIR" }
+-  }
+-}
+-
+-New-Item -Itemtype Directory -Path "$MAVEN_HOME_PARENT" -Force | Out-Null
+-
+-# Download and Install Apache Maven
+-Write-Verbose "Couldn't find MAVEN_HOME, downloading and installing it ..."
+-Write-Verbose "Downloading from: $distributionUrl"
+-Write-Verbose "Downloading to: $TMP_DOWNLOAD_DIR/$distributionUrlName"
+-
+-$webclient = New-Object System.Net.WebClient
+-if ($env:MVNW_USERNAME -and $env:MVNW_PASSWORD) {
+-  $webclient.Credentials = New-Object System.Net.NetworkCredential($env:MVNW_USERNAME, $env:MVNW_PASSWORD)
+-}
+-[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+-$webclient.DownloadFile($distributionUrl, "$TMP_DOWNLOAD_DIR/$distributionUrlName") | Out-Null
+-
+-# If specified, validate the SHA-256 sum of the Maven distribution zip file
+-$distributionSha256Sum = (Get-Content -Raw "$scriptDir/.mvn/wrapper/maven-wrapper.properties" | ConvertFrom-StringData).distributionSha256Sum
+-if ($distributionSha256Sum) {
+-  if ($USE_MVND) {
+-    Write-Error "Checksum validation is not supported for maven-mvnd. `nPlease disable validation by removing 'distributionSha256Sum' from your maven-wrapper.properties."
+-  }
+-  Import-Module $PSHOME\Modules\Microsoft.PowerShell.Utility -Function Get-FileHash
+-  if ((Get-FileHash "$TMP_DOWNLOAD_DIR/$distributionUrlName" -Algorithm SHA256).Hash.ToLower() -ne $distributionSha256Sum) {
+-    Write-Error "Error: Failed to validate Maven distribution SHA-256, your Maven distribution might be compromised. If you updated your Maven version, you need to update the specified distributionSha256Sum property."
+-  }
+-}
+-
+-# unzip and move
+-Expand-Archive "$TMP_DOWNLOAD_DIR/$distributionUrlName" -DestinationPath "$TMP_DOWNLOAD_DIR" | Out-Null
+-
+-# Find the actual extracted directory name (handles snapshots where filename != directory name)
+-$actualDistributionDir = ""
+-
+-# First try the expected directory name (for regular distributions)
+-$expectedPath = Join-Path "$TMP_DOWNLOAD_DIR" "$distributionUrlNameMain"
+-$expectedMvnPath = Join-Path "$expectedPath" "bin/$MVN_CMD"
+-if ((Test-Path -Path $expectedPath -PathType Container) -and (Test-Path -Path $expectedMvnPath -PathType Leaf)) {
+-  $actualDistributionDir = $distributionUrlNameMain
+-}
+-
+-# If not found, search for any directory with the Maven executable (for snapshots)
+-if (!$actualDistributionDir) {
+-  Get-ChildItem -Path "$TMP_DOWNLOAD_DIR" -Directory | ForEach-Object {
+-    $testPath = Join-Path $_.FullName "bin/$MVN_CMD"
+-    if (Test-Path -Path $testPath -PathType Leaf) {
+-      $actualDistributionDir = $_.Name
+-    }
+-  }
+-}
+-
+-if (!$actualDistributionDir) {
+-  Write-Error "Could not find Maven distribution directory in extracted archive"
+-}
+-
+-Write-Verbose "Found extracted Maven distribution directory: $actualDistributionDir"
+-Rename-Item -Path "$TMP_DOWNLOAD_DIR/$actualDistributionDir" -NewName $MAVEN_HOME_NAME | Out-Null
+-try {
+-  Move-Item -Path "$TMP_DOWNLOAD_DIR/$MAVEN_HOME_NAME" -Destination $MAVEN_HOME_PARENT | Out-Null
+-} catch {
+-  if (! (Test-Path -Path "$MAVEN_HOME" -PathType Container)) {
+-    Write-Error "fail to move MAVEN_HOME"
+-  }
+-} finally {
+-  try { Remove-Item $TMP_DOWNLOAD_DIR -Recurse -Force | Out-Null }
+-  catch { Write-Warning "Cannot remove $TMP_DOWNLOAD_DIR" }
+-}
+-
+-Write-Output "MVN_CMD=$MAVEN_HOME/bin/$MVN_CMD"
++<# : batch portion
++@REM ----------------------------------------------------------------------------
++@REM Licensed to the Apache Software Foundation (ASF) under one
++@REM or more contributor license agreements.  See the NOTICE file
++@REM distributed with this work for additional information
++@REM regarding copyright ownership.  The ASF licenses this file
++@REM to you under the Apache License, Version 2.0 (the
++@REM "License"); you may not use this file except in compliance
++@REM with the License.  You may obtain a copy of the License at
++@REM
++@REM    http://www.apache.org/licenses/LICENSE-2.0
++@REM
++@REM Unless required by applicable law or agreed to in writing,
++@REM software distributed under the License is distributed on an
++@REM "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
++@REM KIND, either express or implied.  See the License for the
++@REM specific language governing permissions and limitations
++@REM under the License.
++@REM ----------------------------------------------------------------------------
++
++@REM ----------------------------------------------------------------------------
++@REM Apache Maven Wrapper startup batch script, version 3.3.4
++@REM
++@REM Optional ENV vars
++@REM   MVNW_REPOURL - repo url base for downloading maven distribution
++@REM   MVNW_USERNAME/MVNW_PASSWORD - user and password for downloading maven
++@REM   MVNW_VERBOSE - true: enable verbose log; others: silence the output
++@REM ----------------------------------------------------------------------------
++
++@IF "%__MVNW_ARG0_NAME__%"=="" (SET __MVNW_ARG0_NAME__=%~nx0)
++@SET __MVNW_CMD__=
++@SET __MVNW_ERROR__=
++@SET __MVNW_PSMODULEP_SAVE=%PSModulePath%
++@SET PSModulePath=
++@FOR /F "usebackq tokens=1* delims==" %%A IN (`powershell -noprofile "& {$scriptDir='%~dp0'; $script='%__MVNW_ARG0_NAME__%'; icm -ScriptBlock ([Scriptblock]::Create((Get-Content -Raw '%~f0'))) -NoNewScope}"`) DO @(
++  IF "%%A"=="MVN_CMD" (set __MVNW_CMD__=%%B) ELSE IF "%%B"=="" (echo %%A) ELSE (echo %%A=%%B)
++)
++@SET PSModulePath=%__MVNW_PSMODULEP_SAVE%
++@SET __MVNW_PSMODULEP_SAVE=
++@SET __MVNW_ARG0_NAME__=
++@SET MVNW_USERNAME=
++@SET MVNW_PASSWORD=
++@IF NOT "%__MVNW_CMD__%"=="" ("%__MVNW_CMD__%" %*)
++@echo Cannot start maven from wrapper >&2 && exit /b 1
++@GOTO :EOF
++: end batch / begin powershell #>
++
++$ErrorActionPreference = "Stop"
++if ($env:MVNW_VERBOSE -eq "true") {
++  $VerbosePreference = "Continue"
++}
++
++# calculate distributionUrl, requires .mvn/wrapper/maven-wrapper.properties
++$distributionUrl = (Get-Content -Raw "$scriptDir/.mvn/wrapper/maven-wrapper.properties" | ConvertFrom-StringData).distributionUrl
++if (!$distributionUrl) {
++  Write-Error "cannot read distributionUrl property in $scriptDir/.mvn/wrapper/maven-wrapper.properties"
++}
++
++switch -wildcard -casesensitive ( $($distributionUrl -replace '^.*/','') ) {
++  "maven-mvnd-*" {
++    $USE_MVND = $true
++    $distributionUrl = $distributionUrl -replace '-bin\.[^.]*$',"-windows-amd64.zip"
++    $MVN_CMD = "mvnd.cmd"
++    break
++  }
++  default {
++    $USE_MVND = $false
++    $MVN_CMD = $script -replace '^mvnw','mvn'
++    break
++  }
++}
++
++# apply MVNW_REPOURL and calculate MAVEN_HOME
++# maven home pattern: ~/.m2/wrapper/dists/{apache-maven-<version>,maven-mvnd-<version>-<platform>}/<hash>
++if ($env:MVNW_REPOURL) {
++  $MVNW_REPO_PATTERN = if ($USE_MVND -eq $False) { "/org/apache/maven/" } else { "/maven/mvnd/" }
++  $distributionUrl = "$env:MVNW_REPOURL$MVNW_REPO_PATTERN$($distributionUrl -replace "^.*$MVNW_REPO_PATTERN",'')"
++}
++$distributionUrlName = $distributionUrl -replace '^.*/',''
++$distributionUrlNameMain = $distributionUrlName -replace '\.[^.]*$','' -replace '-bin$',''
++
++$MAVEN_M2_PATH = "$HOME/.m2"
++if ($env:MAVEN_USER_HOME) {
++  $MAVEN_M2_PATH = "$env:MAVEN_USER_HOME"
++}
++
++if (-not (Test-Path -Path $MAVEN_M2_PATH)) {
++    New-Item -Path $MAVEN_M2_PATH -ItemType Directory | Out-Null
++}
++
++$MAVEN_WRAPPER_DISTS = $null
++if ((Get-Item $MAVEN_M2_PATH).Target[0] -eq $null) {
++  $MAVEN_WRAPPER_DISTS = "$MAVEN_M2_PATH/wrapper/dists"
++} else {
++  $MAVEN_WRAPPER_DISTS = (Get-Item $MAVEN_M2_PATH).Target[0] + "/wrapper/dists"
++}
++
++$MAVEN_HOME_PARENT = "$MAVEN_WRAPPER_DISTS/$distributionUrlNameMain"
++$MAVEN_HOME_NAME = ([System.Security.Cryptography.SHA256]::Create().ComputeHash([byte[]][char[]]$distributionUrl) | ForEach-Object {$_.ToString("x2")}) -join ''
++$MAVEN_HOME = "$MAVEN_HOME_PARENT/$MAVEN_HOME_NAME"
++
++if (Test-Path -Path "$MAVEN_HOME" -PathType Container) {
++  Write-Verbose "found existing MAVEN_HOME at $MAVEN_HOME"
++  Write-Output "MVN_CMD=$MAVEN_HOME/bin/$MVN_CMD"
++  exit $?
++}
++
++if (! $distributionUrlNameMain -or ($distributionUrlName -eq $distributionUrlNameMain)) {
++  Write-Error "distributionUrl is not valid, must end with *-bin.zip, but found $distributionUrl"
++}
++
++# prepare tmp dir
++$TMP_DOWNLOAD_DIR_HOLDER = New-TemporaryFile
++$TMP_DOWNLOAD_DIR = New-Item -Itemtype Directory -Path "$TMP_DOWNLOAD_DIR_HOLDER.dir"
++$TMP_DOWNLOAD_DIR_HOLDER.Delete() | Out-Null
++trap {
++  if ($TMP_DOWNLOAD_DIR.Exists) {
++    try { Remove-Item $TMP_DOWNLOAD_DIR -Recurse -Force | Out-Null }
++    catch { Write-Warning "Cannot remove $TMP_DOWNLOAD_DIR" }
++  }
++}
++
++New-Item -Itemtype Directory -Path "$MAVEN_HOME_PARENT" -Force | Out-Null
++
++# Download and Install Apache Maven
++Write-Verbose "Couldn't find MAVEN_HOME, downloading and installing it ..."
++Write-Verbose "Downloading from: $distributionUrl"
++Write-Verbose "Downloading to: $TMP_DOWNLOAD_DIR/$distributionUrlName"
++
++$webclient = New-Object System.Net.WebClient
++if ($env:MVNW_USERNAME -and $env:MVNW_PASSWORD) {
++  $webclient.Credentials = New-Object System.Net.NetworkCredential($env:MVNW_USERNAME, $env:MVNW_PASSWORD)
++}
++[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
++$webclient.DownloadFile($distributionUrl, "$TMP_DOWNLOAD_DIR/$distributionUrlName") | Out-Null
++
++# If specified, validate the SHA-256 sum of the Maven distribution zip file
++$distributionSha256Sum = (Get-Content -Raw "$scriptDir/.mvn/wrapper/maven-wrapper.properties" | ConvertFrom-StringData).distributionSha256Sum
++if ($distributionSha256Sum) {
++  if ($USE_MVND) {
++    Write-Error "Checksum validation is not supported for maven-mvnd. `nPlease disable validation by removing 'distributionSha256Sum' from your maven-wrapper.properties."
++  }
++  Import-Module $PSHOME\Modules\Microsoft.PowerShell.Utility -Function Get-FileHash
++  if ((Get-FileHash "$TMP_DOWNLOAD_DIR/$distributionUrlName" -Algorithm SHA256).Hash.ToLower() -ne $distributionSha256Sum) {
++    Write-Error "Error: Failed to validate Maven distribution SHA-256, your Maven distribution might be compromised. If you updated your Maven version, you need to update the specified distributionSha256Sum property."
++  }
++}
++
++# unzip and move
++Expand-Archive "$TMP_DOWNLOAD_DIR/$distributionUrlName" -DestinationPath "$TMP_DOWNLOAD_DIR" | Out-Null
++
++# Find the actual extracted directory name (handles snapshots where filename != directory name)
++$actualDistributionDir = ""
++
++# First try the expected directory name (for regular distributions)
++$expectedPath = Join-Path "$TMP_DOWNLOAD_DIR" "$distributionUrlNameMain"
++$expectedMvnPath = Join-Path "$expectedPath" "bin/$MVN_CMD"
++if ((Test-Path -Path $expectedPath -PathType Container) -and (Test-Path -Path $expectedMvnPath -PathType Leaf)) {
++  $actualDistributionDir = $distributionUrlNameMain
++}
++
++# If not found, search for any directory with the Maven executable (for snapshots)
++if (!$actualDistributionDir) {
++  Get-ChildItem -Path "$TMP_DOWNLOAD_DIR" -Directory | ForEach-Object {
++    $testPath = Join-Path $_.FullName "bin/$MVN_CMD"
++    if (Test-Path -Path $testPath -PathType Leaf) {
++      $actualDistributionDir = $_.Name
++    }
++  }
++}
++
++if (!$actualDistributionDir) {
++  Write-Error "Could not find Maven distribution directory in extracted archive"
++}
++
++Write-Verbose "Found extracted Maven distribution directory: $actualDistributionDir"
++Rename-Item -Path "$TMP_DOWNLOAD_DIR/$actualDistributionDir" -NewName $MAVEN_HOME_NAME | Out-Null
++try {
++  Move-Item -Path "$TMP_DOWNLOAD_DIR/$MAVEN_HOME_NAME" -Destination $MAVEN_HOME_PARENT | Out-Null
++} catch {
++  if (! (Test-Path -Path "$MAVEN_HOME" -PathType Container)) {
++    Write-Error "fail to move MAVEN_HOME"
++  }
++} finally {
++  try { Remove-Item $TMP_DOWNLOAD_DIR -Recurse -Force | Out-Null }
++  catch { Write-Warning "Cannot remove $TMP_DOWNLOAD_DIR" }
++}
++
++Write-Output "MVN_CMD=$MAVEN_HOME/bin/$MVN_CMD"
+diff --git a/services/payment-service/Dockerfile b/services/payment-service/Dockerfile
+index ef78cc5..99b0b46 100644
+--- a/services/payment-service/Dockerfile
++++ b/services/payment-service/Dockerfile
+@@ -10,7 +10,7 @@ COPY pom.xml .
+ 
+ COPY src ./src
+ 
+-RUN mvn clean package -DskipTests
++RUN mvn clean package
+ 
+ # ==========================================================
+ # RUNTIME STAGE
+
+STDERR
+

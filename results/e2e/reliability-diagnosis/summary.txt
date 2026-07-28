@@ -1,0 +1,2036 @@
+
+==========================================================================================
+order-failure.json
+==========================================================================================
+document_id: 7aa2c5da-3a94-479a-93f1-dd900574beed
+trace_id: cf2d82866432bea6b2384db19f395e53
+top_service: order-service
+confidence: 0.5990543842315674
+is_reliable: True
+
+Campos de diagnóstico:
+
+confidence:
+0.5990543842315674
+
+is_reliable:
+true
+
+top_score:
+0.5990543842315674
+
+ranking_count:
+1
+
+evidence_count:
+5
+
+payload.confidence:
+0.5990543842315674
+
+payload.ranking:
+[
+  {
+    "position": 1,
+    "service_name": "order-service",
+    "scores": {
+      "model_probability": 0.9976359605789185,
+      "shap_support_score": 0.0,
+      "temporal_score": 1.0,
+      "graph_score": 0.0,
+      "anomaly_score": 0.0,
+      "final_score": 0.5990543842315674,
+      "component_weights": {
+        "model_probability": 0.4,
+        "shap_support": 0.25,
+        "temporal": 0.2,
+        "graph": 0.15,
+        "anomaly": 0.0
+      },
+      "normalization_method": "normalized_weighted_ranking_v1"
+    },
+    "evidence_ids": [
+      "ev-355475d5e53f1975f73d05e3",
+      "ev-ac892657d3defc923efdc0a5",
+      "ev-72ba17d2a4bf0e3f3ff245a0",
+      "ev-175fff920b7aa3272fb1809d",
+      "ev-64c842988e847c05bd60e3ef"
+    ]
+  }
+]
+
+payload.ranking[0].scores:
+{
+  "model_probability": 0.9976359605789185,
+  "shap_support_score": 0.0,
+  "temporal_score": 1.0,
+  "graph_score": 0.0,
+  "anomaly_score": 0.0,
+  "final_score": 0.5990543842315674,
+  "component_weights": {
+    "model_probability": 0.4,
+    "shap_support": 0.25,
+    "temporal": 0.2,
+    "graph": 0.15,
+    "anomaly": 0.0
+  },
+  "normalization_method": "normalized_weighted_ranking_v1"
+}
+
+payload.ranking[0].scores.shap_support_score:
+0.0
+
+payload.ranking[0].scores.temporal_score:
+1.0
+
+payload.ranking[0].scores.graph_score:
+0.0
+
+payload.ranking[0].scores.anomaly_score:
+0.0
+
+payload.ranking[0].scores.final_score:
+0.5990543842315674
+
+payload.ranking[0].evidence_ids:
+[
+  "ev-355475d5e53f1975f73d05e3",
+  "ev-ac892657d3defc923efdc0a5",
+  "ev-72ba17d2a4bf0e3f3ff245a0",
+  "ev-175fff920b7aa3272fb1809d",
+  "ev-64c842988e847c05bd60e3ef"
+]
+
+payload.evidence:
+[
+  {
+    "evidence_id": "ev-355475d5e53f1975f73d05e3",
+    "evidence_type": "model",
+    "source_component": "PredictionPipeline",
+    "description": "O modelo atribuiu probabilidade 0.997636 ao serviço order-service.",
+    "service_name": "order-service",
+    "metric_name": "root_cause_probability",
+    "raw_value": 0.9976359605789185,
+    "normalized_value": 0.9976359605789185,
+    "unit": "probability",
+    "direction": "supporting",
+    "observed_at": null,
+    "attributes": {
+      "evidence_subtype": "model_prediction",
+      "model_version": "xgboost-rca-v1",
+      "builder_version": "evidence-builder-v1",
+      "trace_id": "cf2d82866432bea6b2384db19f395e53"
+    },
+    "tags": []
+  },
+  {
+    "evidence_id": "ev-ac892657d3defc923efdc0a5",
+    "evidence_type": "shap",
+    "source_component": "SHAPService",
+    "description": "O suporte SHAP agregado para order-service foi 0.000000.",
+    "service_name": "order-service",
+    "metric_name": "shap_support_score",
+    "raw_value": 0.0,
+    "normalized_value": 0.0,
+    "unit": "normalized_score",
+    "direction": "neutral",
+    "observed_at": null,
+    "attributes": {
+      "evidence_subtype": "shap_support",
+      "builder_version": "evidence-builder-v1",
+      "trace_id": "cf2d82866432bea6b2384db19f395e53"
+    },
+    "tags": []
+  },
+  {
+    "evidence_id": "ev-72ba17d2a4bf0e3f3ff245a0",
+    "evidence_type": "temporal",
+    "source_component": "TemporalCorrelator",
+    "description": "O serviço order-service obteve score temporal 1.000000; primeira falha/anomalia: True.",
+    "service_name": "order-service",
+    "metric_name": "temporal_score",
+    "raw_value": {
+      "score": 1.0,
+      "is_first_anomaly": true,
+      "anomaly_started_at": "2026-07-28T19:42:19.069002+00:00",
+      "lead_ms": null
+    },
+    "normalized_value": 1.0,
+    "unit": "normalized_score",
+    "direction": "supporting",
+    "observed_at": "2026-07-28T19:42:19.069002+00:00",
+    "attributes": {
+      "evidence_subtype": "temporal_correlation",
+      "is_first_anomaly": true,
+      "rank": 1,
+      "scoring_mode": "failure_precedence_and_latency",
+      "builder_version": "evidence-builder-v1",
+      "trace_id": "cf2d82866432bea6b2384db19f395e53"
+    },
+    "tags": []
+  },
+  {
+    "evidence_id": "ev-175fff920b7aa3272fb1809d",
+    "evidence_type": "graph",
+    "source_component": "GraphFeatureExtractor",
+    "description": "O serviço order-service obteve score estrutural 0.000000.",
+    "service_name": "order-service",
+    "metric_name": "graph_score",
+    "raw_value": {
+      "score": 0.0,
+      "centrality": null,
+      "in_degree": null,
+      "out_degree": null
+    },
+    "normalized_value": 0.0,
+    "unit": "normalized_score",
+    "direction": "neutral",
+    "observed_at": null,
+    "attributes": {
+      "evidence_subtype": "graph_structure",
+      "builder_version": "evidence-builder-v1",
+      "trace_id": "cf2d82866432bea6b2384db19f395e53"
+    },
+    "tags": []
+  },
+  {
+    "evidence_id": "ev-64c842988e847c05bd60e3ef",
+    "evidence_type": "anomaly",
+    "source_component": "AnomalyFeatureExtractor",
+    "description": "O serviço order-service obteve score de anomalia 0.000000.",
+    "service_name": "order-service",
+    "metric_name": "anomaly_score",
+    "raw_value": {
+      "raw_score": 0.0,
+      "zscore": 0.0,
+      "error_count": 1,
+      "error_rate": 0.5
+    },
+    "normalized_value": 0.0,
+    "unit": "normalized_score",
+    "direction": "neutral",
+    "observed_at": null,
+    "attributes": {
+      "evidence_subtype": "anomaly_detection",
+      "builder_version": "evidence-builder-v1",
+      "trace_id": "cf2d82866432bea6b2384db19f395e53"
+    },
+    "tags": []
+  }
+]
+
+payload.evidence[0].evidence_id:
+"ev-355475d5e53f1975f73d05e3"
+
+payload.evidence[0].evidence_type:
+"model"
+
+payload.evidence[0].attributes.evidence_subtype:
+"model_prediction"
+
+payload.evidence[1].evidence_id:
+"ev-ac892657d3defc923efdc0a5"
+
+payload.evidence[1].evidence_type:
+"shap"
+
+payload.evidence[1].attributes.evidence_subtype:
+"shap_support"
+
+payload.evidence[2].evidence_id:
+"ev-72ba17d2a4bf0e3f3ff245a0"
+
+payload.evidence[2].evidence_type:
+"temporal"
+
+payload.evidence[2].raw_value.score:
+1.0
+
+payload.evidence[2].attributes.evidence_subtype:
+"temporal_correlation"
+
+payload.evidence[3].evidence_id:
+"ev-175fff920b7aa3272fb1809d"
+
+payload.evidence[3].evidence_type:
+"graph"
+
+payload.evidence[3].raw_value.score:
+0.0
+
+payload.evidence[3].attributes.evidence_subtype:
+"graph_structure"
+
+payload.evidence[4].evidence_id:
+"ev-64c842988e847c05bd60e3ef"
+
+payload.evidence[4].evidence_type:
+"anomaly"
+
+payload.evidence[4].raw_value.raw_score:
+0.0
+
+payload.evidence[4].raw_value.zscore:
+0.0
+
+payload.evidence[4].attributes.evidence_subtype:
+"anomaly_detection"
+
+payload.reliability:
+{
+  "is_reliable": true,
+  "confidence": 0.5990543842315674,
+  "confidence_method": "reliability-gate-v1",
+  "minimum_confidence": 0.5,
+  "margin_to_second": null,
+  "minimum_margin": 0.05,
+  "passed_rules": [
+    "ranking_present",
+    "minimum_confidence",
+    "single_candidate",
+    "minimum_evidence_count",
+    "minimum_source_diversity"
+  ],
+  "failed_rules": []
+}
+
+payload.reliability.is_reliable:
+true
+
+payload.reliability.confidence:
+0.5990543842315674
+
+payload.reliability.confidence_method:
+"reliability-gate-v1"
+
+payload.reliability.minimum_confidence:
+0.5
+
+payload.reliability.margin_to_second:
+null
+
+payload.reliability.minimum_margin:
+0.05
+
+payload.reliability.passed_rules:
+[
+  "ranking_present",
+  "minimum_confidence",
+  "single_candidate",
+  "minimum_evidence_count",
+  "minimum_source_diversity"
+]
+
+payload.reliability.failed_rules:
+[]
+
+payload.metadata.evidence_count:
+5
+
+==========================================================================================
+order-latency.json
+==========================================================================================
+document_id: ec940397-a320-45e8-8ae1-df9e2d7df461
+trace_id: 6ecbd2fa74cc52a4094c352ab7746443
+top_service: order-service
+confidence: 0.19357770473002955
+is_reliable: False
+
+Campos de diagnóstico:
+
+confidence:
+0.19357770473002955
+
+is_reliable:
+false
+
+top_score:
+0.19357770473002955
+
+ranking_count:
+2
+
+evidence_count:
+10
+
+payload.confidence:
+0.19357770473002955
+
+payload.ranking:
+[
+  {
+    "position": 1,
+    "service_name": "order-service",
+    "scores": {
+      "model_probability": 0.0023640133440494537,
+      "shap_support_score": 0.0,
+      "temporal_score": 0.9631604969620489,
+      "graph_score": 0.0,
+      "anomaly_score": 0.0,
+      "final_score": 0.19357770473002955,
+      "component_weights": {
+        "model_probability": 0.4,
+        "shap_support": 0.25,
+        "temporal": 0.2,
+        "graph": 0.15,
+        "anomaly": 0.0
+      },
+      "normalization_method": "normalized_weighted_ranking_v1"
+    },
+    "evidence_ids": [
+      "ev-c01fe8631d6fbceeabb0d1d3",
+      "ev-21f47c35dab12495c373c93f",
+      "ev-83b2979ae8da38fcb0a59798",
+      "ev-dda76da76a577a39a3026c14",
+      "ev-e51c4e1f6af8220d82a3cd7d"
+    ]
+  },
+  {
+    "position": 2,
+    "service_name": "payment-service",
+    "scores": {
+      "model_probability": 0.0023640133440494537,
+      "shap_support_score": 0.0,
+      "temporal_score": 0.03683950303795113,
+      "graph_score": 0.0,
+      "anomaly_score": 0.0,
+      "final_score": 0.008313505945210008,
+      "component_weights": {
+        "model_probability": 0.4,
+        "shap_support": 0.25,
+        "temporal": 0.2,
+        "graph": 0.15,
+        "anomaly": 0.0
+      },
+      "normalization_method": "normalized_weighted_ranking_v1"
+    },
+    "evidence_ids": [
+      "ev-5deeb490b59141075c8c1400",
+      "ev-d086e72124eb36b8768db102",
+      "ev-0174726804dabe19545edf96",
+      "ev-bd903c85db5b16a373d7de9e",
+      "ev-fcef04b02a5cb06cbe750aa2"
+    ]
+  }
+]
+
+payload.ranking[0].scores:
+{
+  "model_probability": 0.0023640133440494537,
+  "shap_support_score": 0.0,
+  "temporal_score": 0.9631604969620489,
+  "graph_score": 0.0,
+  "anomaly_score": 0.0,
+  "final_score": 0.19357770473002955,
+  "component_weights": {
+    "model_probability": 0.4,
+    "shap_support": 0.25,
+    "temporal": 0.2,
+    "graph": 0.15,
+    "anomaly": 0.0
+  },
+  "normalization_method": "normalized_weighted_ranking_v1"
+}
+
+payload.ranking[0].scores.shap_support_score:
+0.0
+
+payload.ranking[0].scores.temporal_score:
+0.9631604969620489
+
+payload.ranking[0].scores.graph_score:
+0.0
+
+payload.ranking[0].scores.anomaly_score:
+0.0
+
+payload.ranking[0].scores.final_score:
+0.19357770473002955
+
+payload.ranking[0].evidence_ids:
+[
+  "ev-c01fe8631d6fbceeabb0d1d3",
+  "ev-21f47c35dab12495c373c93f",
+  "ev-83b2979ae8da38fcb0a59798",
+  "ev-dda76da76a577a39a3026c14",
+  "ev-e51c4e1f6af8220d82a3cd7d"
+]
+
+payload.ranking[1].scores:
+{
+  "model_probability": 0.0023640133440494537,
+  "shap_support_score": 0.0,
+  "temporal_score": 0.03683950303795113,
+  "graph_score": 0.0,
+  "anomaly_score": 0.0,
+  "final_score": 0.008313505945210008,
+  "component_weights": {
+    "model_probability": 0.4,
+    "shap_support": 0.25,
+    "temporal": 0.2,
+    "graph": 0.15,
+    "anomaly": 0.0
+  },
+  "normalization_method": "normalized_weighted_ranking_v1"
+}
+
+payload.ranking[1].scores.shap_support_score:
+0.0
+
+payload.ranking[1].scores.temporal_score:
+0.03683950303795113
+
+payload.ranking[1].scores.graph_score:
+0.0
+
+payload.ranking[1].scores.anomaly_score:
+0.0
+
+payload.ranking[1].scores.final_score:
+0.008313505945210008
+
+payload.ranking[1].evidence_ids:
+[
+  "ev-5deeb490b59141075c8c1400",
+  "ev-d086e72124eb36b8768db102",
+  "ev-0174726804dabe19545edf96",
+  "ev-bd903c85db5b16a373d7de9e",
+  "ev-fcef04b02a5cb06cbe750aa2"
+]
+
+payload.evidence:
+[
+  {
+    "evidence_id": "ev-c01fe8631d6fbceeabb0d1d3",
+    "evidence_type": "model",
+    "source_component": "PredictionPipeline",
+    "description": "O modelo atribuiu probabilidade 0.002364 ao serviço order-service.",
+    "service_name": "order-service",
+    "metric_name": "root_cause_probability",
+    "raw_value": 0.0023640133440494537,
+    "normalized_value": 0.0023640133440494537,
+    "unit": "probability",
+    "direction": "supporting",
+    "observed_at": null,
+    "attributes": {
+      "evidence_subtype": "model_prediction",
+      "model_version": "xgboost-rca-v1",
+      "builder_version": "evidence-builder-v1",
+      "trace_id": "6ecbd2fa74cc52a4094c352ab7746443"
+    },
+    "tags": []
+  },
+  {
+    "evidence_id": "ev-21f47c35dab12495c373c93f",
+    "evidence_type": "shap",
+    "source_component": "SHAPService",
+    "description": "O suporte SHAP agregado para order-service foi 0.000000.",
+    "service_name": "order-service",
+    "metric_name": "shap_support_score",
+    "raw_value": 0.0,
+    "normalized_value": 0.0,
+    "unit": "normalized_score",
+    "direction": "neutral",
+    "observed_at": null,
+    "attributes": {
+      "evidence_subtype": "shap_support",
+      "builder_version": "evidence-builder-v1",
+      "trace_id": "6ecbd2fa74cc52a4094c352ab7746443"
+    },
+    "tags": []
+  },
+  {
+    "evidence_id": "ev-83b2979ae8da38fcb0a59798",
+    "evidence_type": "temporal",
+    "source_component": "TemporalCorrelator",
+    "description": "O serviço order-service obteve score temporal 0.963160; primeira falha/anomalia: False.",
+    "service_name": "order-service",
+    "metric_name": "temporal_score",
+    "raw_value": {
+      "score": 0.9631604969620489,
+      "is_first_anomaly": false,
+      "anomaly_started_at": null,
+      "lead_ms": null
+    },
+    "normalized_value": 0.9631604969620489,
+    "unit": "normalized_score",
+    "direction": "supporting",
+    "observed_at": null,
+    "attributes": {
+      "evidence_subtype": "temporal_correlation",
+      "is_first_anomaly": false,
+      "rank": 1,
+      "scoring_mode": "exclusive_latency_dominance",
+      "builder_version": "evidence-builder-v1",
+      "trace_id": "6ecbd2fa74cc52a4094c352ab7746443"
+    },
+    "tags": []
+  },
+  {
+    "evidence_id": "ev-dda76da76a577a39a3026c14",
+    "evidence_type": "graph",
+    "source_component": "GraphFeatureExtractor",
+    "description": "O serviço order-service obteve score estrutural 0.000000.",
+    "service_name": "order-service",
+    "metric_name": "graph_score",
+    "raw_value": {
+      "score": 0.0,
+      "centrality": null,
+      "in_degree": null,
+      "out_degree": null
+    },
+    "normalized_value": 0.0,
+    "unit": "normalized_score",
+    "direction": "neutral",
+    "observed_at": null,
+    "attributes": {
+      "evidence_subtype": "graph_structure",
+      "builder_version": "evidence-builder-v1",
+      "trace_id": "6ecbd2fa74cc52a4094c352ab7746443"
+    },
+    "tags": []
+  },
+  {
+    "evidence_id": "ev-e51c4e1f6af8220d82a3cd7d",
+    "evidence_type": "anomaly",
+    "source_component": "AnomalyFeatureExtractor",
+    "description": "O serviço order-service obteve score de anomalia 0.000000.",
+    "service_name": "order-service",
+    "metric_name": "anomaly_score",
+    "raw_value": {
+      "raw_score": 0.0,
+      "zscore": 0.0,
+      "error_count": 0,
+      "error_rate": 0.0
+    },
+    "normalized_value": 0.0,
+    "unit": "normalized_score",
+    "direction": "neutral",
+    "observed_at": null,
+    "attributes": {
+      "evidence_subtype": "anomaly_detection",
+      "builder_version": "evidence-builder-v1",
+      "trace_id": "6ecbd2fa74cc52a4094c352ab7746443"
+    },
+    "tags": []
+  },
+  {
+    "evidence_id": "ev-5deeb490b59141075c8c1400",
+    "evidence_type": "model",
+    "source_component": "PredictionPipeline",
+    "description": "O modelo atribuiu probabilidade 0.002364 ao serviço payment-service.",
+    "service_name": "payment-service",
+    "metric_name": "root_cause_probability",
+    "raw_value": 0.0023640133440494537,
+    "normalized_value": 0.0023640133440494537,
+    "unit": "probability",
+    "direction": "supporting",
+    "observed_at": null,
+    "attributes": {
+      "evidence_subtype": "model_prediction",
+      "model_version": "xgboost-rca-v1",
+      "builder_version": "evidence-builder-v1",
+      "trace_id": "6ecbd2fa74cc52a4094c352ab7746443"
+    },
+    "tags": []
+  },
+  {
+    "evidence_id": "ev-d086e72124eb36b8768db102",
+    "evidence_type": "shap",
+    "source_component": "SHAPService",
+    "description": "O suporte SHAP agregado para payment-service foi 0.000000.",
+    "service_name": "payment-service",
+    "metric_name": "shap_support_score",
+    "raw_value": 0.0,
+    "normalized_value": 0.0,
+    "unit": "normalized_score",
+    "direction": "neutral",
+    "observed_at": null,
+    "attributes": {
+      "evidence_subtype": "shap_support",
+      "builder_version": "evidence-builder-v1",
+      "trace_id": "6ecbd2fa74cc52a4094c352ab7746443"
+    },
+    "tags": []
+  },
+  {
+    "evidence_id": "ev-0174726804dabe19545edf96",
+    "evidence_type": "temporal",
+    "source_component": "TemporalCorrelator",
+    "description": "O serviço payment-service obteve score temporal 0.036840; primeira falha/anomalia: False.",
+    "service_name": "payment-service",
+    "metric_name": "temporal_score",
+    "raw_value": {
+      "score": 0.03683950303795113,
+      "is_first_anomaly": false,
+      "anomaly_started_at": null,
+      "lead_ms": null
+    },
+    "normalized_value": 0.03683950303795113,
+    "unit": "normalized_score",
+    "direction": "supporting",
+    "observed_at": null,
+    "attributes": {
+      "evidence_subtype": "temporal_correlation",
+      "is_first_anomaly": false,
+      "rank": 2,
+      "scoring_mode": "exclusive_latency_dominance",
+      "builder_version": "evidence-builder-v1",
+      "trace_id": "6ecbd2fa74cc52a4094c352ab7746443"
+    },
+    "tags": []
+  },
+  {
+    "evidence_id": "ev-bd903c85db5b16a373d7de9e",
+    "evidence_type": "graph",
+    "source_component": "GraphFeatureExtractor",
+    "description": "O serviço payment-service obteve score estrutural 0.000000.",
+    "service_name": "payment-service",
+    "metric_name": "graph_score",
+    "raw_value": {
+      "score": 0.0,
+      "centrality": null,
+      "in_degree": null,
+      "out_degree": null
+    },
+    "normalized_value": 0.0,
+    "unit": "normalized_score",
+    "direction": "neutral",
+    "observed_at": null,
+    "attributes": {
+      "evidence_subtype": "graph_structure",
+      "builder_version": "evidence-builder-v1",
+      "trace_id": "6ecbd2fa74cc52a4094c352ab7746443"
+    },
+    "tags": []
+  },
+  {
+    "evidence_id": "ev-fcef04b02a5cb06cbe750aa2",
+    "evidence_type": "anomaly",
+    "source_component": "AnomalyFeatureExtractor",
+    "description": "O serviço payment-service obteve score de anomalia 0.000000.",
+    "service_name": "payment-service",
+    "metric_name": "anomaly_score",
+    "raw_value": {
+      "raw_score": 0.0,
+      "zscore": 0.0,
+      "error_count": 0,
+      "error_rate": 0.0
+    },
+    "normalized_value": 0.0,
+    "unit": "normalized_score",
+    "direction": "neutral",
+    "observed_at": null,
+    "attributes": {
+      "evidence_subtype": "anomaly_detection",
+      "builder_version": "evidence-builder-v1",
+      "trace_id": "6ecbd2fa74cc52a4094c352ab7746443"
+    },
+    "tags": []
+  }
+]
+
+payload.evidence[0].evidence_id:
+"ev-c01fe8631d6fbceeabb0d1d3"
+
+payload.evidence[0].evidence_type:
+"model"
+
+payload.evidence[0].attributes.evidence_subtype:
+"model_prediction"
+
+payload.evidence[1].evidence_id:
+"ev-21f47c35dab12495c373c93f"
+
+payload.evidence[1].evidence_type:
+"shap"
+
+payload.evidence[1].attributes.evidence_subtype:
+"shap_support"
+
+payload.evidence[2].evidence_id:
+"ev-83b2979ae8da38fcb0a59798"
+
+payload.evidence[2].evidence_type:
+"temporal"
+
+payload.evidence[2].raw_value.score:
+0.9631604969620489
+
+payload.evidence[2].attributes.evidence_subtype:
+"temporal_correlation"
+
+payload.evidence[3].evidence_id:
+"ev-dda76da76a577a39a3026c14"
+
+payload.evidence[3].evidence_type:
+"graph"
+
+payload.evidence[3].raw_value.score:
+0.0
+
+payload.evidence[3].attributes.evidence_subtype:
+"graph_structure"
+
+payload.evidence[4].evidence_id:
+"ev-e51c4e1f6af8220d82a3cd7d"
+
+payload.evidence[4].evidence_type:
+"anomaly"
+
+payload.evidence[4].raw_value.raw_score:
+0.0
+
+payload.evidence[4].raw_value.zscore:
+0.0
+
+payload.evidence[4].attributes.evidence_subtype:
+"anomaly_detection"
+
+payload.evidence[5].evidence_id:
+"ev-5deeb490b59141075c8c1400"
+
+payload.evidence[5].evidence_type:
+"model"
+
+payload.evidence[5].attributes.evidence_subtype:
+"model_prediction"
+
+payload.evidence[6].evidence_id:
+"ev-d086e72124eb36b8768db102"
+
+payload.evidence[6].evidence_type:
+"shap"
+
+payload.evidence[6].attributes.evidence_subtype:
+"shap_support"
+
+payload.evidence[7].evidence_id:
+"ev-0174726804dabe19545edf96"
+
+payload.evidence[7].evidence_type:
+"temporal"
+
+payload.evidence[7].raw_value.score:
+0.03683950303795113
+
+payload.evidence[7].attributes.evidence_subtype:
+"temporal_correlation"
+
+payload.evidence[8].evidence_id:
+"ev-bd903c85db5b16a373d7de9e"
+
+payload.evidence[8].evidence_type:
+"graph"
+
+payload.evidence[8].raw_value.score:
+0.0
+
+payload.evidence[8].attributes.evidence_subtype:
+"graph_structure"
+
+payload.evidence[9].evidence_id:
+"ev-fcef04b02a5cb06cbe750aa2"
+
+payload.evidence[9].evidence_type:
+"anomaly"
+
+payload.evidence[9].raw_value.raw_score:
+0.0
+
+payload.evidence[9].raw_value.zscore:
+0.0
+
+payload.evidence[9].attributes.evidence_subtype:
+"anomaly_detection"
+
+payload.reliability:
+{
+  "is_reliable": false,
+  "confidence": 0.19357770473002955,
+  "confidence_method": "reliability-gate-v1",
+  "minimum_confidence": 0.5,
+  "margin_to_second": 0.18526419878481953,
+  "minimum_margin": 0.05,
+  "passed_rules": [
+    "ranking_present",
+    "minimum_margin",
+    "minimum_evidence_count",
+    "minimum_source_diversity"
+  ],
+  "failed_rules": [
+    "minimum_confidence"
+  ]
+}
+
+payload.reliability.is_reliable:
+false
+
+payload.reliability.confidence:
+0.19357770473002955
+
+payload.reliability.confidence_method:
+"reliability-gate-v1"
+
+payload.reliability.minimum_confidence:
+0.5
+
+payload.reliability.margin_to_second:
+0.18526419878481953
+
+payload.reliability.minimum_margin:
+0.05
+
+payload.reliability.passed_rules:
+[
+  "ranking_present",
+  "minimum_margin",
+  "minimum_evidence_count",
+  "minimum_source_diversity"
+]
+
+payload.reliability.failed_rules:
+[
+  "minimum_confidence"
+]
+
+payload.metadata.evidence_count:
+10
+
+==========================================================================================
+payment-failure.json
+==========================================================================================
+document_id: 0442b39f-48ec-427b-8826-227f061d4b23
+trace_id: 0aa5f9cea885ae79462a038ac6a91d3a
+top_service: payment-service
+confidence: 0.5690543842315674
+is_reliable: True
+
+Campos de diagnóstico:
+
+confidence:
+0.5690543842315674
+
+is_reliable:
+true
+
+top_score:
+0.5690543842315674
+
+ranking_count:
+2
+
+evidence_count:
+10
+
+payload.confidence:
+0.5690543842315674
+
+payload.ranking:
+[
+  {
+    "position": 1,
+    "service_name": "payment-service",
+    "scores": {
+      "model_probability": 0.9976359605789185,
+      "shap_support_score": 0.0,
+      "temporal_score": 0.85,
+      "graph_score": 0.0,
+      "anomaly_score": 0.0,
+      "final_score": 0.5690543842315674,
+      "component_weights": {
+        "model_probability": 0.4,
+        "shap_support": 0.25,
+        "temporal": 0.2,
+        "graph": 0.15,
+        "anomaly": 0.0
+      },
+      "normalization_method": "normalized_weighted_ranking_v1"
+    },
+    "evidence_ids": [
+      "ev-f803b971de14a2d00638210f",
+      "ev-0044c3d22dc30793b227cc02",
+      "ev-308aeb7d9d8f1a4773eb389a",
+      "ev-50e8bf77fb71dfbe096182d5",
+      "ev-bd2af1e7dad85fc35cba67ca"
+    ]
+  },
+  {
+    "position": 2,
+    "service_name": "order-service",
+    "scores": {
+      "model_probability": 0.0023640133440494537,
+      "shap_support_score": 0.0,
+      "temporal_score": 0.4,
+      "graph_score": 0.0,
+      "anomaly_score": 0.0,
+      "final_score": 0.0809456053376198,
+      "component_weights": {
+        "model_probability": 0.4,
+        "shap_support": 0.25,
+        "temporal": 0.2,
+        "graph": 0.15,
+        "anomaly": 0.0
+      },
+      "normalization_method": "normalized_weighted_ranking_v1"
+    },
+    "evidence_ids": [
+      "ev-86b8695dd1accfe511bef921",
+      "ev-a5e91a95f6ecba3acf3de063",
+      "ev-56466ccffc86ff793c92c88b",
+      "ev-6aa4d8909ff3795f4bd9e373",
+      "ev-82b99c66f29ab133d7ff7765"
+    ]
+  }
+]
+
+payload.ranking[0].scores:
+{
+  "model_probability": 0.9976359605789185,
+  "shap_support_score": 0.0,
+  "temporal_score": 0.85,
+  "graph_score": 0.0,
+  "anomaly_score": 0.0,
+  "final_score": 0.5690543842315674,
+  "component_weights": {
+    "model_probability": 0.4,
+    "shap_support": 0.25,
+    "temporal": 0.2,
+    "graph": 0.15,
+    "anomaly": 0.0
+  },
+  "normalization_method": "normalized_weighted_ranking_v1"
+}
+
+payload.ranking[0].scores.shap_support_score:
+0.0
+
+payload.ranking[0].scores.temporal_score:
+0.85
+
+payload.ranking[0].scores.graph_score:
+0.0
+
+payload.ranking[0].scores.anomaly_score:
+0.0
+
+payload.ranking[0].scores.final_score:
+0.5690543842315674
+
+payload.ranking[0].evidence_ids:
+[
+  "ev-f803b971de14a2d00638210f",
+  "ev-0044c3d22dc30793b227cc02",
+  "ev-308aeb7d9d8f1a4773eb389a",
+  "ev-50e8bf77fb71dfbe096182d5",
+  "ev-bd2af1e7dad85fc35cba67ca"
+]
+
+payload.ranking[1].scores:
+{
+  "model_probability": 0.0023640133440494537,
+  "shap_support_score": 0.0,
+  "temporal_score": 0.4,
+  "graph_score": 0.0,
+  "anomaly_score": 0.0,
+  "final_score": 0.0809456053376198,
+  "component_weights": {
+    "model_probability": 0.4,
+    "shap_support": 0.25,
+    "temporal": 0.2,
+    "graph": 0.15,
+    "anomaly": 0.0
+  },
+  "normalization_method": "normalized_weighted_ranking_v1"
+}
+
+payload.ranking[1].scores.shap_support_score:
+0.0
+
+payload.ranking[1].scores.temporal_score:
+0.4
+
+payload.ranking[1].scores.graph_score:
+0.0
+
+payload.ranking[1].scores.anomaly_score:
+0.0
+
+payload.ranking[1].scores.final_score:
+0.0809456053376198
+
+payload.ranking[1].evidence_ids:
+[
+  "ev-86b8695dd1accfe511bef921",
+  "ev-a5e91a95f6ecba3acf3de063",
+  "ev-56466ccffc86ff793c92c88b",
+  "ev-6aa4d8909ff3795f4bd9e373",
+  "ev-82b99c66f29ab133d7ff7765"
+]
+
+payload.evidence:
+[
+  {
+    "evidence_id": "ev-86b8695dd1accfe511bef921",
+    "evidence_type": "model",
+    "source_component": "PredictionPipeline",
+    "description": "O modelo atribuiu probabilidade 0.002364 ao serviço order-service.",
+    "service_name": "order-service",
+    "metric_name": "root_cause_probability",
+    "raw_value": 0.0023640133440494537,
+    "normalized_value": 0.0023640133440494537,
+    "unit": "probability",
+    "direction": "supporting",
+    "observed_at": null,
+    "attributes": {
+      "evidence_subtype": "model_prediction",
+      "model_version": "xgboost-rca-v1",
+      "builder_version": "evidence-builder-v1",
+      "trace_id": "0aa5f9cea885ae79462a038ac6a91d3a"
+    },
+    "tags": []
+  },
+  {
+    "evidence_id": "ev-a5e91a95f6ecba3acf3de063",
+    "evidence_type": "shap",
+    "source_component": "SHAPService",
+    "description": "O suporte SHAP agregado para order-service foi 0.000000.",
+    "service_name": "order-service",
+    "metric_name": "shap_support_score",
+    "raw_value": 0.0,
+    "normalized_value": 0.0,
+    "unit": "normalized_score",
+    "direction": "neutral",
+    "observed_at": null,
+    "attributes": {
+      "evidence_subtype": "shap_support",
+      "builder_version": "evidence-builder-v1",
+      "trace_id": "0aa5f9cea885ae79462a038ac6a91d3a"
+    },
+    "tags": []
+  },
+  {
+    "evidence_id": "ev-56466ccffc86ff793c92c88b",
+    "evidence_type": "temporal",
+    "source_component": "TemporalCorrelator",
+    "description": "O serviço order-service obteve score temporal 0.400000; primeira falha/anomalia: False.",
+    "service_name": "order-service",
+    "metric_name": "temporal_score",
+    "raw_value": {
+      "score": 0.4,
+      "is_first_anomaly": false,
+      "anomaly_started_at": "2026-07-28T19:46:35.844261+00:00",
+      "lead_ms": 6.891
+    },
+    "normalized_value": 0.4,
+    "unit": "normalized_score",
+    "direction": "supporting",
+    "observed_at": "2026-07-28T19:46:35.844261+00:00",
+    "attributes": {
+      "evidence_subtype": "temporal_correlation",
+      "is_first_anomaly": false,
+      "rank": 1,
+      "scoring_mode": "failure_precedence_and_latency",
+      "builder_version": "evidence-builder-v1",
+      "trace_id": "0aa5f9cea885ae79462a038ac6a91d3a"
+    },
+    "tags": []
+  },
+  {
+    "evidence_id": "ev-6aa4d8909ff3795f4bd9e373",
+    "evidence_type": "graph",
+    "source_component": "GraphFeatureExtractor",
+    "description": "O serviço order-service obteve score estrutural 0.000000.",
+    "service_name": "order-service",
+    "metric_name": "graph_score",
+    "raw_value": {
+      "score": 0.0,
+      "centrality": null,
+      "in_degree": null,
+      "out_degree": null
+    },
+    "normalized_value": 0.0,
+    "unit": "normalized_score",
+    "direction": "neutral",
+    "observed_at": null,
+    "attributes": {
+      "evidence_subtype": "graph_structure",
+      "builder_version": "evidence-builder-v1",
+      "trace_id": "0aa5f9cea885ae79462a038ac6a91d3a"
+    },
+    "tags": []
+  },
+  {
+    "evidence_id": "ev-82b99c66f29ab133d7ff7765",
+    "evidence_type": "anomaly",
+    "source_component": "AnomalyFeatureExtractor",
+    "description": "O serviço order-service obteve score de anomalia 0.000000.",
+    "service_name": "order-service",
+    "metric_name": "anomaly_score",
+    "raw_value": {
+      "raw_score": 0.0,
+      "zscore": 0.0,
+      "error_count": 2,
+      "error_rate": 1.0
+    },
+    "normalized_value": 0.0,
+    "unit": "normalized_score",
+    "direction": "neutral",
+    "observed_at": null,
+    "attributes": {
+      "evidence_subtype": "anomaly_detection",
+      "builder_version": "evidence-builder-v1",
+      "trace_id": "0aa5f9cea885ae79462a038ac6a91d3a"
+    },
+    "tags": []
+  },
+  {
+    "evidence_id": "ev-f803b971de14a2d00638210f",
+    "evidence_type": "model",
+    "source_component": "PredictionPipeline",
+    "description": "O modelo atribuiu probabilidade 0.997636 ao serviço payment-service.",
+    "service_name": "payment-service",
+    "metric_name": "root_cause_probability",
+    "raw_value": 0.9976359605789185,
+    "normalized_value": 0.9976359605789185,
+    "unit": "probability",
+    "direction": "supporting",
+    "observed_at": null,
+    "attributes": {
+      "evidence_subtype": "model_prediction",
+      "model_version": "xgboost-rca-v1",
+      "builder_version": "evidence-builder-v1",
+      "trace_id": "0aa5f9cea885ae79462a038ac6a91d3a"
+    },
+    "tags": []
+  },
+  {
+    "evidence_id": "ev-0044c3d22dc30793b227cc02",
+    "evidence_type": "shap",
+    "source_component": "SHAPService",
+    "description": "O suporte SHAP agregado para payment-service foi 0.000000.",
+    "service_name": "payment-service",
+    "metric_name": "shap_support_score",
+    "raw_value": 0.0,
+    "normalized_value": 0.0,
+    "unit": "normalized_score",
+    "direction": "neutral",
+    "observed_at": null,
+    "attributes": {
+      "evidence_subtype": "shap_support",
+      "builder_version": "evidence-builder-v1",
+      "trace_id": "0aa5f9cea885ae79462a038ac6a91d3a"
+    },
+    "tags": []
+  },
+  {
+    "evidence_id": "ev-308aeb7d9d8f1a4773eb389a",
+    "evidence_type": "temporal",
+    "source_component": "TemporalCorrelator",
+    "description": "O serviço payment-service obteve score temporal 0.850000; primeira falha/anomalia: True.",
+    "service_name": "payment-service",
+    "metric_name": "temporal_score",
+    "raw_value": {
+      "score": 0.85,
+      "is_first_anomaly": true,
+      "anomaly_started_at": "2026-07-28T19:46:35.851152+00:00",
+      "lead_ms": null
+    },
+    "normalized_value": 0.85,
+    "unit": "normalized_score",
+    "direction": "supporting",
+    "observed_at": "2026-07-28T19:46:35.851152+00:00",
+    "attributes": {
+      "evidence_subtype": "temporal_correlation",
+      "is_first_anomaly": true,
+      "rank": 2,
+      "scoring_mode": "failure_precedence_and_latency",
+      "builder_version": "evidence-builder-v1",
+      "trace_id": "0aa5f9cea885ae79462a038ac6a91d3a"
+    },
+    "tags": []
+  },
+  {
+    "evidence_id": "ev-50e8bf77fb71dfbe096182d5",
+    "evidence_type": "graph",
+    "source_component": "GraphFeatureExtractor",
+    "description": "O serviço payment-service obteve score estrutural 0.000000.",
+    "service_name": "payment-service",
+    "metric_name": "graph_score",
+    "raw_value": {
+      "score": 0.0,
+      "centrality": null,
+      "in_degree": null,
+      "out_degree": null
+    },
+    "normalized_value": 0.0,
+    "unit": "normalized_score",
+    "direction": "neutral",
+    "observed_at": null,
+    "attributes": {
+      "evidence_subtype": "graph_structure",
+      "builder_version": "evidence-builder-v1",
+      "trace_id": "0aa5f9cea885ae79462a038ac6a91d3a"
+    },
+    "tags": []
+  },
+  {
+    "evidence_id": "ev-bd2af1e7dad85fc35cba67ca",
+    "evidence_type": "anomaly",
+    "source_component": "AnomalyFeatureExtractor",
+    "description": "O serviço payment-service obteve score de anomalia 0.000000.",
+    "service_name": "payment-service",
+    "metric_name": "anomaly_score",
+    "raw_value": {
+      "raw_score": 0.0,
+      "zscore": 0.0,
+      "error_count": 1,
+      "error_rate": 0.5
+    },
+    "normalized_value": 0.0,
+    "unit": "normalized_score",
+    "direction": "neutral",
+    "observed_at": null,
+    "attributes": {
+      "evidence_subtype": "anomaly_detection",
+      "builder_version": "evidence-builder-v1",
+      "trace_id": "0aa5f9cea885ae79462a038ac6a91d3a"
+    },
+    "tags": []
+  }
+]
+
+payload.evidence[0].evidence_id:
+"ev-86b8695dd1accfe511bef921"
+
+payload.evidence[0].evidence_type:
+"model"
+
+payload.evidence[0].attributes.evidence_subtype:
+"model_prediction"
+
+payload.evidence[1].evidence_id:
+"ev-a5e91a95f6ecba3acf3de063"
+
+payload.evidence[1].evidence_type:
+"shap"
+
+payload.evidence[1].attributes.evidence_subtype:
+"shap_support"
+
+payload.evidence[2].evidence_id:
+"ev-56466ccffc86ff793c92c88b"
+
+payload.evidence[2].evidence_type:
+"temporal"
+
+payload.evidence[2].raw_value.score:
+0.4
+
+payload.evidence[2].attributes.evidence_subtype:
+"temporal_correlation"
+
+payload.evidence[3].evidence_id:
+"ev-6aa4d8909ff3795f4bd9e373"
+
+payload.evidence[3].evidence_type:
+"graph"
+
+payload.evidence[3].raw_value.score:
+0.0
+
+payload.evidence[3].attributes.evidence_subtype:
+"graph_structure"
+
+payload.evidence[4].evidence_id:
+"ev-82b99c66f29ab133d7ff7765"
+
+payload.evidence[4].evidence_type:
+"anomaly"
+
+payload.evidence[4].raw_value.raw_score:
+0.0
+
+payload.evidence[4].raw_value.zscore:
+0.0
+
+payload.evidence[4].attributes.evidence_subtype:
+"anomaly_detection"
+
+payload.evidence[5].evidence_id:
+"ev-f803b971de14a2d00638210f"
+
+payload.evidence[5].evidence_type:
+"model"
+
+payload.evidence[5].attributes.evidence_subtype:
+"model_prediction"
+
+payload.evidence[6].evidence_id:
+"ev-0044c3d22dc30793b227cc02"
+
+payload.evidence[6].evidence_type:
+"shap"
+
+payload.evidence[6].attributes.evidence_subtype:
+"shap_support"
+
+payload.evidence[7].evidence_id:
+"ev-308aeb7d9d8f1a4773eb389a"
+
+payload.evidence[7].evidence_type:
+"temporal"
+
+payload.evidence[7].raw_value.score:
+0.85
+
+payload.evidence[7].attributes.evidence_subtype:
+"temporal_correlation"
+
+payload.evidence[8].evidence_id:
+"ev-50e8bf77fb71dfbe096182d5"
+
+payload.evidence[8].evidence_type:
+"graph"
+
+payload.evidence[8].raw_value.score:
+0.0
+
+payload.evidence[8].attributes.evidence_subtype:
+"graph_structure"
+
+payload.evidence[9].evidence_id:
+"ev-bd2af1e7dad85fc35cba67ca"
+
+payload.evidence[9].evidence_type:
+"anomaly"
+
+payload.evidence[9].raw_value.raw_score:
+0.0
+
+payload.evidence[9].raw_value.zscore:
+0.0
+
+payload.evidence[9].attributes.evidence_subtype:
+"anomaly_detection"
+
+payload.reliability:
+{
+  "is_reliable": true,
+  "confidence": 0.5690543842315674,
+  "confidence_method": "reliability-gate-v1",
+  "minimum_confidence": 0.5,
+  "margin_to_second": 0.4881087788939476,
+  "minimum_margin": 0.05,
+  "passed_rules": [
+    "ranking_present",
+    "minimum_confidence",
+    "minimum_margin",
+    "minimum_evidence_count",
+    "minimum_source_diversity"
+  ],
+  "failed_rules": []
+}
+
+payload.reliability.is_reliable:
+true
+
+payload.reliability.confidence:
+0.5690543842315674
+
+payload.reliability.confidence_method:
+"reliability-gate-v1"
+
+payload.reliability.minimum_confidence:
+0.5
+
+payload.reliability.margin_to_second:
+0.4881087788939476
+
+payload.reliability.minimum_margin:
+0.05
+
+payload.reliability.passed_rules:
+[
+  "ranking_present",
+  "minimum_confidence",
+  "minimum_margin",
+  "minimum_evidence_count",
+  "minimum_source_diversity"
+]
+
+payload.reliability.failed_rules:
+[]
+
+payload.metadata.evidence_count:
+10
+
+==========================================================================================
+payment-latency.json
+==========================================================================================
+document_id: b5d30431-fed0-46d7-84dd-80d37e67201d
+trace_id: 4a756aba391a017789d1b406117375dd
+top_service: payment-service
+confidence: 0.19966096872138697
+is_reliable: False
+
+Campos de diagnóstico:
+
+confidence:
+0.19966096872138697
+
+is_reliable:
+false
+
+top_score:
+0.19966096872138697
+
+ranking_count:
+2
+
+evidence_count:
+10
+
+payload.confidence:
+0.19966096872138697
+
+payload.ranking:
+[
+  {
+    "position": 1,
+    "service_name": "payment-service",
+    "scores": {
+      "model_probability": 0.0023640133440494537,
+      "shap_support_score": 0.0,
+      "temporal_score": 0.9935768169188359,
+      "graph_score": 0.0,
+      "anomaly_score": 0.0,
+      "final_score": 0.19966096872138697,
+      "component_weights": {
+        "model_probability": 0.4,
+        "shap_support": 0.25,
+        "temporal": 0.2,
+        "graph": 0.15,
+        "anomaly": 0.0
+      },
+      "normalization_method": "normalized_weighted_ranking_v1"
+    },
+    "evidence_ids": [
+      "ev-220f7de94ca4ee32de20d490",
+      "ev-c55c65be3a52ffdfd42d16f7",
+      "ev-11172234c55c1396663096bf",
+      "ev-495f96fbc9577892ee68f3f0",
+      "ev-69473decfa582b65a68befa8"
+    ]
+  },
+  {
+    "position": 2,
+    "service_name": "order-service",
+    "scores": {
+      "model_probability": 0.0023640133440494537,
+      "shap_support_score": 0.0,
+      "temporal_score": 0.006423183081164125,
+      "graph_score": 0.0,
+      "anomaly_score": 0.0,
+      "final_score": 0.0022302419538526063,
+      "component_weights": {
+        "model_probability": 0.4,
+        "shap_support": 0.25,
+        "temporal": 0.2,
+        "graph": 0.15,
+        "anomaly": 0.0
+      },
+      "normalization_method": "normalized_weighted_ranking_v1"
+    },
+    "evidence_ids": [
+      "ev-295a295fea3d440401c32abd",
+      "ev-9dfe7ebfc0e775814660ab9f",
+      "ev-0ffc75c773e4b39bae76c8b6",
+      "ev-2a3b1dd058e9b1d94b876e39",
+      "ev-ffe175e34282af800171b385"
+    ]
+  }
+]
+
+payload.ranking[0].scores:
+{
+  "model_probability": 0.0023640133440494537,
+  "shap_support_score": 0.0,
+  "temporal_score": 0.9935768169188359,
+  "graph_score": 0.0,
+  "anomaly_score": 0.0,
+  "final_score": 0.19966096872138697,
+  "component_weights": {
+    "model_probability": 0.4,
+    "shap_support": 0.25,
+    "temporal": 0.2,
+    "graph": 0.15,
+    "anomaly": 0.0
+  },
+  "normalization_method": "normalized_weighted_ranking_v1"
+}
+
+payload.ranking[0].scores.shap_support_score:
+0.0
+
+payload.ranking[0].scores.temporal_score:
+0.9935768169188359
+
+payload.ranking[0].scores.graph_score:
+0.0
+
+payload.ranking[0].scores.anomaly_score:
+0.0
+
+payload.ranking[0].scores.final_score:
+0.19966096872138697
+
+payload.ranking[0].evidence_ids:
+[
+  "ev-220f7de94ca4ee32de20d490",
+  "ev-c55c65be3a52ffdfd42d16f7",
+  "ev-11172234c55c1396663096bf",
+  "ev-495f96fbc9577892ee68f3f0",
+  "ev-69473decfa582b65a68befa8"
+]
+
+payload.ranking[1].scores:
+{
+  "model_probability": 0.0023640133440494537,
+  "shap_support_score": 0.0,
+  "temporal_score": 0.006423183081164125,
+  "graph_score": 0.0,
+  "anomaly_score": 0.0,
+  "final_score": 0.0022302419538526063,
+  "component_weights": {
+    "model_probability": 0.4,
+    "shap_support": 0.25,
+    "temporal": 0.2,
+    "graph": 0.15,
+    "anomaly": 0.0
+  },
+  "normalization_method": "normalized_weighted_ranking_v1"
+}
+
+payload.ranking[1].scores.shap_support_score:
+0.0
+
+payload.ranking[1].scores.temporal_score:
+0.006423183081164125
+
+payload.ranking[1].scores.graph_score:
+0.0
+
+payload.ranking[1].scores.anomaly_score:
+0.0
+
+payload.ranking[1].scores.final_score:
+0.0022302419538526063
+
+payload.ranking[1].evidence_ids:
+[
+  "ev-295a295fea3d440401c32abd",
+  "ev-9dfe7ebfc0e775814660ab9f",
+  "ev-0ffc75c773e4b39bae76c8b6",
+  "ev-2a3b1dd058e9b1d94b876e39",
+  "ev-ffe175e34282af800171b385"
+]
+
+payload.evidence:
+[
+  {
+    "evidence_id": "ev-295a295fea3d440401c32abd",
+    "evidence_type": "model",
+    "source_component": "PredictionPipeline",
+    "description": "O modelo atribuiu probabilidade 0.002364 ao serviço order-service.",
+    "service_name": "order-service",
+    "metric_name": "root_cause_probability",
+    "raw_value": 0.0023640133440494537,
+    "normalized_value": 0.0023640133440494537,
+    "unit": "probability",
+    "direction": "supporting",
+    "observed_at": null,
+    "attributes": {
+      "evidence_subtype": "model_prediction",
+      "model_version": "xgboost-rca-v1",
+      "builder_version": "evidence-builder-v1",
+      "trace_id": "4a756aba391a017789d1b406117375dd"
+    },
+    "tags": []
+  },
+  {
+    "evidence_id": "ev-9dfe7ebfc0e775814660ab9f",
+    "evidence_type": "shap",
+    "source_component": "SHAPService",
+    "description": "O suporte SHAP agregado para order-service foi 0.000000.",
+    "service_name": "order-service",
+    "metric_name": "shap_support_score",
+    "raw_value": 0.0,
+    "normalized_value": 0.0,
+    "unit": "normalized_score",
+    "direction": "neutral",
+    "observed_at": null,
+    "attributes": {
+      "evidence_subtype": "shap_support",
+      "builder_version": "evidence-builder-v1",
+      "trace_id": "4a756aba391a017789d1b406117375dd"
+    },
+    "tags": []
+  },
+  {
+    "evidence_id": "ev-0ffc75c773e4b39bae76c8b6",
+    "evidence_type": "temporal",
+    "source_component": "TemporalCorrelator",
+    "description": "O serviço order-service obteve score temporal 0.006423; primeira falha/anomalia: False.",
+    "service_name": "order-service",
+    "metric_name": "temporal_score",
+    "raw_value": {
+      "score": 0.006423183081164125,
+      "is_first_anomaly": false,
+      "anomaly_started_at": null,
+      "lead_ms": null
+    },
+    "normalized_value": 0.006423183081164125,
+    "unit": "normalized_score",
+    "direction": "supporting",
+    "observed_at": null,
+    "attributes": {
+      "evidence_subtype": "temporal_correlation",
+      "is_first_anomaly": false,
+      "rank": 2,
+      "scoring_mode": "exclusive_latency_dominance",
+      "builder_version": "evidence-builder-v1",
+      "trace_id": "4a756aba391a017789d1b406117375dd"
+    },
+    "tags": []
+  },
+  {
+    "evidence_id": "ev-2a3b1dd058e9b1d94b876e39",
+    "evidence_type": "graph",
+    "source_component": "GraphFeatureExtractor",
+    "description": "O serviço order-service obteve score estrutural 0.000000.",
+    "service_name": "order-service",
+    "metric_name": "graph_score",
+    "raw_value": {
+      "score": 0.0,
+      "centrality": null,
+      "in_degree": null,
+      "out_degree": null
+    },
+    "normalized_value": 0.0,
+    "unit": "normalized_score",
+    "direction": "neutral",
+    "observed_at": null,
+    "attributes": {
+      "evidence_subtype": "graph_structure",
+      "builder_version": "evidence-builder-v1",
+      "trace_id": "4a756aba391a017789d1b406117375dd"
+    },
+    "tags": []
+  },
+  {
+    "evidence_id": "ev-ffe175e34282af800171b385",
+    "evidence_type": "anomaly",
+    "source_component": "AnomalyFeatureExtractor",
+    "description": "O serviço order-service obteve score de anomalia 0.000000.",
+    "service_name": "order-service",
+    "metric_name": "anomaly_score",
+    "raw_value": {
+      "raw_score": 0.0,
+      "zscore": 0.0,
+      "error_count": 0,
+      "error_rate": 0.0
+    },
+    "normalized_value": 0.0,
+    "unit": "normalized_score",
+    "direction": "neutral",
+    "observed_at": null,
+    "attributes": {
+      "evidence_subtype": "anomaly_detection",
+      "builder_version": "evidence-builder-v1",
+      "trace_id": "4a756aba391a017789d1b406117375dd"
+    },
+    "tags": []
+  },
+  {
+    "evidence_id": "ev-220f7de94ca4ee32de20d490",
+    "evidence_type": "model",
+    "source_component": "PredictionPipeline",
+    "description": "O modelo atribuiu probabilidade 0.002364 ao serviço payment-service.",
+    "service_name": "payment-service",
+    "metric_name": "root_cause_probability",
+    "raw_value": 0.0023640133440494537,
+    "normalized_value": 0.0023640133440494537,
+    "unit": "probability",
+    "direction": "supporting",
+    "observed_at": null,
+    "attributes": {
+      "evidence_subtype": "model_prediction",
+      "model_version": "xgboost-rca-v1",
+      "builder_version": "evidence-builder-v1",
+      "trace_id": "4a756aba391a017789d1b406117375dd"
+    },
+    "tags": []
+  },
+  {
+    "evidence_id": "ev-c55c65be3a52ffdfd42d16f7",
+    "evidence_type": "shap",
+    "source_component": "SHAPService",
+    "description": "O suporte SHAP agregado para payment-service foi 0.000000.",
+    "service_name": "payment-service",
+    "metric_name": "shap_support_score",
+    "raw_value": 0.0,
+    "normalized_value": 0.0,
+    "unit": "normalized_score",
+    "direction": "neutral",
+    "observed_at": null,
+    "attributes": {
+      "evidence_subtype": "shap_support",
+      "builder_version": "evidence-builder-v1",
+      "trace_id": "4a756aba391a017789d1b406117375dd"
+    },
+    "tags": []
+  },
+  {
+    "evidence_id": "ev-11172234c55c1396663096bf",
+    "evidence_type": "temporal",
+    "source_component": "TemporalCorrelator",
+    "description": "O serviço payment-service obteve score temporal 0.993577; primeira falha/anomalia: False.",
+    "service_name": "payment-service",
+    "metric_name": "temporal_score",
+    "raw_value": {
+      "score": 0.9935768169188359,
+      "is_first_anomaly": false,
+      "anomaly_started_at": null,
+      "lead_ms": null
+    },
+    "normalized_value": 0.9935768169188359,
+    "unit": "normalized_score",
+    "direction": "supporting",
+    "observed_at": null,
+    "attributes": {
+      "evidence_subtype": "temporal_correlation",
+      "is_first_anomaly": false,
+      "rank": 1,
+      "scoring_mode": "exclusive_latency_dominance",
+      "builder_version": "evidence-builder-v1",
+      "trace_id": "4a756aba391a017789d1b406117375dd"
+    },
+    "tags": []
+  },
+  {
+    "evidence_id": "ev-495f96fbc9577892ee68f3f0",
+    "evidence_type": "graph",
+    "source_component": "GraphFeatureExtractor",
+    "description": "O serviço payment-service obteve score estrutural 0.000000.",
+    "service_name": "payment-service",
+    "metric_name": "graph_score",
+    "raw_value": {
+      "score": 0.0,
+      "centrality": null,
+      "in_degree": null,
+      "out_degree": null
+    },
+    "normalized_value": 0.0,
+    "unit": "normalized_score",
+    "direction": "neutral",
+    "observed_at": null,
+    "attributes": {
+      "evidence_subtype": "graph_structure",
+      "builder_version": "evidence-builder-v1",
+      "trace_id": "4a756aba391a017789d1b406117375dd"
+    },
+    "tags": []
+  },
+  {
+    "evidence_id": "ev-69473decfa582b65a68befa8",
+    "evidence_type": "anomaly",
+    "source_component": "AnomalyFeatureExtractor",
+    "description": "O serviço payment-service obteve score de anomalia 0.000000.",
+    "service_name": "payment-service",
+    "metric_name": "anomaly_score",
+    "raw_value": {
+      "raw_score": 0.0,
+      "zscore": 0.0,
+      "error_count": 0,
+      "error_rate": 0.0
+    },
+    "normalized_value": 0.0,
+    "unit": "normalized_score",
+    "direction": "neutral",
+    "observed_at": null,
+    "attributes": {
+      "evidence_subtype": "anomaly_detection",
+      "builder_version": "evidence-builder-v1",
+      "trace_id": "4a756aba391a017789d1b406117375dd"
+    },
+    "tags": []
+  }
+]
+
+payload.evidence[0].evidence_id:
+"ev-295a295fea3d440401c32abd"
+
+payload.evidence[0].evidence_type:
+"model"
+
+payload.evidence[0].attributes.evidence_subtype:
+"model_prediction"
+
+payload.evidence[1].evidence_id:
+"ev-9dfe7ebfc0e775814660ab9f"
+
+payload.evidence[1].evidence_type:
+"shap"
+
+payload.evidence[1].attributes.evidence_subtype:
+"shap_support"
+
+payload.evidence[2].evidence_id:
+"ev-0ffc75c773e4b39bae76c8b6"
+
+payload.evidence[2].evidence_type:
+"temporal"
+
+payload.evidence[2].raw_value.score:
+0.006423183081164125
+
+payload.evidence[2].attributes.evidence_subtype:
+"temporal_correlation"
+
+payload.evidence[3].evidence_id:
+"ev-2a3b1dd058e9b1d94b876e39"
+
+payload.evidence[3].evidence_type:
+"graph"
+
+payload.evidence[3].raw_value.score:
+0.0
+
+payload.evidence[3].attributes.evidence_subtype:
+"graph_structure"
+
+payload.evidence[4].evidence_id:
+"ev-ffe175e34282af800171b385"
+
+payload.evidence[4].evidence_type:
+"anomaly"
+
+payload.evidence[4].raw_value.raw_score:
+0.0
+
+payload.evidence[4].raw_value.zscore:
+0.0
+
+payload.evidence[4].attributes.evidence_subtype:
+"anomaly_detection"
+
+payload.evidence[5].evidence_id:
+"ev-220f7de94ca4ee32de20d490"
+
+payload.evidence[5].evidence_type:
+"model"
+
+payload.evidence[5].attributes.evidence_subtype:
+"model_prediction"
+
+payload.evidence[6].evidence_id:
+"ev-c55c65be3a52ffdfd42d16f7"
+
+payload.evidence[6].evidence_type:
+"shap"
+
+payload.evidence[6].attributes.evidence_subtype:
+"shap_support"
+
+payload.evidence[7].evidence_id:
+"ev-11172234c55c1396663096bf"
+
+payload.evidence[7].evidence_type:
+"temporal"
+
+payload.evidence[7].raw_value.score:
+0.9935768169188359
+
+payload.evidence[7].attributes.evidence_subtype:
+"temporal_correlation"
+
+payload.evidence[8].evidence_id:
+"ev-495f96fbc9577892ee68f3f0"
+
+payload.evidence[8].evidence_type:
+"graph"
+
+payload.evidence[8].raw_value.score:
+0.0
+
+payload.evidence[8].attributes.evidence_subtype:
+"graph_structure"
+
+payload.evidence[9].evidence_id:
+"ev-69473decfa582b65a68befa8"
+
+payload.evidence[9].evidence_type:
+"anomaly"
+
+payload.evidence[9].raw_value.raw_score:
+0.0
+
+payload.evidence[9].raw_value.zscore:
+0.0
+
+payload.evidence[9].attributes.evidence_subtype:
+"anomaly_detection"
+
+payload.reliability:
+{
+  "is_reliable": false,
+  "confidence": 0.19966096872138697,
+  "confidence_method": "reliability-gate-v1",
+  "minimum_confidence": 0.5,
+  "margin_to_second": 0.19743072676753437,
+  "minimum_margin": 0.05,
+  "passed_rules": [
+    "ranking_present",
+    "minimum_margin",
+    "minimum_evidence_count",
+    "minimum_source_diversity"
+  ],
+  "failed_rules": [
+    "minimum_confidence"
+  ]
+}
+
+payload.reliability.is_reliable:
+false
+
+payload.reliability.confidence:
+0.19966096872138697
+
+payload.reliability.confidence_method:
+"reliability-gate-v1"
+
+payload.reliability.minimum_confidence:
+0.5
+
+payload.reliability.margin_to_second:
+0.19743072676753437
+
+payload.reliability.minimum_margin:
+0.05
+
+payload.reliability.passed_rules:
+[
+  "ranking_present",
+  "minimum_margin",
+  "minimum_evidence_count",
+  "minimum_source_diversity"
+]
+
+payload.reliability.failed_rules:
+[
+  "minimum_confidence"
+]
+
+payload.metadata.evidence_count:
+10

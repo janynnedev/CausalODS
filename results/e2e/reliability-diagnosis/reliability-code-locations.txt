@@ -1,0 +1,146 @@
+correlation-engine/pipeline/rca_pipeline.py:350:            "reliability": (
+correlation-engine/pipeline/rca_pipeline.py:351:                rca_result.reliability
+correlation-engine/pipeline/rca_pipeline.py:393:            rca_result.reliability
+correlation-engine/pipeline/rca_pipeline.py:394:            .is_reliable
+correlation-engine/pipeline/rca_pipeline.py:428:                "reliability": (
+correlation-engine/pipeline/rca_pipeline.py:430:                    .reliability
+correlation-engine/pipeline/rca_pipeline.py:665:            "\n========== RELIABILITY ==========",
+correlation-engine/pipeline/rca_pipeline.py:671:            .reliability
+correlation-engine/pipeline/rca_result_factory.py:14:from ranking.reliability_gate import (
+correlation-engine/pipeline/rca_result_factory.py:15:    ReliabilityGate,
+correlation-engine/pipeline/rca_result_factory.py:26:        → ReliabilityDecision
+correlation-engine/pipeline/rca_result_factory.py:41:        reliability_gate: (
+correlation-engine/pipeline/rca_result_factory.py:42:            ReliabilityGate | None
+correlation-engine/pipeline/rca_result_factory.py:58:        self.reliability_gate = (
+correlation-engine/pipeline/rca_result_factory.py:59:            reliability_gate
+correlation-engine/pipeline/rca_result_factory.py:60:            if reliability_gate is not None
+correlation-engine/pipeline/rca_result_factory.py:61:            else ReliabilityGate()
+correlation-engine/pipeline/rca_result_factory.py:87:        reliability = (
+correlation-engine/pipeline/rca_result_factory.py:88:            self.reliability_gate
+correlation-engine/pipeline/rca_result_factory.py:99:            reliability=reliability,
+correlation-engine/tests/test_phase3_rca_result.py:182:        result.reliability.confidence
+correlation-engine/tests/test_phase3_rca_result.py:187:        result.reliability.is_reliable
+correlation-engine/tests/test_phase3_rca_result.py:220:        result.reliability.is_reliable
+correlation-engine/tests/test_phase3_rca_result.py:225:        "minimum_confidence"
+correlation-engine/tests/test_phase3_rca_result.py:226:        in result.reliability.failed_rules
+correlation-engine/tests/test_phase3_rca_result.py:278:        payload["reliability"],
+correlation-engine/tests/test_rca_contracts.py:14:    ReliabilityDecision,
+correlation-engine/tests/test_rca_contracts.py:57:def build_reliability() -> ReliabilityDecision:
+correlation-engine/tests/test_rca_contracts.py:58:    return ReliabilityDecision(
+correlation-engine/tests/test_rca_contracts.py:59:        is_reliable=True,
+correlation-engine/tests/test_rca_contracts.py:64:        minimum_confidence=0.60,
+correlation-engine/tests/test_rca_contracts.py:65:        margin_to_second=0.25,
+correlation-engine/tests/test_rca_contracts.py:67:        passed_rules=(
+correlation-engine/tests/test_rca_contracts.py:68:            "minimum_confidence",
+correlation-engine/tests/test_rca_contracts.py:72:        failed_rules=(),
+correlation-engine/tests/test_rca_contracts.py:127:        reliability=build_reliability(),
+correlation-engine/tests/test_rca_contracts.py:168:            reliability=build_reliability(),
+correlation-engine/tests/test_rca_result_repository.py:39:class FakeReliability:
+correlation-engine/tests/test_rca_result_repository.py:41:    is_reliable = False
+correlation-engine/tests/test_rca_result_repository.py:64:    reliability = (
+correlation-engine/tests/test_rca_result_repository.py:65:        FakeReliability()
+correlation-engine/tests/test_rca_result_repository.py:99:            "reliability": {
+correlation-engine/tests/test_rca_result_repository.py:100:                "is_reliable":
+correlation-engine/tests/test_rca_result_repository.py:150:        document["is_reliable"]
+correlation-engine/ranking/reliability_gate.py:6:    ReliabilityDecision,
+correlation-engine/ranking/reliability_gate.py:10:class ReliabilityGate:
+correlation-engine/ranking/reliability_gate.py:20:    METHOD_VERSION = "reliability-gate-v1"
+correlation-engine/ranking/reliability_gate.py:24:        minimum_confidence: float = 0.50,
+correlation-engine/ranking/reliability_gate.py:30:        self.minimum_confidence = (
+correlation-engine/ranking/reliability_gate.py:32:                minimum_confidence
+correlation-engine/ranking/reliability_gate.py:74:    ) -> ReliabilityDecision:
+correlation-engine/ranking/reliability_gate.py:76:        passed_rules: list[str] = []
+correlation-engine/ranking/reliability_gate.py:77:        failed_rules: list[str] = []
+correlation-engine/ranking/reliability_gate.py:81:            failed_rules.append(
+correlation-engine/ranking/reliability_gate.py:85:            return ReliabilityDecision(
+correlation-engine/ranking/reliability_gate.py:86:                is_reliable=False,
+correlation-engine/ranking/reliability_gate.py:91:                minimum_confidence=(
+correlation-engine/ranking/reliability_gate.py:92:                    self.minimum_confidence
+correlation-engine/ranking/reliability_gate.py:94:                margin_to_second=None,
+correlation-engine/ranking/reliability_gate.py:98:                passed_rules=tuple(
+correlation-engine/ranking/reliability_gate.py:99:                    passed_rules
+correlation-engine/ranking/reliability_gate.py:101:                failed_rules=tuple(
+correlation-engine/ranking/reliability_gate.py:102:                    failed_rules
+correlation-engine/ranking/reliability_gate.py:106:        passed_rules.append(
+correlation-engine/ranking/reliability_gate.py:117:            self.minimum_confidence
+correlation-engine/ranking/reliability_gate.py:119:            passed_rules.append(
+correlation-engine/ranking/reliability_gate.py:120:                "minimum_confidence"
+correlation-engine/ranking/reliability_gate.py:123:            failed_rules.append(
+correlation-engine/ranking/reliability_gate.py:124:                "minimum_confidence"
+correlation-engine/ranking/reliability_gate.py:129:            margin_to_second = max(
+correlation-engine/ranking/reliability_gate.py:137:            if margin_to_second >= (
+correlation-engine/ranking/reliability_gate.py:140:                passed_rules.append(
+correlation-engine/ranking/reliability_gate.py:144:                failed_rules.append(
+correlation-engine/ranking/reliability_gate.py:150:            margin_to_second = None
+correlation-engine/ranking/reliability_gate.py:152:            passed_rules.append(
+correlation-engine/ranking/reliability_gate.py:170:            passed_rules.append(
+correlation-engine/ranking/reliability_gate.py:174:            failed_rules.append(
+correlation-engine/ranking/reliability_gate.py:197:            passed_rules.append(
+correlation-engine/ranking/reliability_gate.py:201:            failed_rules.append(
+correlation-engine/ranking/reliability_gate.py:205:        return ReliabilityDecision(
+correlation-engine/ranking/reliability_gate.py:206:            is_reliable=(
+correlation-engine/ranking/reliability_gate.py:207:                len(failed_rules) == 0
+correlation-engine/ranking/reliability_gate.py:213:            minimum_confidence=(
+correlation-engine/ranking/reliability_gate.py:214:                self.minimum_confidence
+correlation-engine/ranking/reliability_gate.py:216:            margin_to_second=(
+correlation-engine/ranking/reliability_gate.py:217:                margin_to_second
+correlation-engine/ranking/reliability_gate.py:222:            passed_rules=tuple(
+correlation-engine/ranking/reliability_gate.py:223:                passed_rules
+correlation-engine/ranking/reliability_gate.py:225:            failed_rules=tuple(
+correlation-engine/ranking/reliability_gate.py:226:                failed_rules
+correlation-engine/models/rca_result.py:233:class ReliabilityDecision:
+correlation-engine/models/rca_result.py:235:    Resultado do Reliability Gate.
+correlation-engine/models/rca_result.py:237:    Um RCAResult pode existir mesmo quando is_reliable=False.
+correlation-engine/models/rca_result.py:239:    Quando is_reliable=False, o resultado pode ser armazenado para
+correlation-engine/models/rca_result.py:244:    is_reliable: bool
+correlation-engine/models/rca_result.py:250:    minimum_confidence: float
+correlation-engine/models/rca_result.py:252:    margin_to_second: float | None
+correlation-engine/models/rca_result.py:256:    passed_rules: tuple[str, ...] = field(
+correlation-engine/models/rca_result.py:260:    failed_rules: tuple[str, ...] = field(
+correlation-engine/models/rca_result.py:271:        minimum_confidence = ensure_score(
+correlation-engine/models/rca_result.py:272:            self.minimum_confidence,
+correlation-engine/models/rca_result.py:273:            field_name="minimum_confidence",
+correlation-engine/models/rca_result.py:289:            "minimum_confidence",
+correlation-engine/models/rca_result.py:290:            minimum_confidence,
+correlation-engine/models/rca_result.py:299:        if self.margin_to_second is not None:
+correlation-engine/models/rca_result.py:301:            margin_to_second = ensure_finite_number(
+correlation-engine/models/rca_result.py:302:                self.margin_to_second,
+correlation-engine/models/rca_result.py:303:                field_name="margin_to_second",
+correlation-engine/models/rca_result.py:306:            if not 0.0 <= margin_to_second <= 1.0:
+correlation-engine/models/rca_result.py:309:                    "margin_to_second deve estar "
+correlation-engine/models/rca_result.py:315:                "margin_to_second",
+correlation-engine/models/rca_result.py:316:                margin_to_second,
+correlation-engine/models/rca_result.py:335:        passed_rules = tuple(
+correlation-engine/models/rca_result.py:338:                for rule in self.passed_rules
+correlation-engine/models/rca_result.py:343:        failed_rules = tuple(
+correlation-engine/models/rca_result.py:346:                for rule in self.failed_rules
+correlation-engine/models/rca_result.py:353:            "passed_rules",
+correlation-engine/models/rca_result.py:354:            passed_rules,
+correlation-engine/models/rca_result.py:359:            "failed_rules",
+correlation-engine/models/rca_result.py:360:            failed_rules,
+correlation-engine/models/rca_result.py:363:        if self.is_reliable and failed_rules:
+correlation-engine/models/rca_result.py:367:                "não pode possuir failed_rules."
+correlation-engine/models/rca_result.py:373:            "is_reliable": (
+correlation-engine/models/rca_result.py:374:                self.is_reliable
+correlation-engine/models/rca_result.py:382:            "minimum_confidence": (
+correlation-engine/models/rca_result.py:383:                self.minimum_confidence
+correlation-engine/models/rca_result.py:385:            "margin_to_second": (
+correlation-engine/models/rca_result.py:386:                self.margin_to_second
+correlation-engine/models/rca_result.py:391:            "passed_rules": list(
+correlation-engine/models/rca_result.py:392:                self.passed_rules
+correlation-engine/models/rca_result.py:394:            "failed_rules": list(
+correlation-engine/models/rca_result.py:395:                self.failed_rules
+correlation-engine/models/rca_result.py:430:    reliability: ReliabilityDecision
+correlation-engine/models/rca_result.py:585:        self._validate_reliability()
+correlation-engine/models/rca_result.py:720:    def _validate_reliability(self) -> None:
+correlation-engine/models/rca_result.py:724:            self.reliability.confidence,
+correlation-engine/models/rca_result.py:731:                "ReliabilityDecision."
+correlation-engine/models/rca_result.py:740:        reliability: ReliabilityDecision,
+correlation-engine/models/rca_result.py:788:            reliability=reliability,
+correlation-engine/models/rca_result.py:857:            "reliability": (
+correlation-engine/models/rca_result.py:858:                self.reliability.to_dict()
+correlation-engine/models/rca_context.py:21:    - reliability gate;
+correlation-engine/persistence/opensearch/rca_result_index_manager.py:46:                        "is_reliable": {
+correlation-engine/persistence/opensearch/rca_result_repository.py:60:            "is_reliable":
+correlation-engine/persistence/opensearch/rca_result_repository.py:63:                    .reliability
+correlation-engine/persistence/opensearch/rca_result_repository.py:64:                    .is_reliable

@@ -1,0 +1,74 @@
+$ /usr/bin/python3 /home/palhetajso/projects/CausalODS/experiments/e2e_runner.py --scenario all --repeat 1 --expected-runtime-version v2
+
+RCA runtime verified | version=v2
+
+======================================================================
+Scenario: healthy | iteration=1 | run_id=4eadb91453e8
+======================================================================
+Fault configuration unchanged | service=payment-service | mode=none
+Fault configuration unchanged | service=order-service | mode=none
+Faults configured | target=None | requested_mode=none | order_mode=none | payment_mode=none | target_rate=0.0 | target_delay_ms=0 | seed=42 | recreated=['none']
+Preparation traces settled | rca_count=199
+Order request | scenario=healthy | http_status=200 | duration_ms=234.282 | response={'id': 1785274044795, 'product': 'e2e-healthy-4eadb91453e8', 'quantity': 2, 'status': 'APPROVED'}
+Order trace resolved | run_id=4eadb91453e8 | trace_id=42ce2be4f6aa1f21f5ae226f1b3a9df1
+RCAResult matched | trace_id=42ce2be4f6aa1f21f5ae226f1b3a9df1 | document_id=f8f71b01-067e-4f2e-a000-264ae651f8cb
+Result: PASSED | scenario=healthy | top_service=order-service | reliable=False | confidence=0.019218145109378835 | incident=None | runtime=v2 | model_version=xgboost-rca-v2 | pipeline_version=causalods-rca-v2
+
+======================================================================
+Scenario: payment_failure | iteration=1 | run_id=89fe2e681632
+======================================================================
+payment-service ready | attempts=7 | check=http | status=200 | application_status=UP
+Fault configuration unchanged | service=order-service | mode=none
+Faults configured | target=payment-service | requested_mode=error | order_mode=none | payment_mode=error | target_rate=1.0 | target_delay_ms=0 | seed=42 | recreated=['payment-service']
+Preparation traces settled | rca_count=200
+Order request | scenario=payment_failure | http_status=500 | duration_ms=103.430 | response={'timestamp': '2026-07-28T21:27:58.578+00:00', 'status': 500, 'error': 'Internal Server Error', 'path': '/orders'}
+Order trace resolved | run_id=89fe2e681632 | trace_id=dcafb5c254a0af96a185f9e50206ccf2
+RCAResult matched | trace_id=dcafb5c254a0af96a185f9e50206ccf2 | document_id=5b88c81c-4913-423f-ae77-5dbffc76d6c3
+Result: PASSED | scenario=payment_failure | top_service=payment-service | reliable=True | confidence=0.7716313352968582 | incident=payment-service | runtime=v2 | model_version=xgboost-rca-v2 | pipeline_version=causalods-rca-v2
+
+======================================================================
+Scenario: payment_latency | iteration=1 | run_id=f427645bd595
+======================================================================
+payment-service ready | attempts=8 | check=http | status=200 | application_status=UP
+Fault configuration unchanged | service=order-service | mode=none
+Faults configured | target=payment-service | requested_mode=latency | order_mode=none | payment_mode=latency | target_rate=1.0 | target_delay_ms=1500 | seed=42 | recreated=['payment-service']
+Preparation traces settled | rca_count=201
+Order request | scenario=payment_latency | http_status=200 | duration_ms=1565.355 | response={'id': 1785274112555, 'product': 'e2e-payment_latency-f427645bd595', 'quantity': 2, 'status': 'APPROVED'}
+Order trace resolved | run_id=f427645bd595 | trace_id=cebd788d9c8f0a7dd3a2df012240153f
+RCAResult matched | trace_id=cebd788d9c8f0a7dd3a2df012240153f | document_id=cf8f8b42-e5ab-4100-968a-8f238817b271
+Result: PASSED | scenario=payment_latency | top_service=payment-service | reliable=True | confidence=0.8227819406717689 | incident=payment-service | runtime=v2 | model_version=xgboost-rca-v2 | pipeline_version=causalods-rca-v2
+
+======================================================================
+Scenario: order_failure | iteration=1 | run_id=b2c4d0f0e37b
+======================================================================
+payment-service ready | attempts=8 | check=http | status=200 | application_status=UP
+order-service ready | attempts=9 | check=http | status=200 | application_status=UP
+Faults configured | target=order-service | requested_mode=error | order_mode=error | payment_mode=none | target_rate=1.0 | target_delay_ms=0 | seed=42 | recreated=['payment-service', 'order-service']
+Preparation traces settled | rca_count=202
+Order request | scenario=order_failure | http_status=503 | duration_ms=79.504 | response={'timestamp': '2026-07-28T21:29:14.976+00:00', 'status': 503, 'error': 'Service Unavailable', 'path': '/orders'}
+Order trace resolved | run_id=b2c4d0f0e37b | trace_id=b4c79fcdc092298520552497e6434a84
+RCAResult matched | trace_id=b4c79fcdc092298520552497e6434a84 | document_id=33f96884-35e0-4280-9ab9-db8b1d1bcb39
+Result: PASSED | scenario=order_failure | top_service=order-service | reliable=True | confidence=0.800033828558584 | incident=order-service | runtime=v2 | model_version=xgboost-rca-v2 | pipeline_version=causalods-rca-v2
+
+======================================================================
+Scenario: order_latency | iteration=1 | run_id=c4bf8d23425f
+======================================================================
+Fault configuration unchanged | service=payment-service | mode=none
+order-service ready | attempts=8 | check=http | status=200 | application_status=UP
+Faults configured | target=order-service | requested_mode=latency | order_mode=latency | payment_mode=none | target_rate=1.0 | target_delay_ms=1500 | seed=42 | recreated=['order-service']
+Preparation traces settled | rca_count=203
+Order request | scenario=order_latency | http_status=200 | duration_ms=1785.436 | response={'id': 1785274185590, 'product': 'e2e-order_latency-c4bf8d23425f', 'quantity': 2, 'status': 'APPROVED'}
+Order trace resolved | run_id=c4bf8d23425f | trace_id=bec190cf62cd70df81cfb3cebeb923cc
+RCAResult matched | trace_id=bec190cf62cd70df81cfb3cebeb923cc | document_id=1b766719-fea4-4065-9101-d58c4550a8df
+Result: PASSED | scenario=order_latency | top_service=order-service | reliable=True | confidence=0.8156961804857819 | incident=order-service | runtime=v2 | model_version=xgboost-rca-v2 | pipeline_version=causalods-rca-v2
+
+Restoring order-service and payment-service to fault_mode=none...
+Fault configuration unchanged | service=payment-service | mode=none
+order-service ready | attempts=8 | check=http | status=200 | application_status=UP
+Faults configured | target=None | requested_mode=none | order_mode=none | payment_mode=none | target_rate=0.0 | target_delay_ms=0 | seed=42 | recreated=['order-service']
+
+======================================================================
+Passed: 5/5
+JSON: /home/palhetajso/projects/CausalODS/results/e2e/e2e-20260728T213011Z.json
+CSV:  /home/palhetajso/projects/CausalODS/results/e2e/e2e-20260728T213011Z.csv
+======================================================================
