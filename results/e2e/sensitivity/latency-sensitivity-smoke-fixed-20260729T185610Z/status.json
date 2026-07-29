@@ -1,0 +1,124 @@
+{
+  "campaign_id": "latency-sensitivity-smoke-fixed-20260729T185610Z",
+  "state": "completed",
+  "started_at": "2026-07-29T18:56:16.618093+00:00",
+  "finished_at": "2026-07-29T19:04:53.696651+00:00",
+  "current_version": null,
+  "current_condition": null,
+  "configuration": {
+    "schema_version": "1.0",
+    "campaign_id": "latency-sensitivity-smoke-fixed-20260729T185610Z",
+    "versions": [
+      "v1",
+      "v2"
+    ],
+    "services": [
+      "payment-service",
+      "order-service"
+    ],
+    "delays_ms": [
+      500,
+      1500
+    ],
+    "repeat": 1,
+    "random_seed": 20260729,
+    "fault_seed": 42,
+    "include_healthy_control": true,
+    "final_runtime": "v2",
+    "settle_seconds": 12.0,
+    "runtime_warmup_per_version": 1,
+    "warmup_included_in_analysis": false,
+    "expected_runs_per_version": 5
+  },
+  "phases": {
+    "v1": {
+      "rows": 5,
+      "technical_valid": 5,
+      "detected": 0,
+      "incidents": 0,
+      "passed": 1,
+      "failed": 4,
+      "condition_counts": [
+        {
+          "condition_kind": "healthy",
+          "service": null,
+          "delay_ms": 0,
+          "count": 1
+        },
+        {
+          "condition_kind": "latency",
+          "service": "order-service",
+          "delay_ms": 1500,
+          "count": 1
+        },
+        {
+          "condition_kind": "latency",
+          "service": "order-service",
+          "delay_ms": 500,
+          "count": 1
+        },
+        {
+          "condition_kind": "latency",
+          "service": "payment-service",
+          "delay_ms": 1500,
+          "count": 1
+        },
+        {
+          "condition_kind": "latency",
+          "service": "payment-service",
+          "delay_ms": 500,
+          "count": 1
+        }
+      ],
+      "state": "completed",
+      "updated_at": "2026-07-29T19:00:19.030899+00:00",
+      "expected_rows": 5
+    },
+    "v2": {
+      "rows": 5,
+      "technical_valid": 5,
+      "detected": 4,
+      "incidents": 4,
+      "passed": 5,
+      "failed": 0,
+      "condition_counts": [
+        {
+          "condition_kind": "healthy",
+          "service": null,
+          "delay_ms": 0,
+          "count": 1
+        },
+        {
+          "condition_kind": "latency",
+          "service": "order-service",
+          "delay_ms": 1500,
+          "count": 1
+        },
+        {
+          "condition_kind": "latency",
+          "service": "order-service",
+          "delay_ms": 500,
+          "count": 1
+        },
+        {
+          "condition_kind": "latency",
+          "service": "payment-service",
+          "delay_ms": 1500,
+          "count": 1
+        },
+        {
+          "condition_kind": "latency",
+          "service": "payment-service",
+          "delay_ms": 500,
+          "count": 1
+        }
+      ],
+      "state": "completed",
+      "updated_at": "2026-07-29T19:04:19.665404+00:00",
+      "expected_rows": 5
+    }
+  },
+  "errors": [],
+  "original_runtime": "v2",
+  "final_runtime": "v2"
+}
