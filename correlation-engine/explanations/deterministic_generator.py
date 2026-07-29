@@ -16,7 +16,20 @@ from explanations.evidence_adapter import (
 )
 
 
-GENERATOR_VERSION = "causalods-explanation-v1"
+GENERATOR_VERSION = "causalods-explanation-v1.1"
+MAX_DOMAIN_EVIDENCE = 8
+MAX_SCORE_EVIDENCE = 5
+
+SOURCE_PRIORITY = {
+    "temporal": 0,
+    "shap": 1,
+    "model": 2,
+    "anomaly": 3,
+    "graph": 4,
+    "reliability": 5,
+    "rca_evidence": 6,
+    "score_breakdown": 10,
+}
 
 
 def _compact_text(value: Any) -> str:
@@ -35,6 +48,22 @@ def _evidence_service(item: Mapping[str, Any]) -> str | None:
     return None
 
 
+def _canonical_source(value: Any) -> str:
+    text = str(value or "").strip().lower()
+    aliases = {
+        "temporal_correlation": "temporal",
+        "temporalcorrelator": "temporal",
+        "shap_value": "shap",
+        "shap_support": "shap",
+        "prediction": "model",
+        "model_prediction": "model",
+        "anomaly_detection": "anomaly",
+        "graph_structure": "graph",
+        "reliability_gate": "reliability",
+    }
+    return aliases.get(text, text or "rca_evidence")
+
+
 def _evidence_source(item: Mapping[str, Any]) -> str:
     for key in (
         "source",
@@ -44,23 +73,29 @@ def _evidence_source(item: Mapping[str, Any]) -> str:
     ):
         value = item.get(key)
         if value:
-            return str(value)
+            return _canonical_source(value)
     return "rca_evidence"
+
+
+def _number(value: Any) -> float | None:
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return None
 
 
 def _evidence_score(item: Mapping[str, Any]) -> float | None:
     for key in (
         "score",
+        "normalized_value",
         "value",
         "weight",
         "contribution",
     ):
         value = item.get(key)
-        if value is not None:
-            try:
-                return float(value)
-            except (TypeError, ValueError):
-                continue
+        number = _number(value)
+        if number is not None:
+            return number
     return None
 
 
@@ -76,6 +111,18 @@ def _evidence_statement(item: Mapping[str, Any]) -> str:
         if value:
             return _compact_text(value)
 
+    metric_name = item.get("metric_name")
+    normalized = _number(item.get("normalized_value"))
+    service = _evidence_service(item)
+    source = _evidence_source(item)
+
+    if metric_name and normalized is not None:
+        target = service or "serviço avaliado"
+        return (
+            f"A evidência {source} registrou {metric_name}="
+            f"{normalized:.6f} para {target}."
+        )
+
     ignored = {
         "metadata",
         "service",
@@ -86,6 +133,8 @@ def _evidence_statement(item: Mapping[str, Any]) -> str:
         "source",
         "type",
         "category",
+        "attributes",
+        "tags",
     }
     fragments = []
     for key, value in item.items():
@@ -114,10 +163,8 @@ def _score_breakdown(
     for key in sorted(scores):
         if key == "final_score":
             continue
-        value = scores[key]
-        try:
-            number = float(value)
-        except (TypeError, ValueError):
+        number = _number(scores[key])
+        if number is None:
             continue
 
         evidence.append(
@@ -133,10 +180,49 @@ def _score_breakdown(
             )
         )
 
-    return evidence
+    evidence.sort(
+        key=lambda item: (
+            -(abs(item.score or 0.0)),
+            item.statement,
+        )
+    )
+    return evidence[:MAX_SCORE_EVIDENCE]
 
 
-def _normalize_evidence(
+def _evidence_sort_key(
+    item: ExplanationEvidence,
+) -> tuple[Any, ...]:
+    return (
+        SOURCE_PRIORITY.get(item.source, 7),
+        item.score is None,
+        -(abs(item.score or 0.0)),
+        item.source,
+        item.statement,
+    )
+
+
+def _deduplicate(
+    items: list[ExplanationEvidence],
+) -> list[ExplanationEvidence]:
+    result: list[ExplanationEvidence] = []
+    seen: set[tuple[Any, ...]] = set()
+
+    for item in items:
+        key = (
+            item.source,
+            item.service_name,
+            item.statement,
+            item.score,
+        )
+        if key in seen:
+            continue
+        seen.add(key)
+        result.append(item)
+
+    return result
+
+
+def _domain_evidence(
     normalized: NormalizedRCA,
 ) -> list[ExplanationEvidence]:
     selected: list[ExplanationEvidence] = []
@@ -167,17 +253,37 @@ def _normalize_evidence(
             )
         )
 
-    selected.extend(_score_breakdown(normalized))
+    selected = _deduplicate(selected)
+    selected.sort(key=_evidence_sort_key)
 
-    selected.sort(
-        key=lambda item: (
-            item.score is None,
-            -(item.score or 0.0),
-            item.source,
-            item.statement,
-        )
-    )
-    return selected[:8]
+    # Preserve diversity before filling remaining slots.
+    diverse: list[ExplanationEvidence] = []
+    seen_sources: set[str] = set()
+
+    for item in selected:
+        if item.source in seen_sources:
+            continue
+        diverse.append(item)
+        seen_sources.add(item.source)
+        if len(diverse) >= MAX_DOMAIN_EVIDENCE:
+            return diverse
+
+    for item in selected:
+        if item in diverse:
+            continue
+        diverse.append(item)
+        if len(diverse) >= MAX_DOMAIN_EVIDENCE:
+            break
+
+    return diverse
+
+
+def _normalize_evidence(
+    normalized: NormalizedRCA,
+) -> list[ExplanationEvidence]:
+    domain = _domain_evidence(normalized)
+    score = _score_breakdown(normalized)
+    return _deduplicate(domain + score)
 
 
 def _alternatives(

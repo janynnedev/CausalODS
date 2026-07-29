@@ -1,4 +1,4 @@
-# Camada de explicação auditável do CausalODS
+# Camada de explicação auditável do CausalODS — v1.1
 
 ## Objetivo
 
@@ -6,52 +6,43 @@ Transformar um `RCAResult` em uma explicação textual estruturada, determiníst
 e rastreável, sem introduzir inferências que não estejam presentes nas
 evidências persistidas.
 
-## Por que uma versão determinística
+## Melhorias da v1.1
 
-A primeira versão não usa LLM. Isso cria um baseline de explicação que:
+- preservação explícita de evidências temporal e SHAP;
+- seleção diversificada por fonte;
+- score breakdown como complemento, não substituto;
+- amostragem estratificada no relatório;
+- métricas de cobertura por tipo de evidência;
+- avaliação automática de fidelidade ao RCAResult;
+- comparação opcional byte a byte entre duas gerações.
 
-- é reproduzível;
-- mantém vínculo explícito com `rca_result_id` e `trace_id`;
-- não inventa causas ou relações;
-- permite testes unitários;
-- pode ser comparado posteriormente com uma versão baseada em LLM.
+## Regra de seleção
 
-## Contrato de saída
+A ordem de prioridade é:
 
-Cada explicação contém:
+1. temporal;
+2. SHAP;
+3. modelo;
+4. anomalia;
+5. grafo;
+6. confiabilidade;
+7. outras evidências;
+8. componentes quantitativos do score.
 
-- `explanation_id`;
-- `rca_result_id`;
-- `trace_id`;
-- serviço classificado;
-- confiança;
-- decisão de confiabilidade;
-- resumo;
-- evidências;
-- alternativas;
-- limitações;
-- proveniência do modelo, pipeline e gerador.
+O gerador mantém até oito evidências de domínio e cinco componentes do score.
 
-## Regras
+## Critérios de validação
 
-1. O serviço principal vem do primeiro item do ranking.
-2. A confiança vem de `scores.final_score`.
-3. Evidências do serviço principal têm prioridade.
-4. Componentes do score podem ser expostos como evidência quantitativa.
-5. Resultado não confiável é descrito como hipótese, não como incidente.
-6. Campos ausentes são informados como limitação.
-7. O gerador não altera o RCAResult nem cria incidentes.
+- cobertura 100%;
+- zero falhas de adaptação;
+- causa, confiança e confiabilidade iguais ao RCAResult;
+- proveniência completa;
+- IDs determinísticos;
+- consistência entre confiabilidade e linguagem operacional;
+- igualdade byte a byte entre duas execuções independentes.
 
-## Uso científico
+## Limite metodológico
 
-Esta versão pode ser avaliada por:
-
-- cobertura de explicações;
-- fidelidade ao RCAResult;
-- determinismo;
-- completude de proveniência;
-- proporção de explicações sem evidência textual;
-- avaliação humana de clareza.
-
-Uma versão LLM deve ser comparada contra este baseline e receber somente a
-estrutura validada, nunca documentos arbitrários do OpenSearch.
+A versão determinística mede rastreabilidade e fidelidade. Clareza percebida,
+utilidade operacional e qualidade narrativa exigem avaliação humana ou
+comparação futura com uma variante baseada em LLM.

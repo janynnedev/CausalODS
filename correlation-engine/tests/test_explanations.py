@@ -7,7 +7,10 @@ from pathlib import Path
 ENGINE_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ENGINE_ROOT))
 
-from explanations import generate_explanation
+from explanations import (
+    GENERATOR_VERSION,
+    generate_explanation,
+)
 
 
 def reliable_document():
@@ -25,6 +28,9 @@ def reliable_document():
                             "final_score": 0.82,
                             "model_score": 0.70,
                             "temporal_score": 0.90,
+                            "shap_support_score": 0.60,
+                            "graph_score": 0.20,
+                            "anomaly_score": 0.50,
                         },
                     },
                     {
@@ -41,17 +47,43 @@ def reliable_document():
                 "evidence": [
                     {
                         "service_name": "payment-service",
-                        "source": "temporal",
+                        "evidence_type": "temporal",
                         "description": (
                             "Foi a primeira anomalia observada."
                         ),
-                        "score": 0.9,
+                        "normalized_value": 0.90,
+                    },
+                    {
+                        "service_name": "payment-service",
+                        "evidence_type": "shap",
+                        "description": (
+                            "SHAP sustentou a classificação."
+                        ),
+                        "normalized_value": 0.60,
+                    },
+                    {
+                        "service_name": "payment-service",
+                        "evidence_type": "model",
+                        "description": "O modelo sustentou a hipótese.",
+                        "normalized_value": 0.70,
+                    },
+                    {
+                        "service_name": "payment-service",
+                        "evidence_type": "anomaly",
+                        "description": "Anomalia observada.",
+                        "normalized_value": 0.50,
+                    },
+                    {
+                        "service_name": "payment-service",
+                        "evidence_type": "graph",
+                        "description": "Relação estrutural observada.",
+                        "normalized_value": 0.20,
                     },
                     {
                         "service_name": "order-service",
-                        "source": "graph",
+                        "evidence_type": "graph",
                         "description": "Serviço upstream.",
-                        "score": 0.2,
+                        "normalized_value": 0.10,
                     },
                 ],
             },
@@ -60,15 +92,14 @@ def reliable_document():
 
 
 def test_generates_reliable_explanation():
-    explanation = generate_explanation(
-        reliable_document()
-    )
+    explanation = generate_explanation(reliable_document())
 
     assert explanation.root_cause_service == "payment-service"
     assert explanation.is_reliable is True
     assert explanation.confidence == 0.82
     assert explanation.model_version == "xgboost-rca-v2"
     assert explanation.pipeline_version == "causalods-rca-v2"
+    assert explanation.generator_version == GENERATOR_VERSION
     assert explanation.evidence
     assert "payment-service" in explanation.summary
     assert explanation.alternatives == (
@@ -76,15 +107,27 @@ def test_generates_reliable_explanation():
     )
 
 
+def test_preserves_temporal_and_shap_sources():
+    explanation = generate_explanation(reliable_document())
+    sources = {
+        item.source
+        for item in explanation.evidence
+    }
+
+    assert "temporal" in sources
+    assert "shap" in sources
+    assert "model" in sources
+    assert "anomaly" in sources
+    assert "graph" in sources
+    assert "score_breakdown" in sources
+
+
 def test_explanation_id_is_deterministic():
-    first = generate_explanation(
-        reliable_document()
-    )
-    second = generate_explanation(
-        reliable_document()
-    )
+    first = generate_explanation(reliable_document())
+    second = generate_explanation(reliable_document())
 
     assert first.explanation_id == second.explanation_id
+    assert first.to_dict() == second.to_dict()
 
 
 def test_non_reliable_result_reports_gate():
