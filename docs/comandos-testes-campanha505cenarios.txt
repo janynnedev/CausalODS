@@ -1,0 +1,475 @@
+3. Extrair e instalar
+unzip -q \
+  causalods_post_campaign_v2.zip
+
+Confira a estrutura:
+
+find \
+  causalods_post_campaign_v2 \
+  -maxdepth 3 \
+  -type f |
+  sort
+
+Execute o instalador:
+
+./causalods_post_campaign_v2/install.sh \
+  /workspaces/CausalODS
+
+O instalador:
+
+copia os novos scripts;
+preserva arquivos existentes;
+guarda o seu export_rca_evidence.py anterior em .causalods-backup/<timestamp>/;
+compila os módulos;
+executa os testes.
+
+Resultado esperado:
+
+Ran 7 tests
+
+OK
+Instalação e validação concluídas.
+Arquivos instalados
+experiments/
+├── analysis_utils.py
+├── compare_e2e_results.py
+├── export_rca_evidence.py
+├── run_baselines.py
+├── post_campaign_analysis.py
+├── build_experimental_report.py
+├── baselines/
+│   ├── __init__.py
+│   ├── contracts.py
+│   └── selectors.py
+└── tests/
+    ├── test_compare_e2e_results.py
+    └── test_baselines.py
+
+docs/
+├── baseline-methodology.md
+├── post-campaign-analysis.md
+└── experimental-results-template.md
+4. Executar novamente os testes
+
+Mesmo que o instalador já execute os testes:
+
+python -m unittest discover \
+  -s experiments/tests \
+  -v
+
+Esperado:
+
+Ran 7 tests
+
+OK
+
+Valide também a sintaxe:
+
+python -m py_compile \
+  experiments/analysis_utils.py \
+  experiments/compare_e2e_results.py \
+  experiments/export_rca_evidence.py \
+  experiments/run_baselines.py \
+  experiments/post_campaign_analysis.py \
+  experiments/build_experimental_report.py \
+  experiments/baselines/*.py
+
+Nenhuma saída significa sucesso.
+
+5. Verificar a estrutura da campanha
+find \
+  results/e2e/final/final-v1-v2-50 \
+  -maxdepth 3 \
+  -type f \
+  -printf '%P\n' |
+  sort
+
+Os itens essenciais são:
+
+status.json
+v1/all-repeat50.json
+v2/all-repeat50.json
+baseline-input/rca-documents.json
+baseline-input/rca-documents.json.sha256
+
+Valide novamente a evidência exportada:
+
+cd \
+  results/e2e/final/final-v1-v2-50/baseline-input
+
+sha256sum -c \
+  rca-documents.json.sha256
+
+Esperado:
+
+rca-documents.json: OK
+
+Retorne:
+
+cd /workspaces/CausalODS
+6. Primeiro passo analítico: comparar v1 × v2
+
+Execute:
+
+python \
+  experiments/compare_e2e_results.py \
+  --campaign-dir \
+  results/e2e/final/final-v1-v2-50 \
+  --bootstrap-samples 10000 \
+  --seed 42
+
+Saída esperada no terminal:
+
+Análise concluída:
+.../results/e2e/final/final-v1-v2-50/comparison
+
+Validação: OK
+
+v1 | executions=250 | pass_rate=0.6 | top1=1.0 | reliability=0.6
+v2 | executions=250 | pass_rate=1.0 | top1=1.0 | reliability=1.0
+
+Isso significa:
+
+Métrica	v1	v2
+Execuções	250	250
+Sucesso E2E	60%	100%
+Top-1 nos cenários de falha	100%	100%
+Reliability geral	60%	100%
+Falsos positivos saudáveis	0%	0%
+Falsos negativos em falhas	50%	0%
+Arquivos produzidos
+find \
+  results/e2e/final/final-v1-v2-50/comparison \
+  -maxdepth 1 \
+  -type f \
+  -printf '%f\n' |
+  sort
+
+Esperado:
+
+SHA256SUMS
+comparison.json
+confidence_summary.csv
+duration_summary.csv
+incident_summary.csv
+overall_metrics.csv
+provenance_validation.json
+reliability_summary.csv
+report.md
+run_level_metrics.csv
+scenario_metrics.csv
+statistical_tests.json
+
+Leia o relatório:
+
+sed -n '1,320p' \
+  results/e2e/final/final-v1-v2-50/comparison/report.md
+7. Validar a proveniência
+python - <<'PY'
+import json
+from pathlib import Path
+
+path = Path(
+    "results/e2e/final/final-v1-v2-50/"
+    "comparison/provenance_validation.json"
+)
+
+data = json.loads(
+    path.read_text(encoding="utf-8")
+)
+
+print(json.dumps(data, indent=2, ensure_ascii=False))
+
+if not data.get("valid"):
+    raise SystemExit("ERRO: proveniência inválida")
+
+print("\nPROVENIÊNCIA: OK")
+PY
+
+O campo pode estar organizado de forma ligeiramente diferente, mas o relatório deverá indicar:
+
+v1:
+runtime_model_version = v1
+model_version = xgboost-rca-v1
+pipeline_version = causalods-rca-v1
+
+v2:
+runtime_model_version = v2
+model_version = xgboost-rca-v2
+pipeline_version = causalods-rca-v2
+
+Caso o JSON não possua diretamente valid, abra o conteúdo:
+
+cat \
+  results/e2e/final/final-v1-v2-50/comparison/provenance_validation.json
+
+Não prossiga apenas se houver erros explícitos.
+
+8. Conferir as métricas gerais
+column -s, -t \
+  < \
+  results/e2e/final/final-v1-v2-50/comparison/overall_metrics.csv |
+  less -S
+
+Saia com q.
+
+Também pode visualizar somente os campos principais:
+
+python - <<'PY'
+import csv
+from pathlib import Path
+
+path = Path(
+    "results/e2e/final/final-v1-v2-50/"
+    "comparison/overall_metrics.csv"
+)
+
+with path.open(
+    encoding="utf-8",
+    newline="",
+) as handle:
+    rows = list(csv.DictReader(handle))
+
+fields = (
+    "version",
+    "executions",
+    "runner_pass.rate",
+    "top1_accuracy_fault_only.rate",
+    "reliability_accuracy.rate",
+    "incident_decision_accuracy.rate",
+    "healthy_false_positive_rate",
+    "fault_false_negative_rate",
+)
+
+for row in rows:
+    print()
+    for field in fields:
+        print(f"{field}: {row.get(field)}")
+PY
+9. Conferir os testes estatísticos
+python -m json.tool \
+  results/e2e/final/final-v1-v2-50/comparison/statistical_tests.json |
+  less
+
+O comparador realiza:
+
+McNemar exato para métricas booleanas;
+bootstrap pareado da diferença v2 − v1 para confiança e durações;
+pareamento por scenario + iteration.
+
+Nos cenários de latência, devem existir 100 pares em que:
+
+v1 = falha operacional
+v2 = sucesso operacional
+
+e nenhum par no sentido contrário.
+
+10. Segundo passo analítico: executar os baselines
+
+Agora use os 500 RCAResults completos:
+
+python \
+  experiments/run_baselines.py \
+  --input \
+  results/e2e/final/final-v1-v2-50/baseline-input/rca-documents.json \
+  --output-dir \
+  results/e2e/final/final-v1-v2-50/baselines
+
+Serão executados:
+
+max_temporal_score
+max_anomaly_zscore
+first_anomaly_in_time
+Significado
+max_temporal_score
+
+Escolhe o serviço com maior evidência de correlação temporal.
+
+max_anomaly_zscore
+
+Escolhe o serviço com maior z-score de anomalia.
+
+first_anomaly_in_time
+
+Escolhe o primeiro serviço que apresentou anomalia temporal.
+
+Saídas
+find \
+  results/e2e/final/final-v1-v2-50/baselines \
+  -maxdepth 1 \
+  -type f \
+  -printf '%f\n' |
+  sort
+
+Esperado:
+
+SHA256SUMS
+baseline_metrics.json
+baseline_overall_metrics.csv
+baseline_results.csv
+baseline_results.json
+baseline_scenario_metrics.csv
+report.md
+statistical_tests.json
+
+Leia:
+
+sed -n '1,360p' \
+  results/e2e/final/final-v1-v2-50/baselines/report.md
+11. Validar a quantidade de resultados dos baselines
+
+São:
+
+500 RCAResults × 3 baselines = 1.500 previsões
+
+Valide:
+
+python - <<'PY'
+import json
+from pathlib import Path
+
+path = Path(
+    "results/e2e/final/final-v1-v2-50/"
+    "baselines/baseline_results.json"
+)
+
+data = json.loads(
+    path.read_text(encoding="utf-8")
+)
+
+if isinstance(data, dict):
+    rows = (
+        data.get("results")
+        or data.get("predictions")
+        or data.get("rows")
+    )
+else:
+    rows = data
+
+if not isinstance(rows, list):
+    raise SystemExit(
+        "Não foi possível localizar a lista de resultados."
+    )
+
+print("Resultados:", len(rows))
+assert len(rows) == 1500
+
+print("VALIDAÇÃO: OK")
+PY
+12. Terceiro passo: gerar relatório consolidado
+python \
+  experiments/build_experimental_report.py \
+  --campaign-dir \
+  results/e2e/final/final-v1-v2-50
+
+Saídas:
+
+find \
+  results/e2e/final/final-v1-v2-50/final-analysis \
+  -maxdepth 1 \
+  -type f \
+  -printf '%f\n' |
+  sort
+
+Esperado:
+
+SHA256SUMS
+report-data.json
+report.md
+
+Leia:
+
+sed -n '1,420p' \
+  results/e2e/final/final-v1-v2-50/final-analysis/report.md
+13. Alternativa: executar tudo de uma vez
+
+Como você já possui rca-documents.json, pode executar:
+
+python \
+  experiments/post_campaign_analysis.py \
+  --campaign-dir \
+  results/e2e/final/final-v1-v2-50 \
+  --skip-export \
+  --baseline-input \
+  results/e2e/final/final-v1-v2-50/baseline-input/rca-documents.json \
+  --bootstrap-samples 10000 \
+  --seed 42
+
+Ele executará:
+
+comparação v1 × v2
+→ baselines
+→ relatório consolidado
+
+Apesar disso, na primeira execução recomendo realizar separadamente, pois fica mais fácil identificar qualquer incompatibilidade de schema ou evidência.
+
+14. Commitar somente o código
+
+Depois que os testes e scripts funcionarem:
+
+git status --short
+
+Os arquivos de results/e2e/ não devem aparecer, pois são artefatos gerados.
+
+Adicione o código:
+
+git add \
+  experiments/analysis_utils.py \
+  experiments/compare_e2e_results.py \
+  experiments/export_rca_evidence.py \
+  experiments/run_baselines.py \
+  experiments/post_campaign_analysis.py \
+  experiments/build_experimental_report.py \
+  experiments/baselines \
+  experiments/tests \
+  docs
+
+Não adicione:
+
+causalods_post_campaign_v2.zip
+causalods_post_campaign_v2/
+.causalods-backup/
+results/e2e/
+
+Você pode removê-los localmente depois da instalação:
+
+rm -rf \
+  causalods_post_campaign_v2 \
+  causalods_post_campaign_v2.zip \
+  causalods_post_campaign_v2.zip.sha256
+
+Mantenha .causalods-backup até confirmar que tudo funciona.
+
+Revise:
+
+git diff --cached --stat
+git diff --cached --name-status
+
+Commit sugerido:
+
+git commit -m \
+  "feat: add post-campaign analysis and RCA baselines"
+
+Envie:
+
+git push origin \
+  feat/rca-contract-v2
+Ordem imediata
+
+Faça agora:
+
+1. baixar e validar causalods_post_campaign_v2.zip
+2. executar install.sh
+3. confirmar 7 testes aprovados
+4. executar compare_e2e_results.py
+5. validar 150/250 na v1 e 250/250 na v2
+6. executar run_baselines.py
+7. validar 1.500 previsões
+8. gerar final-analysis/report.md
+9. revisar os resultados
+10. commit do código de análise
+
+O próximo comando prático, após colocar o ZIP na raiz do projeto, é:
+
+./causalods_post_campaign_v2/install.sh \
+  /workspaces/CausalODS

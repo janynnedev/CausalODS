@@ -1,0 +1,423 @@
+1. Confirmar o estado da .venv
+
+Na raiz do projeto:
+
+cd /workspaces/CausalODS
+
+echo "VIRTUAL_ENV=$VIRTUAL_ENV"
+
+command -v python || true
+command -v python3 || true
+command -v pip || true
+command -v pip3 || true
+
+ls -la .venv/bin 2>/dev/null || true
+ls -l .venv/bin/python* 2>/dev/null || true
+
+Em uma .venv válida, seria esperado algo parecido com:
+
+/workspaces/CausalODS/.venv/bin/python
+/workspaces/CausalODS/.venv/bin/python3
+/workspaces/CausalODS/.venv/bin/pip
+
+Como python3 está apontando para /usr/bin/python3, a reconstrução da .venv é a alternativa mais segura.
+
+2. Remover a ativação quebrada
+deactivate 2>/dev/null || true
+
+unset VIRTUAL_ENV
+hash -r
+
+Confira:
+
+echo "VIRTUAL_ENV=$VIRTUAL_ENV"
+command -v python3
+python3 --version
+
+Agora é normal que retorne:
+
+/usr/bin/python3
+3. Recriar a .venv
+
+A .venv é apenas um ambiente local e pode ser recriada. Ela não deve conter código ou resultados da campanha.
+
+cd /workspaces/CausalODS
+
+rm -rf .venv
+
+/usr/bin/python3 -m venv .venv
+
+Caso apareça erro relacionado a ensurepip ou venv, instale o pacote:
+
+sudo apt-get update
+
+sudo apt-get install -y \
+  python3-venv
+
+Depois repita:
+
+/usr/bin/python3 -m venv .venv
+
+Ative:
+
+source .venv/bin/activate
+
+Valide:
+
+echo "VIRTUAL_ENV=$VIRTUAL_ENV"
+
+command -v python
+command -v python3
+command -v pip
+
+python --version
+python3 --version
+python -m pip --version
+
+Agora os caminhos devem começar com:
+
+/workspaces/CausalODS/.venv/bin/
+
+Por exemplo:
+
+/workspaces/CausalODS/.venv/bin/python
+/workspaces/CausalODS/.venv/bin/python3
+/workspaces/CausalODS/.venv/bin/pip
+4. Atualizar as ferramentas básicas
+python -m pip install \
+  --upgrade \
+  pip \
+  setuptools \
+  wheel
+
+Não use:
+
+sudo pip install
+
+Os pacotes devem ser instalados apenas dentro da .venv.
+
+5. Localizar os arquivos de dependências
+find . \
+  -maxdepth 3 \
+  -type f \
+  \( \
+    -name 'requirements*.txt' \
+    -o -name 'pyproject.toml' \
+    -o -name 'setup.py' \
+  \) \
+  -print
+
+Provavelmente aparecerá algo como:
+
+./correlation-engine/requirements.txt
+
+Confira:
+
+sed -n '1,240p' \
+  correlation-engine/requirements.txt
+
+Procure dependências de teste:
+
+grep -Rni \
+  'pytest' \
+  requirements*.txt \
+  correlation-engine/requirements*.txt \
+  pyproject.toml \
+  correlation-engine/pyproject.toml \
+  2>/dev/null || true
+6. Instalar as dependências
+
+Instale as dependências principais:
+
+python -m pip install \
+  -r correlation-engine/requirements.txt
+
+Caso exista um arquivo de desenvolvimento:
+
+ls \
+  correlation-engine/requirements-dev.txt \
+  2>/dev/null
+
+Então instale:
+
+python -m pip install \
+  -r correlation-engine/requirements-dev.txt
+
+Caso não exista ou não contenha pytest, instale explicitamente:
+
+python -m pip install \
+  pytest
+
+Confirme:
+
+python -m pytest --version
+
+Esperado:
+
+pytest <versão>
+
+Registre as versões para auditoria:
+
+python --version
+python -m pip --version
+python -m pytest --version
+7. Executar primeiro os testes do correlation-engine
+
+A partir da raiz:
+
+cd /workspaces/CausalODS
+
+Tente:
+
+python -m pytest \
+  correlation-engine/tests \
+  -q
+
+Como o diretório possui imports como:
+
+from config.settings import Settings
+from pipeline.rca_pipeline import RCAPipeline
+
+pode ser necessário incluir correlation-engine no PYTHONPATH:
+
+PYTHONPATH=correlation-engine \
+python -m pytest \
+  correlation-engine/tests \
+  -q
+
+Para uma execução mais detalhada:
+
+PYTHONPATH=correlation-engine \
+python -m pytest \
+  correlation-engine/tests \
+  -v
+8. Executar os testes específicos dos contratos
+
+Os testes mais importantes após esse merge são os contratos e os adapters:
+
+PYTHONPATH=correlation-engine \
+python -m pytest \
+  correlation-engine/tests/test_rca_contracts.py \
+  correlation-engine/tests/test_result_adapters.py \
+  -v
+
+Também procure os testes disponíveis:
+
+find \
+  correlation-engine/tests \
+  -maxdepth 1 \
+  -type f \
+  -name 'test_*.py' \
+  -printf '%f\n' |
+  sort
+9. Executar os testes dos experimentos
+
+Caso a branch já contenha:
+
+experiments/tests/
+
+execute:
+
+python -m unittest discover \
+  -s experiments/tests \
+  -v
+
+Ou com pytest:
+
+python -m pytest \
+  experiments/tests \
+  -v
+10. Executar a suíte completa
+
+Depois dos grupos separados:
+
+PYTHONPATH=correlation-engine \
+python -m pytest \
+  -q
+
+Caso a descoberta na raiz tente coletar arquivos de diretórios que não são testes, prefira os caminhos explícitos:
+
+PYTHONPATH=correlation-engine \
+python -m pytest \
+  correlation-engine/tests \
+  experiments/tests \
+  -q
+11. Verificar o caminho do modelo v2
+
+O Compose atualmente apresentou:
+
+MODEL_PATH_V2: training/models/xgboost_rca_v2.pkl
+
+Esse é um caminho relativo, enquanto o da v1 é absoluto:
+
+MODEL_PATH: /app/training/models/xgboost_rca.pkl
+
+Como a campanha v2 foi concluída corretamente, o caminho funcionava no ambiente da campanha. Mesmo assim, após o merge é importante confirmar que ele continua resolvendo dentro do container.
+
+Execute:
+
+docker compose exec -T \
+  correlation-engine \
+  sh -lc '
+    echo "pwd=$(pwd)"
+    echo "RCA_MODEL_VERSION=$RCA_MODEL_VERSION"
+    echo "MODEL_PATH=$MODEL_PATH"
+    echo "MODEL_PATH_V2=$MODEL_PATH_V2"
+
+    echo
+    echo "[modelo v1]"
+    ls -lh "$MODEL_PATH"
+
+    echo
+    echo "[modelo v2]"
+    ls -lh "$MODEL_PATH_V2"
+  '
+
+Esperado:
+
+RCA_MODEL_VERSION=v2
+
+E ambos os arquivos devem existir.
+
+Teste diretamente:
+
+docker compose exec -T \
+  correlation-engine \
+  sh -lc '
+    test -f "$MODEL_PATH" &&
+      echo "MODEL_PATH: OK"
+
+    test -f "$MODEL_PATH_V2" &&
+      echo "MODEL_PATH_V2: OK"
+  '
+
+Esperado:
+
+MODEL_PATH: OK
+MODEL_PATH_V2: OK
+Normalização recomendada
+
+Para evitar dependência do diretório de trabalho do container, é melhor que os dois caminhos sejam absolutos:
+
+MODEL_PATH: /app/training/models/xgboost_rca.pkl
+MODEL_PATH_V2: /app/training/models/xgboost_rca_v2.pkl
+
+Antes de modificar, confirme no container:
+
+docker compose exec -T \
+  correlation-engine \
+  sh -lc '
+    ls -lh \
+      /app/training/models/xgboost_rca.pkl \
+      /app/training/models/xgboost_rca_v2.pkl
+  '
+
+Se os dois existirem, altere no docker-compose.yml:
+
+MODEL_PATH: ${MODEL_PATH:-/app/training/models/xgboost_rca.pkl}
+MODEL_PATH_V2: ${MODEL_PATH_V2:-/app/training/models/xgboost_rca_v2.pkl}
+
+Depois valide:
+
+docker compose config \
+  > /tmp/causalods-compose-after-model-path-fix.yml
+grep -n \
+  'RCA_MODEL_VERSION\|MODEL_PATH' \
+  /tmp/causalods-compose-after-model-path-fix.yml
+
+Esperado:
+
+MODEL_PATH: /app/training/models/xgboost_rca.pkl
+MODEL_PATH_V2: /app/training/models/xgboost_rca_v2.pkl
+RCA_MODEL_VERSION: v2
+
+Essa normalização não exige repetir a campanha; é apenas uma melhoria de configuração posterior.
+
+12. Verificar que .venv está ignorada
+git check-ignore -v \
+  .venv
+
+Se não houver saída, adicione ao .gitignore:
+
+cat >> .gitignore <<'EOF'
+
+# Python virtual environments
+.venv/
+venv/
+EOF
+
+Confirme:
+
+git status --short
+
+A .venv não deve aparecer no Git.
+
+13. Depois que os testes passarem
+
+Confira a branch:
+
+git branch --show-current
+
+Você está em:
+
+feat/rca-contract-v2
+
+Veja o status:
+
+git status --short
+
+Caso tenha alterado apenas o caminho do modelo e o .gitignore:
+
+git add \
+  docker-compose.yml \
+  .gitignore
+
+Revise:
+
+git diff --cached
+
+Commit sugerido:
+
+git commit -m \
+  "fix: normalize model paths and Python environment setup"
+
+Envie:
+
+git push origin \
+  feat/rca-contract-v2
+Sequência imediata
+
+Execute agora:
+
+deactivate 2>/dev/null || true
+unset VIRTUAL_ENV
+hash -r
+
+cd /workspaces/CausalODS
+
+rm -rf .venv
+
+/usr/bin/python3 -m venv .venv
+
+source .venv/bin/activate
+
+python -m pip install \
+  --upgrade \
+  pip \
+  setuptools \
+  wheel
+
+python -m pip install \
+  -r correlation-engine/requirements.txt
+
+python -m pip install \
+  pytest
+
+Depois:
+
+PYTHONPATH=correlation-engine \
+python -m pytest \
+  correlation-engine/tests \
+  -q
+
+O erro atual não indica problema no merge nem no código da v2. Ele indica somente que a .venv exibida no prompt não estava funcional.
