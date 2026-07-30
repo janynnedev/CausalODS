@@ -17,20 +17,110 @@ module = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(module)
 
 
-def row(version: str, service: str, delay: int, detected: bool, confidence: float):
+def row(
+    version: str,
+    service: str | None,
+    delay: int,
+    detected: bool,
+    confidence: float,
+    *,
+    top1_correct: bool | None = True,
+    condition_kind: str = "latency",
+    passed: bool | None = None,
+):
+    if passed is None:
+        passed = (
+            detected
+            if condition_kind == "latency"
+            else not detected
+        )
+
     return {
         "runtime_model_version": version,
-        "condition_kind": "latency",
+        "condition_kind": condition_kind,
         "sensitivity_service": service,
         "configured_delay_ms": delay,
         "technical_valid": True,
         "is_reliable": detected,
         "incident_created": detected,
-        "passed": detected,
-        "top1_correct": True,
+        "passed": passed,
+        "top1_correct": top1_correct,
         "confidence": confidence,
         "request_duration_ms": delay + 200.0,
     }
+
+def test_top1_metrics_with_nine_correct_results():
+    rows = [
+        row(
+            "v1",
+            "payment-service",
+            500,
+            detected=False,
+            confidence=0.15,
+            top1_correct=index < 9,
+        )
+        for index in range(10)
+    ]
+
+    condition_rows = module.build_condition_table(rows)
+
+    assert len(condition_rows) == 1
+
+    result = condition_rows[0]
+
+    assert result["top1_evaluable_count"] == 10
+    assert result["top1_correct_count"] == 9
+    assert result["top1_accuracy"] == 0.9
+
+
+def test_top1_metrics_with_zero_correct_results():
+    rows = [
+        row(
+            "v1",
+            "payment-service",
+            250,
+            detected=False,
+            confidence=0.001,
+            top1_correct=False,
+        )
+        for _ in range(10)
+    ]
+
+    condition_rows = module.build_condition_table(rows)
+
+    assert len(condition_rows) == 1
+
+    result = condition_rows[0]
+
+    assert result["top1_evaluable_count"] == 10
+    assert result["top1_correct_count"] == 0
+    assert result["top1_accuracy"] == 0.0
+
+
+def test_top1_metrics_are_not_applicable_to_healthy_control():
+    rows = [
+        row(
+            "v2",
+            None,
+            0,
+            detected=False,
+            confidence=0.01,
+            top1_correct=None,
+            condition_kind="healthy",
+            passed=True,
+        )
+        for _ in range(10)
+    ]
+
+    condition_rows = module.build_condition_table(rows)
+
+    assert len(condition_rows) == 1
+
+    result = condition_rows[0]
+
+    assert result["top1_evaluable_count"] == 0
+    assert result["top1_correct_count"] == 0
+    assert result["top1_accuracy"] is None
 
 
 def test_threshold_is_first_delay_reaching_rate():

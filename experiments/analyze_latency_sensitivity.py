@@ -215,6 +215,17 @@ def condition_metrics(rows: list[dict[str, Any]]) -> dict[str, Any]:
         for row in rows
         if row.get("top1_correct") is not None
     ]
+    top1_evaluable_count = len(top1_values)
+    top1_correct_count = sum(1
+                             for value in top1_values 
+                             if value
+                             )
+    top1_accuracy = (
+        top1_correct_count
+        / top1_evaluable_count
+        if top1_evaluable_count
+        else None
+    )
     confidence = [
         float(row["confidence"])
         for row in rows
@@ -238,11 +249,9 @@ def condition_metrics(rows: list[dict[str, Any]]) -> dict[str, Any]:
         "incident_rate": incidents / total if total else None,
         "passed_count": passed,
         "end_to_end_rate": passed / total if total else None,
-        "top1_count": len(top1_values),
-        "top1_accuracy": (
-            sum(top1_values) / len(top1_values)
-            if top1_values else None
-        ),
+        "top1_evaluable_count": top1_evaluable_count,
+        "top1_correct_count": top1_correct_count,
+        "top1_accuracy": top1_accuracy,
         "confidence_mean": mean(confidence),
         "confidence_median": median(confidence),
         "confidence_stdev": stdev(confidence),
