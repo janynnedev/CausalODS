@@ -1,0 +1,636 @@
+{
+  "campaign_id": "latency-sensitivity-v1-v2-20260729T191418Z",
+  "count": 2,
+  "diagnostics": [
+    {
+      "rca_result_id": "9be25e72-9ead-45bd-8289-67f3ac3d47d3",
+      "campaign_row": {
+        "run_id": "d4e44efeb1d0",
+        "scenario": "payment_latency_0250ms",
+        "iteration": 2,
+        "started_at": "2026-07-29T21:12:05.704834+00:00",
+        "finished_at": "2026-07-29T21:12:40.389730+00:00",
+        "duration_ms": 34684.896,
+        "runtime_model_version": "v2",
+        "model_version": "xgboost-rca-v2",
+        "pipeline_version": "causalods-rca-v2",
+        "fault_target": "payment-service",
+        "fault_mode": "latency",
+        "fault_rate": 1.0,
+        "fault_delay_ms": 250,
+        "fault_seed": 42,
+        "http_status": 200,
+        "request_duration_ms": 308.31563600804657,
+        "rca_count_before": 892,
+        "rca_count_after": 893,
+        "incident_count_before": 413,
+        "incident_count_after": 413,
+        "rca_result_id": "9be25e72-9ead-45bd-8289-67f3ac3d47d3",
+        "trace_id": "dd254d2aa0d6d9e84d2ae0ceb148c346",
+        "top_service": "payment-service",
+        "confidence": 0.07971024491567653,
+        "is_reliable": false,
+        "incident_id": null,
+        "incident_root_cause": null,
+        "restart_count_before": 0,
+        "restart_count_after": 0,
+        "passed": false,
+        "failures": [
+          "Decisão de confiabilidade incorreta: esperado=True; encontrado=False.",
+          "Criação de incidente incorreta: esperado=True; encontrado=False."
+        ],
+        "experiment": "latency_sensitivity",
+        "condition_kind": "latency",
+        "sensitivity_service": "payment-service",
+        "configured_delay_ms": 250,
+        "matrix_order": 9,
+        "randomization_seed": 20260731,
+        "technical_valid": true,
+        "top1_correct": true,
+        "detected": false,
+        "incident_created": false
+      },
+      "trace_id": "dd254d2aa0d6d9e84d2ae0ceb148c346",
+      "model_version": "xgboost-rca-v2",
+      "pipeline_version": "causalods-rca-v2",
+      "top_service": "payment-service",
+      "top_final_score": 0.07971024491567653,
+      "top_scores": {
+        "model_probability": 0.019899513572454453,
+        "shap_support_score": 0.287001757946779,
+        "temporal_score": 0.0,
+        "graph_score": 0.0,
+        "anomaly_score": 0.0,
+        "final_score": 0.07971024491567653,
+        "component_weights": {
+          "model_probability": 0.4,
+          "shap_support": 0.25,
+          "temporal": 0.2,
+          "graph": 0.15,
+          "anomaly": 0.0
+        },
+        "normalization_method": "normalized_weighted_ranking_v1"
+      },
+      "second_service": "order-service",
+      "second_final_score": 0.03859051182322653,
+      "second_scores": {
+        "model_probability": 0.0006586299859918654,
+        "shap_support_score": 0.15330823931531914,
+        "temporal_score": 0.0,
+        "graph_score": 0.0,
+        "anomaly_score": 0.0,
+        "final_score": 0.03859051182322653,
+        "component_weights": {
+          "model_probability": 0.4,
+          "shap_support": 0.25,
+          "temporal": 0.2,
+          "graph": 0.15,
+          "anomaly": 0.0
+        },
+        "normalization_method": "normalized_weighted_ranking_v1"
+      },
+      "reliability": {
+        "is_reliable": false,
+        "confidence": 0.07971024491567653,
+        "confidence_method": "reliability-gate-v1",
+        "minimum_confidence": 0.5,
+        "margin_to_second": 0.041119733092450005,
+        "minimum_margin": 0.05,
+        "passed_rules": [
+          "ranking_present",
+          "minimum_evidence_count",
+          "minimum_source_diversity"
+        ],
+        "failed_rules": [
+          "minimum_confidence",
+          "minimum_margin"
+        ]
+      },
+      "evidence": [
+        {
+          "source": "model",
+          "service_name": "order-service",
+          "metric_name": "root_cause_probability",
+          "normalized_value": 0.0006586299859918654,
+          "score": null,
+          "description": "O modelo atribuiu probabilidade 0.000659 ao serviço order-service."
+        },
+        {
+          "source": "shap",
+          "service_name": "order-service",
+          "metric_name": "exclusive_latency_ms",
+          "normalized_value": 0.15330823931531914,
+          "score": null,
+          "description": "A feature exclusive_latency_ms apresentou contribuição SHAP -3.214992 para o serviço order-service."
+        },
+        {
+          "source": "shap",
+          "service_name": "order-service",
+          "metric_name": "exclusive_latency_ratio",
+          "normalized_value": 0.15330823931531914,
+          "score": null,
+          "description": "A feature exclusive_latency_ratio apresentou contribuição SHAP -2.628366 para o serviço order-service."
+        },
+        {
+          "source": "shap",
+          "service_name": "order-service",
+          "metric_name": "is_first_failure",
+          "normalized_value": 0.15330823931531914,
+          "score": null,
+          "description": "A feature is_first_failure apresentou contribuição SHAP -2.354773 para o serviço order-service."
+        },
+        {
+          "source": "shap",
+          "service_name": "order-service",
+          "metric_name": "avg_latency_ms",
+          "normalized_value": 0.15330823931531914,
+          "score": null,
+          "description": "A feature avg_latency_ms apresentou contribuição SHAP 1.233976 para o serviço order-service."
+        },
+        {
+          "source": "shap",
+          "service_name": "order-service",
+          "metric_name": "error_count",
+          "normalized_value": 0.15330823931531914,
+          "score": null,
+          "description": "A feature error_count apresentou contribuição SHAP -0.697227 para o serviço order-service."
+        },
+        {
+          "source": "temporal",
+          "service_name": "order-service",
+          "metric_name": "temporal_score",
+          "normalized_value": 0.0,
+          "score": null,
+          "description": "O serviço order-service obteve score temporal 0.000000; primeira falha/anomalia: False."
+        },
+        {
+          "source": "graph",
+          "service_name": "order-service",
+          "metric_name": "graph_score",
+          "normalized_value": 0.0,
+          "score": null,
+          "description": "O serviço order-service obteve score estrutural 0.000000."
+        },
+        {
+          "source": "anomaly",
+          "service_name": "order-service",
+          "metric_name": "anomaly_score",
+          "normalized_value": 0.0,
+          "score": null,
+          "description": "O serviço order-service obteve score de anomalia 0.000000."
+        },
+        {
+          "source": "model",
+          "service_name": "payment-service",
+          "metric_name": "root_cause_probability",
+          "normalized_value": 0.019899513572454453,
+          "score": null,
+          "description": "O modelo atribuiu probabilidade 0.019900 ao serviço payment-service."
+        },
+        {
+          "source": "shap",
+          "service_name": "payment-service",
+          "metric_name": "exclusive_latency_ms",
+          "normalized_value": 0.287001757946779,
+          "score": null,
+          "description": "A feature exclusive_latency_ms apresentou contribuição SHAP -3.941411 para o serviço payment-service."
+        },
+        {
+          "source": "shap",
+          "service_name": "payment-service",
+          "metric_name": "is_first_failure",
+          "normalized_value": 0.287001757946779,
+          "score": null,
+          "description": "A feature is_first_failure apresentou contribuição SHAP -2.124655 para o serviço payment-service."
+        },
+        {
+          "source": "shap",
+          "service_name": "payment-service",
+          "metric_name": "avg_latency_ms",
+          "normalized_value": 0.287001757946779,
+          "score": null,
+          "description": "A feature avg_latency_ms apresentou contribuição SHAP 1.537954 para o serviço payment-service."
+        },
+        {
+          "source": "shap",
+          "service_name": "payment-service",
+          "metric_name": "exclusive_latency_ratio",
+          "normalized_value": 0.287001757946779,
+          "score": null,
+          "description": "A feature exclusive_latency_ratio apresentou contribuição SHAP 0.629892 para o serviço payment-service."
+        },
+        {
+          "source": "shap",
+          "service_name": "payment-service",
+          "metric_name": "error_count",
+          "normalized_value": 0.287001757946779,
+          "score": null,
+          "description": "A feature error_count apresentou contribuição SHAP -0.597911 para o serviço payment-service."
+        },
+        {
+          "source": "temporal",
+          "service_name": "payment-service",
+          "metric_name": "temporal_score",
+          "normalized_value": 0.0,
+          "score": null,
+          "description": "O serviço payment-service obteve score temporal 0.000000; primeira falha/anomalia: False."
+        },
+        {
+          "source": "graph",
+          "service_name": "payment-service",
+          "metric_name": "graph_score",
+          "normalized_value": 0.0,
+          "score": null,
+          "description": "O serviço payment-service obteve score estrutural 0.000000."
+        },
+        {
+          "source": "anomaly",
+          "service_name": "payment-service",
+          "metric_name": "anomaly_score",
+          "normalized_value": 0.0,
+          "score": null,
+          "description": "O serviço payment-service obteve score de anomalia 0.000000."
+        }
+      ],
+      "ranking": [
+        {
+          "position": 1,
+          "service_name": "payment-service",
+          "scores": {
+            "model_probability": 0.019899513572454453,
+            "shap_support_score": 0.287001757946779,
+            "temporal_score": 0.0,
+            "graph_score": 0.0,
+            "anomaly_score": 0.0,
+            "final_score": 0.07971024491567653,
+            "component_weights": {
+              "model_probability": 0.4,
+              "shap_support": 0.25,
+              "temporal": 0.2,
+              "graph": 0.15,
+              "anomaly": 0.0
+            },
+            "normalization_method": "normalized_weighted_ranking_v1"
+          },
+          "evidence_ids": [
+            "ev-a75f5f8e92a65a7b1f43bf73",
+            "ev-fbe61b15d8730c3c1990999e",
+            "ev-e226f4ca6937c5da64c2f5d2",
+            "ev-a40cd4904886300f8dd5e7a2",
+            "ev-c42af0a0787a9f6f213f5aba",
+            "ev-e1aa4130143e2c0478c37e4f",
+            "ev-64e6632775930ec15bdbda5c",
+            "ev-ac68de9f25e924e067eee116",
+            "ev-f2305ffe6a2d813251f66ddd"
+          ]
+        },
+        {
+          "position": 2,
+          "service_name": "order-service",
+          "scores": {
+            "model_probability": 0.0006586299859918654,
+            "shap_support_score": 0.15330823931531914,
+            "temporal_score": 0.0,
+            "graph_score": 0.0,
+            "anomaly_score": 0.0,
+            "final_score": 0.03859051182322653,
+            "component_weights": {
+              "model_probability": 0.4,
+              "shap_support": 0.25,
+              "temporal": 0.2,
+              "graph": 0.15,
+              "anomaly": 0.0
+            },
+            "normalization_method": "normalized_weighted_ranking_v1"
+          },
+          "evidence_ids": [
+            "ev-1d2e13def7762fce4b4b2f2e",
+            "ev-465ed0d6a08837df7b91ea21",
+            "ev-76c0632140820843b6cc997f",
+            "ev-ecb693bb5f0175dfc6363cbe",
+            "ev-59503c11b3f6c55dd6812256",
+            "ev-564836fa07ee67ded3efa6a8",
+            "ev-7e2263c28271f3e1019a3ca3",
+            "ev-75ca4e912007b26682a606ab",
+            "ev-24d0fd40c0ad7260d4808ee0"
+          ]
+        }
+      ]
+    },
+    {
+      "rca_result_id": "4f07b232-cf57-4af2-9ac3-ead428ae037f",
+      "campaign_row": {
+        "run_id": "e5b6c1596ea8",
+        "scenario": "payment_latency_0250ms",
+        "iteration": 4,
+        "started_at": "2026-07-29T21:28:25.058041+00:00",
+        "finished_at": "2026-07-29T21:28:57.926537+00:00",
+        "duration_ms": 32868.496,
+        "runtime_model_version": "v2",
+        "model_version": "xgboost-rca-v2",
+        "pipeline_version": "causalods-rca-v2",
+        "fault_target": "payment-service",
+        "fault_mode": "latency",
+        "fault_rate": 1.0,
+        "fault_delay_ms": 250,
+        "fault_seed": 42,
+        "http_status": 200,
+        "request_duration_ms": 306.0284560197033,
+        "rca_count_before": 919,
+        "rca_count_after": 920,
+        "incident_count_before": 437,
+        "incident_count_after": 437,
+        "rca_result_id": "4f07b232-cf57-4af2-9ac3-ead428ae037f",
+        "trace_id": "0a9e18045bf537ccaaba472a4ff56dbe",
+        "top_service": "payment-service",
+        "confidence": 0.07971024491567653,
+        "is_reliable": false,
+        "incident_id": null,
+        "incident_root_cause": null,
+        "restart_count_before": 0,
+        "restart_count_after": 0,
+        "passed": false,
+        "failures": [
+          "Decisão de confiabilidade incorreta: esperado=True; encontrado=False.",
+          "Criação de incidente incorreta: esperado=True; encontrado=False."
+        ],
+        "experiment": "latency_sensitivity",
+        "condition_kind": "latency",
+        "sensitivity_service": "payment-service",
+        "configured_delay_ms": 250,
+        "matrix_order": 6,
+        "randomization_seed": 20260733,
+        "technical_valid": true,
+        "top1_correct": true,
+        "detected": false,
+        "incident_created": false
+      },
+      "trace_id": "0a9e18045bf537ccaaba472a4ff56dbe",
+      "model_version": "xgboost-rca-v2",
+      "pipeline_version": "causalods-rca-v2",
+      "top_service": "payment-service",
+      "top_final_score": 0.07971024491567653,
+      "top_scores": {
+        "model_probability": 0.019899513572454453,
+        "shap_support_score": 0.287001757946779,
+        "temporal_score": 0.0,
+        "graph_score": 0.0,
+        "anomaly_score": 0.0,
+        "final_score": 0.07971024491567653,
+        "component_weights": {
+          "model_probability": 0.4,
+          "shap_support": 0.25,
+          "temporal": 0.2,
+          "graph": 0.15,
+          "anomaly": 0.0
+        },
+        "normalization_method": "normalized_weighted_ranking_v1"
+      },
+      "second_service": "order-service",
+      "second_final_score": 0.03859051182322653,
+      "second_scores": {
+        "model_probability": 0.0006586299859918654,
+        "shap_support_score": 0.15330823931531914,
+        "temporal_score": 0.0,
+        "graph_score": 0.0,
+        "anomaly_score": 0.0,
+        "final_score": 0.03859051182322653,
+        "component_weights": {
+          "model_probability": 0.4,
+          "shap_support": 0.25,
+          "temporal": 0.2,
+          "graph": 0.15,
+          "anomaly": 0.0
+        },
+        "normalization_method": "normalized_weighted_ranking_v1"
+      },
+      "reliability": {
+        "is_reliable": false,
+        "confidence": 0.07971024491567653,
+        "confidence_method": "reliability-gate-v1",
+        "minimum_confidence": 0.5,
+        "margin_to_second": 0.041119733092450005,
+        "minimum_margin": 0.05,
+        "passed_rules": [
+          "ranking_present",
+          "minimum_evidence_count",
+          "minimum_source_diversity"
+        ],
+        "failed_rules": [
+          "minimum_confidence",
+          "minimum_margin"
+        ]
+      },
+      "evidence": [
+        {
+          "source": "model",
+          "service_name": "order-service",
+          "metric_name": "root_cause_probability",
+          "normalized_value": 0.0006586299859918654,
+          "score": null,
+          "description": "O modelo atribuiu probabilidade 0.000659 ao serviço order-service."
+        },
+        {
+          "source": "shap",
+          "service_name": "order-service",
+          "metric_name": "exclusive_latency_ms",
+          "normalized_value": 0.15330823931531914,
+          "score": null,
+          "description": "A feature exclusive_latency_ms apresentou contribuição SHAP -3.214992 para o serviço order-service."
+        },
+        {
+          "source": "shap",
+          "service_name": "order-service",
+          "metric_name": "exclusive_latency_ratio",
+          "normalized_value": 0.15330823931531914,
+          "score": null,
+          "description": "A feature exclusive_latency_ratio apresentou contribuição SHAP -2.628366 para o serviço order-service."
+        },
+        {
+          "source": "shap",
+          "service_name": "order-service",
+          "metric_name": "is_first_failure",
+          "normalized_value": 0.15330823931531914,
+          "score": null,
+          "description": "A feature is_first_failure apresentou contribuição SHAP -2.354773 para o serviço order-service."
+        },
+        {
+          "source": "shap",
+          "service_name": "order-service",
+          "metric_name": "avg_latency_ms",
+          "normalized_value": 0.15330823931531914,
+          "score": null,
+          "description": "A feature avg_latency_ms apresentou contribuição SHAP 1.233976 para o serviço order-service."
+        },
+        {
+          "source": "shap",
+          "service_name": "order-service",
+          "metric_name": "error_count",
+          "normalized_value": 0.15330823931531914,
+          "score": null,
+          "description": "A feature error_count apresentou contribuição SHAP -0.697227 para o serviço order-service."
+        },
+        {
+          "source": "temporal",
+          "service_name": "order-service",
+          "metric_name": "temporal_score",
+          "normalized_value": 0.0,
+          "score": null,
+          "description": "O serviço order-service obteve score temporal 0.000000; primeira falha/anomalia: False."
+        },
+        {
+          "source": "graph",
+          "service_name": "order-service",
+          "metric_name": "graph_score",
+          "normalized_value": 0.0,
+          "score": null,
+          "description": "O serviço order-service obteve score estrutural 0.000000."
+        },
+        {
+          "source": "anomaly",
+          "service_name": "order-service",
+          "metric_name": "anomaly_score",
+          "normalized_value": 0.0,
+          "score": null,
+          "description": "O serviço order-service obteve score de anomalia 0.000000."
+        },
+        {
+          "source": "model",
+          "service_name": "payment-service",
+          "metric_name": "root_cause_probability",
+          "normalized_value": 0.019899513572454453,
+          "score": null,
+          "description": "O modelo atribuiu probabilidade 0.019900 ao serviço payment-service."
+        },
+        {
+          "source": "shap",
+          "service_name": "payment-service",
+          "metric_name": "exclusive_latency_ms",
+          "normalized_value": 0.287001757946779,
+          "score": null,
+          "description": "A feature exclusive_latency_ms apresentou contribuição SHAP -3.941411 para o serviço payment-service."
+        },
+        {
+          "source": "shap",
+          "service_name": "payment-service",
+          "metric_name": "is_first_failure",
+          "normalized_value": 0.287001757946779,
+          "score": null,
+          "description": "A feature is_first_failure apresentou contribuição SHAP -2.124655 para o serviço payment-service."
+        },
+        {
+          "source": "shap",
+          "service_name": "payment-service",
+          "metric_name": "avg_latency_ms",
+          "normalized_value": 0.287001757946779,
+          "score": null,
+          "description": "A feature avg_latency_ms apresentou contribuição SHAP 1.537954 para o serviço payment-service."
+        },
+        {
+          "source": "shap",
+          "service_name": "payment-service",
+          "metric_name": "exclusive_latency_ratio",
+          "normalized_value": 0.287001757946779,
+          "score": null,
+          "description": "A feature exclusive_latency_ratio apresentou contribuição SHAP 0.629892 para o serviço payment-service."
+        },
+        {
+          "source": "shap",
+          "service_name": "payment-service",
+          "metric_name": "error_count",
+          "normalized_value": 0.287001757946779,
+          "score": null,
+          "description": "A feature error_count apresentou contribuição SHAP -0.597911 para o serviço payment-service."
+        },
+        {
+          "source": "temporal",
+          "service_name": "payment-service",
+          "metric_name": "temporal_score",
+          "normalized_value": 0.0,
+          "score": null,
+          "description": "O serviço payment-service obteve score temporal 0.000000; primeira falha/anomalia: False."
+        },
+        {
+          "source": "graph",
+          "service_name": "payment-service",
+          "metric_name": "graph_score",
+          "normalized_value": 0.0,
+          "score": null,
+          "description": "O serviço payment-service obteve score estrutural 0.000000."
+        },
+        {
+          "source": "anomaly",
+          "service_name": "payment-service",
+          "metric_name": "anomaly_score",
+          "normalized_value": 0.0,
+          "score": null,
+          "description": "O serviço payment-service obteve score de anomalia 0.000000."
+        }
+      ],
+      "ranking": [
+        {
+          "position": 1,
+          "service_name": "payment-service",
+          "scores": {
+            "model_probability": 0.019899513572454453,
+            "shap_support_score": 0.287001757946779,
+            "temporal_score": 0.0,
+            "graph_score": 0.0,
+            "anomaly_score": 0.0,
+            "final_score": 0.07971024491567653,
+            "component_weights": {
+              "model_probability": 0.4,
+              "shap_support": 0.25,
+              "temporal": 0.2,
+              "graph": 0.15,
+              "anomaly": 0.0
+            },
+            "normalization_method": "normalized_weighted_ranking_v1"
+          },
+          "evidence_ids": [
+            "ev-f5dcf7c6bdaeaba6ad33c0f3",
+            "ev-8d564ff000f4b75d6523268e",
+            "ev-356b14be547adfcd4349f86a",
+            "ev-9007137ee06cf5bf28eef220",
+            "ev-5a8b07e0b728ec3bf00c2e27",
+            "ev-cd3862f95ffbfadd918620e4",
+            "ev-d5f21e831cd28db0f300f7dd",
+            "ev-bffe03d0d38c5fcd9fdd4d23",
+            "ev-a72545d938a6be4b1e0d9f53"
+          ]
+        },
+        {
+          "position": 2,
+          "service_name": "order-service",
+          "scores": {
+            "model_probability": 0.0006586299859918654,
+            "shap_support_score": 0.15330823931531914,
+            "temporal_score": 0.0,
+            "graph_score": 0.0,
+            "anomaly_score": 0.0,
+            "final_score": 0.03859051182322653,
+            "component_weights": {
+              "model_probability": 0.4,
+              "shap_support": 0.25,
+              "temporal": 0.2,
+              "graph": 0.15,
+              "anomaly": 0.0
+            },
+            "normalization_method": "normalized_weighted_ranking_v1"
+          },
+          "evidence_ids": [
+            "ev-b6b0176aa8e17d8297bb2ebf",
+            "ev-ae8719ff7a9af3566386effa",
+            "ev-94ef600b4c511d162c21a5ce",
+            "ev-a297d84b0c5cffebc6650df6",
+            "ev-71bfb3706003f47d53017e0d",
+            "ev-d632eaf22c8f455d87e5df2c",
+            "ev-e89292c8ca2e99522e1b6195",
+            "ev-5b80dfea38fb4971d7c85e87",
+            "ev-bbe50d5beeb6499e958ee268"
+          ]
+        }
+      ]
+    }
+  ]
+}
