@@ -1,0 +1,239 @@
+name: causalods
+services:
+  correlation-engine:
+    build:
+      context: /home/palhetajso/projects/CausalODS/correlation-engine
+      dockerfile: Dockerfile
+    container_name: correlation-engine
+    depends_on:
+      kafka:
+        condition: service_healthy
+        required: true
+      opensearch:
+        condition: service_healthy
+        required: true
+    environment:
+      CONSUMER_GROUP: correlation-engine
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      KAFKA_TOPIC: traces
+      MODEL_MANIFEST_PATH_V2: training/models/xgboost_rca_v2.manifest.json
+      MODEL_PATH: /app/training/models/xgboost_rca.pkl
+      MODEL_PATH_V2: training/models/xgboost_rca_v2.pkl
+      OPENSEARCH_HOST: causalods-opensearch
+      OPENSEARCH_PORT: "9200"
+      RCA_MODEL_VERSION: v2
+    networks:
+      observability: null
+    restart: unless-stopped
+    volumes:
+      - type: bind
+        source: /home/palhetajso/projects/CausalODS/correlation-engine/output
+        target: /app/output
+        bind: {}
+  jaeger:
+    container_name: jaeger
+    image: jaegertracing/all-in-one:1.66.0
+    networks:
+      observability: null
+    ports:
+      - mode: ingress
+        target: 16686
+        published: "16686"
+        protocol: tcp
+      - mode: ingress
+        target: 14250
+        published: "14250"
+        protocol: tcp
+    restart: unless-stopped
+  kafka:
+    container_name: kafka
+    environment:
+      CLUSTER_ID: MkU3OEVBNTcwNTJENDM2Qk
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
+      KAFKA_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:9093
+      KAFKA_LOG_DIRS: /tmp/kraft-combined-logs
+      KAFKA_NODE_ID: "1"
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: "1"
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: "1"
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: "1"
+    hostname: kafka
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - kafka-broker-api-versions --bootstrap-server localhost:9092 >/dev/null 2>&1
+          || exit 1
+      timeout: 5s
+      interval: 10s
+      retries: 15
+      start_period: 30s
+    image: confluentinc/cp-kafka:7.8.0
+    networks:
+      observability: null
+    ports:
+      - mode: ingress
+        target: 9092
+        published: "9092"
+        protocol: tcp
+    restart: unless-stopped
+  opensearch:
+    container_name: causalods-opensearch
+    environment:
+      DISABLE_SECURITY_PLUGIN: "true"
+      OPENSEARCH_JAVA_OPTS: -Xms512m -Xmx512m
+      bootstrap.memory_lock: "true"
+      discovery.type: single-node
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - curl -fs http://localhost:9200 >/dev/null || exit 1
+      timeout: 10s
+      interval: 20s
+      retries: 20
+      start_period: 30s
+    image: opensearchproject/opensearch:2.19.0
+    networks:
+      observability: null
+    ports:
+      - mode: ingress
+        target: 9200
+        published: "9200"
+        protocol: tcp
+      - mode: ingress
+        target: 9600
+        published: "9600"
+        protocol: tcp
+    restart: unless-stopped
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+  order-service:
+    build:
+      context: /home/palhetajso/projects/CausalODS/services/order-service
+      dockerfile: Dockerfile
+    container_name: order-service
+    depends_on:
+      otel-collector:
+        condition: service_started
+        required: true
+      payment-service:
+        condition: service_started
+        required: true
+    environment:
+      CAUSALODS_FAULT_DELAY_MS: "1500"
+      CAUSALODS_FAULT_MODE: none
+      CAUSALODS_FAULT_RATE: "1.0"
+      CAUSALODS_FAULT_SEED: "42"
+      JAVA_TOOL_OPTIONS: |
+        -javaagent:/otel/opentelemetry-javaagent.jar
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318
+      OTEL_EXPORTER_OTLP_PROTOCOL: http/protobuf
+      OTEL_LOGS_EXPORTER: none
+      OTEL_METRICS_EXPORTER: none
+      OTEL_RESOURCE_ATTRIBUTES: deployment.environment=development
+      OTEL_SERVICE_NAME: order-service
+      OTEL_TRACES_EXPORTER: otlp
+      PAYMENT_SERVICE_URL: http://payment-service:8082
+      SERVER_PORT: "8081"
+    networks:
+      observability: null
+    ports:
+      - mode: ingress
+        target: 8081
+        published: "8081"
+        protocol: tcp
+    restart: unless-stopped
+    volumes:
+      - type: bind
+        source: /home/palhetajso/projects/CausalODS/otel-agent/opentelemetry-javaagent.jar
+        target: /otel/opentelemetry-javaagent.jar
+        bind: {}
+  otel-collector:
+    command:
+      - --config=/etc/otelcol/config.yaml
+    container_name: otel-collector
+    depends_on:
+      kafka:
+        condition: service_started
+        required: true
+    image: otel/opentelemetry-collector-contrib:0.130.0
+    networks:
+      observability: null
+    ports:
+      - mode: ingress
+        target: 4317
+        published: "4317"
+        protocol: tcp
+      - mode: ingress
+        target: 4318
+        published: "4318"
+        protocol: tcp
+    restart: unless-stopped
+    volumes:
+      - type: bind
+        source: /home/palhetajso/projects/CausalODS/collector/otel-collector-config.yaml
+        target: /etc/otelcol/config.yaml
+        bind: {}
+  payment-service:
+    build:
+      context: /home/palhetajso/projects/CausalODS/services/payment-service
+      dockerfile: Dockerfile
+    container_name: payment-service
+    depends_on:
+      otel-collector:
+        condition: service_started
+        required: true
+    environment:
+      CAUSALODS_FAULT_DELAY_MS: "1500"
+      CAUSALODS_FAULT_MODE: none
+      CAUSALODS_FAULT_RATE: "1.0"
+      CAUSALODS_FAULT_SEED: "42"
+      JAVA_TOOL_OPTIONS: |
+        -javaagent:/otel/opentelemetry-javaagent.jar
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318
+      OTEL_EXPORTER_OTLP_PROTOCOL: http/protobuf
+      OTEL_LOGS_EXPORTER: none
+      OTEL_METRICS_EXPORTER: none
+      OTEL_RESOURCE_ATTRIBUTES: deployment.environment=development
+      OTEL_SERVICE_NAME: payment-service
+      OTEL_TRACES_EXPORTER: otlp
+      SERVER_PORT: "8082"
+    networks:
+      observability: null
+    ports:
+      - mode: ingress
+        target: 8082
+        published: "8082"
+        protocol: tcp
+    restart: unless-stopped
+    volumes:
+      - type: bind
+        source: /home/palhetajso/projects/CausalODS/otel-agent/opentelemetry-javaagent.jar
+        target: /otel/opentelemetry-javaagent.jar
+        bind: {}
+  prometheus:
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+    container_name: prometheus
+    image: prom/prometheus:v3.5.0
+    networks:
+      observability: null
+    ports:
+      - mode: ingress
+        target: 9090
+        published: "9090"
+        protocol: tcp
+    restart: unless-stopped
+    volumes:
+      - type: bind
+        source: /home/palhetajso/projects/CausalODS/prometheus/prometheus.yml
+        target: /etc/prometheus/prometheus.yml
+        bind: {}
+networks:
+  observability:
+    name: causalods_observability

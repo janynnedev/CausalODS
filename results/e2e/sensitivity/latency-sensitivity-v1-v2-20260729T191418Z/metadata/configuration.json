@@ -1,0 +1,30 @@
+{
+  "schema_version": "1.0",
+  "campaign_id": "latency-sensitivity-v1-v2-20260729T191418Z",
+  "versions": [
+    "v1",
+    "v2"
+  ],
+  "services": [
+    "payment-service",
+    "order-service"
+  ],
+  "delays_ms": [
+    250,
+    500,
+    750,
+    1000,
+    1500,
+    2000,
+    2500
+  ],
+  "repeat": 10,
+  "random_seed": 20260729,
+  "fault_seed": 42,
+  "include_healthy_control": true,
+  "final_runtime": "v2",
+  "settle_seconds": 12.0,
+  "runtime_warmup_per_version": 1,
+  "warmup_included_in_analysis": false,
+  "expected_runs_per_version": 150
+}
