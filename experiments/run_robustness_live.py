@@ -323,6 +323,15 @@ def run_iteration(
                 row.notes.append("RCA ausente com falha de persistência explícita; não classificado como perda silenciosa.")
             else:
                 silent_loss = 1
+
+        restart_observed: bool | None = None
+        if scenario == RobustnessScenario.CORRELATION_ENGINE_RESTART:
+            restart_observed = bool(
+                row.started_at_before
+                and row.started_at_after
+                and row.started_at_before != row.started_at_after
+            )
+
         row.processing_latency_ms = (time.monotonic() - monotonic_started) * 1000.0
         observation = LiveObservation(
             scenario=scenario,
@@ -342,18 +351,14 @@ def run_iteration(
                 "lag_before": row.lag_before,
                 "lag_during": row.lag_during,
                 "lag_after": row.lag_after,
+                "restart_observed": restart_observed,
+                "started_at_before": row.started_at_before,
+                "started_at_after": row.started_at_after,
             },
         )
         validation = validate_live_observation(observation)
         row.observation = observation.to_dict()
         row.validation = validation.to_dict()
-        row.technical_valid = bool(
-            row.trace_id
-            and row.http_status is not None
-            and row.http_status // 100 == 2
-            and row.restoration_ok is False  # atualizado no finally
-        )
-
     except Exception as exc:
         row.error = f"{type(exc).__name__}: {exc}"
     finally:
@@ -384,12 +389,21 @@ def run_iteration(
             row.processing_latency_ms = (time.monotonic() - monotonic_started) * 1000.0
         if row.observation is not None:
             row.observation["processing_latency_ms"] = row.processing_latency_ms
+        restart_evidence_valid = True
+        if scenario == RobustnessScenario.CORRELATION_ENGINE_RESTART:
+            restart_evidence_valid = bool(
+                row.started_at_before
+                and row.started_at_after
+                and row.started_at_before != row.started_at_after
+            )
+
         row.technical_valid = bool(
             row.trace_id
             and row.http_status is not None
             and row.http_status // 100 == 2
             and row.restoration_ok
             and row.error is None
+            and restart_evidence_valid
         )
     return row
 
