@@ -192,6 +192,7 @@ def validate_live_observation(
 ) -> ValidationReport:
     spec = scenario_catalog(expected_root_cause)[observation.scenario]
     issues: list[ValidationIssue] = []
+    metadata = observation.metadata or {}
 
     if not (
         spec.expected_rca_result_min
@@ -282,6 +283,40 @@ def validate_live_observation(
             actual=False,
         )
 
+    if observation.scenario == RobustnessScenario.CORRELATION_ENGINE_RESTART:
+        started_at_before = metadata.get("started_at_before")
+        started_at_after = metadata.get("started_at_after")
+        restart_observed = bool(
+            metadata.get("restart_observed") is True
+            and started_at_before
+            and started_at_after
+            and started_at_before != started_at_after
+        )
+
+        if not restart_observed:
+            _issue(
+                issues,
+                code="restart_not_detected",
+                message=(
+                    "O restart do correlation-engine não foi "
+                    "confirmado por uma mudança de StartedAt."
+                ),
+                expected=True,
+                actual=metadata.get("restart_observed"),
+            )
+
+        lag_after = metadata.get("lag_after")
+        if lag_after != 0:
+            _issue(
+                issues,
+                code="consumer_not_recovered",
+                message=(
+                    "O consumer não drenou o backlog após o restart."
+                ),
+                expected=0,
+                actual=lag_after,
+            )
+
     metrics = {
         "rca_result_count": observation.rca_result_count,
         "incident_count": observation.incident_count,
@@ -291,6 +326,8 @@ def validate_live_observation(
         "recovery_time_ms": observation.recovery_time_ms,
         "processing_latency_ms": observation.processing_latency_ms,
         "provenance_valid": observation.provenance_valid,
+        "restart_observed": metadata.get("restart_observed"),
+        "lag_after": metadata.get("lag_after"),
     }
 
     return ValidationReport(

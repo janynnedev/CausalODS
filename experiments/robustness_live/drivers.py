@@ -81,7 +81,7 @@ class CorrelationEngineRestartDriver:
         self.command_runner(["docker", "pause", CORRELATION_CONTAINER], timeout=30)
         self.state.injected = True
         self.state.metadata = {
-            "mechanism": "pause_then_sigkill",
+            "mechanism": "pause_then_sigkill_then_explicit_start",
             "container": CORRELATION_CONTAINER,
             "started_at_before": self._started_at_before,
         }
@@ -89,29 +89,107 @@ class CorrelationEngineRestartDriver:
     def trigger_restart(self) -> str:
         if not self.state.injected or self._started_at_before is None:
             raise RuntimeError("Restart driver não foi injetado.")
+
         self.command_runner(
             ["docker", "kill", "--signal", "KILL", CORRELATION_CONTAINER],
             timeout=30,
         )
+
+        # Não depende da política de restart do Docker. O cenário injeta
+        # uma falha abrupta e inicia explicitamente o mesmo container.
+        self.command_runner(
+            ["docker", "start", CORRELATION_CONTAINER],
+            timeout=90,
+        )
+
+        RecoveryProbe.wait_container_running(
+            CORRELATION_CONTAINER,
+            timeout_seconds=120,
+        )
+
         started_at_after = RecoveryProbe.wait_started_at_changed(
             self._started_at_before,
             container_name=CORRELATION_CONTAINER,
             timeout_seconds=120,
         )
+
         assert self.state.metadata is not None
-        self.state.metadata["started_at_after"] = started_at_after
+        self.state.metadata.update(
+            {
+                "started_at_after": started_at_after,
+                "restart_observed": (
+                    started_at_after != self._started_at_before
+                ),
+            }
+        )
         return started_at_after
 
     def restore(self) -> None:
-        state = self.command_runner(
-            ["docker", "inspect", "-f", "{{.State.Status}}", CORRELATION_CONTAINER],
+        paused = self.command_runner(
+            [
+                "docker",
+                "inspect",
+                "-f",
+                "{{.State.Paused}}",
+                CORRELATION_CONTAINER,
+            ],
             check=False,
             timeout=15,
         )
-        if state.returncode != 0 or state.stdout.strip() != "running":
+        if (
+            paused.returncode == 0
+            and paused.stdout.strip().lower() == "true"
+        ):
             self.command_runner(
-                ["docker", "compose", "up", "-d", "--no-deps", CORRELATION_CONTAINER],
+                ["docker", "unpause", CORRELATION_CONTAINER],
+                timeout=30,
+            )
+
+        state = self.command_runner(
+            [
+                "docker",
+                "inspect",
+                "-f",
+                "{{.State.Status}}",
+                CORRELATION_CONTAINER,
+            ],
+            check=False,
+            timeout=15,
+        )
+
+        if state.returncode != 0:
+            self.command_runner(
+                [
+                    "docker",
+                    "compose",
+                    "up",
+                    "-d",
+                    "--no-deps",
+                    CORRELATION_CONTAINER,
+                ],
                 timeout=120,
             )
-        RecoveryProbe.wait_container_running(CORRELATION_CONTAINER, timeout_seconds=120)
+        elif state.stdout.strip() != "running":
+            started = self.command_runner(
+                ["docker", "start", CORRELATION_CONTAINER],
+                check=False,
+                timeout=90,
+            )
+            if started.returncode != 0:
+                self.command_runner(
+                    [
+                        "docker",
+                        "compose",
+                        "up",
+                        "-d",
+                        "--no-deps",
+                        CORRELATION_CONTAINER,
+                    ],
+                    timeout=120,
+                )
+
+        RecoveryProbe.wait_container_running(
+            CORRELATION_CONTAINER,
+            timeout_seconds=120,
+        )
         self.state.restored = True
