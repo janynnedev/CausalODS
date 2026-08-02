@@ -131,6 +131,75 @@ def call_runner_scenario(name: str, iteration: int, runtime: str) -> dict[str, A
     result = base_runner.run_scenario(**kwargs)
     return asdict(result)
 
+def warmup_healthy_environment(
+    *,
+    runtime: str,
+    attempts: int,
+    position: str,
+) -> list[dict[str, Any]]:
+    """Executa aquecimentos não incluídos nas métricas.
+
+    Os resultados são preservados separadamente em
+    warmups.json para rastreabilidade experimental.
+    """
+
+    warmup_results: list[dict[str, Any]] = []
+
+    if attempts < 1:
+        return warmup_results
+
+    print(
+        "Healthy warm-up started "
+        f"| position={position} "
+        f"| attempts={attempts}",
+        flush=True,
+    )
+
+    for warmup_iteration in range(
+        1,
+        attempts + 1,
+    ):
+        result = call_runner_scenario(
+            "healthy",
+            warmup_iteration,
+            runtime,
+        )
+
+        result["position"] = position
+        result["warmup_iteration"] = (
+            warmup_iteration
+        )
+        result["included_in_metrics"] = False
+
+        warmup_results.append(result)
+
+        print(
+            "Healthy warm-up completed "
+            f"| position={position} "
+            f"| iteration={warmup_iteration} "
+            f"| passed={result.get('passed')} "
+            f"| reliable={result.get('reliable')} "
+            f"| confidence={result.get('confidence')}",
+            flush=True,
+        )
+
+    KafkaLagProbe().wait_zero(
+        timeout_seconds=180,
+    )
+
+    base_runner.wait_for_index_quiet(
+        index_name=RCA_INDEX,
+        quiet_seconds=10.0,
+        timeout_seconds=120.0,
+    )
+
+    print(
+        "Healthy warm-up settled "
+        f"| position={position}",
+        flush=True,
+    )
+
+    return warmup_results
 
 def ensure_runtime_v2() -> None:
     version = base_runner.read_rca_runtime_version()
@@ -454,6 +523,15 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--hold-seconds", type=float, default=8.0)
     parser.add_argument("--result-timeout", type=float, default=90.0)
     parser.add_argument("--recovery-timeout", type=float, default=120.0)
+    parser.add_argument(
+        "--warmup-attempts",
+        type=int,
+        default=2,
+        help=(
+            "Quantidade fixa de execuções healthy de "
+            "aquecimento antes de cada controle medido."
+        ),
+    )
     parser.add_argument("--skip-controls", action="store_true")
     return parser.parse_args()
 
@@ -462,6 +540,8 @@ def main() -> int:
     args = parse_args()
     if args.repeat < 1:
         raise ValueError("--repeat deve ser maior que zero")
+    if args.warmup_attempts < 0:
+        raise ValueError("--warmup-attempts não pode ser negativo")
     lock = acquire_lock()
     campaign_dir = RESULTS_ROOT / args.campaign_id
     if campaign_dir.exists():
@@ -478,6 +558,7 @@ def main() -> int:
         "hold_seconds": args.hold_seconds,
         "result_timeout": args.result_timeout,
         "recovery_timeout": args.recovery_timeout,
+        "warmup_attempts": (args.warmup_attempts),
         "started_at": iso_now(),
     }
     atomic_write_json(campaign_dir / "configuration.json", configuration)
@@ -486,16 +567,33 @@ def main() -> int:
 
     rows: list[LiveRunResult] = []
     controls: list[dict[str, Any]] = []
+    warmups: list[dict[str, Any]] = []
     try:
         ensure_runtime_v2()
         restore_faults()
         for scenario_name in args.scenarios:
             if not args.skip_controls:
-                control = call_runner_scenario("healthy", 0, "v2")
-                control["position"] = f"before_{scenario_name}"
-                controls.append(control)
-                if not control.get("passed"):
-                    raise RuntimeError(f"Controle saudável falhou antes de {scenario_name}")
+                warmups.extend(
+                    warmup_healthy_environment(
+                        runtime="v2",
+                        attempts=(
+                            args.warmup_attempts
+                        ),
+                        position=(
+                            f"before_{scenario_name}"
+                        ),
+                    )
+                )
+
+                control = call_runner_scenario(
+                    "healthy",
+                    0,
+                    "v2",
+                )
+            control["position"] = f"before_{scenario_name}"
+            controls.append(control)
+            if not control.get("passed"):
+                raise RuntimeError(f"Controle saudável falhou antes de {scenario_name}")
             for iteration in range(1, args.repeat + 1):
                 row = run_iteration(
                     campaign_id=args.campaign_id,
@@ -519,9 +617,24 @@ def main() -> int:
                 validation_valid = bool((row.validation or {}).get("valid"))
                 if not validation_valid:
                     print(f"AVISO: invariantes falharam em {scenario_name}/{iteration}", flush=True)
-            if not args.skip_controls:
-                control = call_runner_scenario("healthy", 0, "v2")
-                control["position"] = f"after_{scenario_name}"
+                if not args.skip_controls:
+                    warmups.extend(
+                        warmup_healthy_environment(
+                            runtime="v2",
+                            attempts=args.warmup_attempts,
+                            position=f"after_{scenario_name}",
+                        )
+                    )
+
+                    control = call_runner_scenario(
+                        "healthy",
+                        0,
+                        "v2",
+                    )
+
+                    control["position"] = (
+                        f"after_{scenario_name}"
+                    )
                 controls.append(control)
                 if not control.get("passed"):
                     raise RuntimeError(f"Controle saudável falhou após {scenario_name}")
@@ -536,6 +649,7 @@ def main() -> int:
         atomic_write_json(campaign_dir / "status.json", status)
         atomic_write_json(campaign_dir / "results.json", [asdict(item) for item in rows])
         atomic_write_json(campaign_dir / "controls.json", controls)
+        atomic_write_json(campaign_dir / "warmups.json", warmups)
         save_csv(campaign_dir / "results.csv", [asdict(item) for item in rows])
         capture_metadata(campaign_dir / "metadata" / "after")
         write_sha256_manifest(campaign_dir)
