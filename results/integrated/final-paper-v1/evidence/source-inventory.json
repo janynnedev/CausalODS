@@ -1,0 +1,1100 @@
+{
+  "generated_at_utc": "2026-08-02T05:48:54.648552+00:00",
+  "git_commit": "9ea6e92ad626be22b03853223143d342fbc3d2e0",
+  "git_branch": "feat/integrated-experimental-report-v1",
+  "sources": [
+    {
+      "id": "e2e_final",
+      "category": "e2e",
+      "path": "results/e2e/final/final-v1-v2-50",
+      "description": "Campanha final v1 versus v2, com cinquenta repetições por cenário.",
+      "exists": true,
+      "type": "directory",
+      "file_count": 57,
+      "total_bytes": 15375516,
+      "manifests": [
+        {
+          "path": "results/e2e/final/final-v1-v2-50/SHA256SUMS",
+          "valid": true,
+          "return_code": 0,
+          "output_tail": [
+            "metadata/git-diff-cached.patch: SUCESSO",
+            "metadata/git-diff.patch: SUCESSO",
+            "metadata/git-status.txt: SUCESSO",
+            "metadata/model-artifacts.sha256: SUCESSO",
+            "metadata/python-version.txt: SUCESSO",
+            "scripts/e2e_campaign.py: SUCESSO",
+            "scripts/e2e_runner.py: SUCESSO",
+            "status.json: SUCESSO",
+            "v1/all-repeat50.csv: SUCESSO",
+            "v1/all-repeat50.json: SUCESSO",
+            "v1/correlation-engine.after.log: SUCESSO",
+            "v1/docker-ps.after.txt: SUCESSO",
+            "v1/runner.log: SUCESSO",
+            "v1/summary.json: SUCESSO",
+            "v2/all-repeat50.csv: SUCESSO",
+            "v2/all-repeat50.json: SUCESSO",
+            "v2/correlation-engine.after.log: SUCESSO",
+            "v2/docker-ps.after.txt: SUCESSO",
+            "v2/runner.log: SUCESSO",
+            "v2/summary.json: SUCESSO"
+          ]
+        },
+        {
+          "path": "results/e2e/final/final-v1-v2-50/SHA256SUMS.post-export",
+          "valid": true,
+          "return_code": 0,
+          "output_tail": [
+            "./metadata/git-diff-cached.patch: SUCESSO",
+            "./metadata/git-diff.patch: SUCESSO",
+            "./metadata/git-status.txt: SUCESSO",
+            "./metadata/model-artifacts.sha256: SUCESSO",
+            "./metadata/python-version.txt: SUCESSO",
+            "./scripts/e2e_campaign.py: SUCESSO",
+            "./scripts/e2e_runner.py: SUCESSO",
+            "./status.json: SUCESSO",
+            "./v1/all-repeat50.csv: SUCESSO",
+            "./v1/all-repeat50.json: SUCESSO",
+            "./v1/correlation-engine.after.log: SUCESSO",
+            "./v1/docker-ps.after.txt: SUCESSO",
+            "./v1/runner.log: SUCESSO",
+            "./v1/summary.json: SUCESSO",
+            "./v2/all-repeat50.csv: SUCESSO",
+            "./v2/all-repeat50.json: SUCESSO",
+            "./v2/correlation-engine.after.log: SUCESSO",
+            "./v2/docker-ps.after.txt: SUCESSO",
+            "./v2/runner.log: SUCESSO",
+            "./v2/summary.json: SUCESSO"
+          ]
+        },
+        {
+          "path": "results/e2e/final/final-v1-v2-50/baselines/SHA256SUMS",
+          "valid": true,
+          "return_code": 0,
+          "output_tail": [
+            "baseline_metrics.json: SUCESSO",
+            "baseline_overall_metrics.csv: SUCESSO",
+            "baseline_results.csv: SUCESSO",
+            "baseline_results.json: SUCESSO",
+            "baseline_scenario_metrics.csv: SUCESSO",
+            "report.md: SUCESSO",
+            "statistical_tests.json: SUCESSO"
+          ]
+        },
+        {
+          "path": "results/e2e/final/final-v1-v2-50/comparison/SHA256SUMS",
+          "valid": true,
+          "return_code": 0,
+          "output_tail": [
+            "comparison.json: SUCESSO",
+            "confidence_summary.csv: SUCESSO",
+            "duration_summary.csv: SUCESSO",
+            "incident_summary.csv: SUCESSO",
+            "overall_metrics.csv: SUCESSO",
+            "provenance_validation.json: SUCESSO",
+            "reliability_summary.csv: SUCESSO",
+            "report.md: SUCESSO",
+            "run_level_metrics.csv: SUCESSO",
+            "scenario_metrics.csv: SUCESSO",
+            "statistical_tests.json: SUCESSO"
+          ]
+        },
+        {
+          "path": "results/e2e/final/final-v1-v2-50/final-analysis/SHA256SUMS",
+          "valid": true,
+          "return_code": 0,
+          "output_tail": [
+            "report-data.json: SUCESSO",
+            "report.md: SUCESSO"
+          ]
+        }
+      ],
+      "key_json": {
+        "status.json": {
+          "campaign_id": "final-v1-v2-50",
+          "state": "completed",
+          "started_at": "2026-07-28T21:43:03.406944+00:00",
+          "finished_at": "2026-07-29T02:30:21.655865+00:00",
+          "repeat": 50,
+          "versions": [
+            "v1",
+            "v2"
+          ],
+          "current_version": null,
+          "current_step": "finished",
+          "repository_root": "/home/palhetajso/projects/CausalODS",
+          "campaign_root": "/home/palhetajso/projects/CausalODS/results/e2e/final/final-v1-v2-50",
+          "phases": {
+            "v1": {
+              "version": "v1",
+              "repeat": 50,
+              "expected_rows": 250,
+              "actual_rows": 250,
+              "passed_count": 150,
+              "failed_count": 100,
+              "scenario_counts": {
+                "healthy": 50,
+                "payment_failure": 50,
+                "payment_latency": 50,
+                "order_failure": 50,
+                "order_latency": 50
+              },
+              "confidence_by_scenario": {
+                "healthy": {
+                  "count": 50,
+                  "mean": 0.0009456053376197815,
+                  "minimum": 0.0009456053376197815,
+                  "maximum": 0.0009456053376197815
+                },
+                "payment_failure": {
+                  "count": 50,
+                  "mean": 0.5690543842315674,
+                  "minimum": 0.5690543842315674,
+                  "maximum": 0.5690543842315674
+                },
+                "payment_latency": {
+                  "count": 50,
+                  "mean": 0.19938389213919028,
+                  "minimum": 0.1984908929152826,
+                  "maximum": 0.1998756837164645
+                },
+                "order_failure": {
+                  "count": 50,
+                  "mean": 0.5990543842315674,
+                  "minimum": 0.5990543842315674,
+                  "maximum": 0.5990543842315674
+                },
+                "order_latency": {
+                  "count": 50,
+                  "mean": 0.19520501058771042,
+                  "minimum": 0.19291619506546231,
+                  "maximum": 0.1959794848048273
+                }
+              },
+              "completed_at": "2026-07-29T00:08:41.032341+00:00",
+              "runner_return_code": 1,
+              "runner_completed": true,
+              "scenario_failures_present": true,
+              "state": "completed_with_scenario_failures",
+              "json": "/home/palhetajso/projects/CausalODS/results/e2e/final/final-v1-v2-50/v1/all-repeat50.json",
+              "csv": "/home/palhetajso/projects/CausalODS/results/e2e/final/final-v1-v2-50/v1/all-repeat50.csv",
+              "log": "/home/palhetajso/projects/CausalODS/results/e2e/final/final-v1-v2-50/v1/runner.log",
+              "finished_at": "2026-07-29T00:08:41.379538+00:00"
+            },
+            "v2": {
+              "version": "v2",
+              "repeat": 50,
+              "expected_rows": 250,
+              "actual_rows": 250,
+              "passed_count": 250,
+              "failed_count": 0,
+              "scenario_counts": {
+                "healthy": 50,
+                "payment_failure": 50,
+                "payment_latency": 50,
+                "order_failure": 50,
+                "order_latency": 50
+              },
+              "confidence_by_scenario": {
+                "healthy": {
+                  "count": 50,
+                  "mean": 0.019812870994946198,
+                  "minimum": 0.01919883378328181,
+                  "maximum": 0.030286235737074466
+                },
+                "payment_failure": {
+                  "count": 50,
+                  "mean": 0.7716194363294356,
+                  "minimum": 0.7715216927130354,
+                  "maximum": 0.771677148565263
+                },
+                "payment_latency": {
+                  "count": 50,
+                  "mean": 0.8224812180355974,
+                  "minimum": 0.8217754064439825,
+                  "maximum": 0.8230391790409846
+                },
+                "order_failure": {
+                  "count": 50,
+                  "mean": 0.800033828558584,
+                  "minimum": 0.800033828558584,
+                  "maximum": 0.800033828558584
+                },
+                "order_latency": {
+                  "count": 50,
+                  "mean": 0.8161609098831392,
+                  "minimum": 0.8146243336538029,
+                  "maximum": 0.8169583375325046
+                }
+              },
+              "completed_at": "2026-07-29T02:29:59.423195+00:00",
+              "runner_return_code": 0,
+              "runner_completed": true,
+              "scenario_failures_present": false,
+              "state": "completed",
+              "json": "/home/palhetajso/projects/CausalODS/results/e2e/final/final-v1-v2-50/v2/all-repeat50.json",
+              "csv": "/home/palhetajso/projects/CausalODS/results/e2e/final/final-v1-v2-50/v2/all-repeat50.csv",
+              "log": "/home/palhetajso/projects/CausalODS/results/e2e/final/final-v1-v2-50/v2/runner.log",
+              "finished_at": "2026-07-29T02:29:59.723917+00:00"
+            }
+          },
+          "errors": [],
+          "original_runtime": "v2",
+          "final_runtime": "v2"
+        },
+        "v1/summary.json": {
+          "version": "v1",
+          "repeat": 50,
+          "expected_rows": 250,
+          "actual_rows": 250,
+          "passed_count": 150,
+          "failed_count": 100,
+          "scenario_counts": {
+            "healthy": 50,
+            "payment_failure": 50,
+            "payment_latency": 50,
+            "order_failure": 50,
+            "order_latency": 50
+          },
+          "confidence_by_scenario": {
+            "healthy": {
+              "count": 50,
+              "mean": 0.0009456053376197815,
+              "minimum": 0.0009456053376197815,
+              "maximum": 0.0009456053376197815
+            },
+            "payment_failure": {
+              "count": 50,
+              "mean": 0.5690543842315674,
+              "minimum": 0.5690543842315674,
+              "maximum": 0.5690543842315674
+            },
+            "payment_latency": {
+              "count": 50,
+              "mean": 0.19938389213919028,
+              "minimum": 0.1984908929152826,
+              "maximum": 0.1998756837164645
+            },
+            "order_failure": {
+              "count": 50,
+              "mean": 0.5990543842315674,
+              "minimum": 0.5990543842315674,
+              "maximum": 0.5990543842315674
+            },
+            "order_latency": {
+              "count": 50,
+              "mean": 0.19520501058771042,
+              "minimum": 0.19291619506546231,
+              "maximum": 0.1959794848048273
+            }
+          },
+          "completed_at": "2026-07-29T00:08:41.032341+00:00",
+          "runner_return_code": 1,
+          "runner_completed": true,
+          "scenario_failures_present": true
+        },
+        "v2/summary.json": {
+          "version": "v2",
+          "repeat": 50,
+          "expected_rows": 250,
+          "actual_rows": 250,
+          "passed_count": 250,
+          "failed_count": 0,
+          "scenario_counts": {
+            "healthy": 50,
+            "payment_failure": 50,
+            "payment_latency": 50,
+            "order_failure": 50,
+            "order_latency": 50
+          },
+          "confidence_by_scenario": {
+            "healthy": {
+              "count": 50,
+              "mean": 0.019812870994946198,
+              "minimum": 0.01919883378328181,
+              "maximum": 0.030286235737074466
+            },
+            "payment_failure": {
+              "count": 50,
+              "mean": 0.7716194363294356,
+              "minimum": 0.7715216927130354,
+              "maximum": 0.771677148565263
+            },
+            "payment_latency": {
+              "count": 50,
+              "mean": 0.8224812180355974,
+              "minimum": 0.8217754064439825,
+              "maximum": 0.8230391790409846
+            },
+            "order_failure": {
+              "count": 50,
+              "mean": 0.800033828558584,
+              "minimum": 0.800033828558584,
+              "maximum": 0.800033828558584
+            },
+            "order_latency": {
+              "count": 50,
+              "mean": 0.8161609098831392,
+              "minimum": 0.8146243336538029,
+              "maximum": 0.8169583375325046
+            }
+          },
+          "completed_at": "2026-07-29T02:29:59.423195+00:00",
+          "runner_return_code": 0,
+          "runner_completed": true,
+          "scenario_failures_present": false
+        }
+      },
+      "reports": [
+        "baselines/report.md",
+        "comparison/report.md",
+        "final-analysis/report.md"
+      ]
+    },
+    {
+      "id": "e2e_comparison_report",
+      "category": "e2e",
+      "path": "results/e2e/final/comparison/relatorio_comparacao_e2e_rca_v1_v2.md",
+      "description": "Relatório comparativo v1 versus v2.",
+      "exists": true,
+      "type": "file",
+      "file_count": 1,
+      "total_bytes": 2807,
+      "sha256": "1b8699b5d93ed427093375cdc70cc951bd31eaf8d34d91a08d1480378fbdb8f4",
+      "manifests": [],
+      "key_json": {},
+      "reports": [
+        "results/e2e/final/comparison/relatorio_comparacao_e2e_rca_v1_v2.md"
+      ]
+    },
+    {
+      "id": "latency_sensitivity",
+      "category": "sensitivity",
+      "path": "results/e2e/sensitivity/latency-sensitivity-v1-v2-20260729T191418Z",
+      "description": "Sensibilidade do RCA a diferentes intensidades de latência.",
+      "exists": true,
+      "type": "directory",
+      "file_count": 50,
+      "total_bytes": 7502945,
+      "manifests": [
+        {
+          "path": "results/e2e/sensitivity/latency-sensitivity-v1-v2-20260729T191418Z/FINAL_SHA256SUMS",
+          "valid": true,
+          "return_code": 0,
+          "output_tail": [
+            "./metadata/docker-images.txt: SUCESSO",
+            "./metadata/docker-ps.txt: SUCESSO",
+            "./metadata/git-branch.txt: SUCESSO",
+            "./metadata/git-commit.txt: SUCESSO",
+            "./metadata/git-status.txt: SUCESSO",
+            "./metadata/post-campaign/campaign-console.log: SUCESSO",
+            "./metadata/post-campaign/correlation-engine-restart-count.txt: SUCESSO",
+            "./metadata/post-campaign/docker-compose.resolved.yml: SUCESSO",
+            "./metadata/post-campaign/docker-images.txt: SUCESSO",
+            "./metadata/post-campaign/docker-ps.txt: SUCESSO",
+            "./metadata/post-campaign/git-commit.txt: SUCESSO",
+            "./metadata/post-campaign/git-status.txt: SUCESSO",
+            "./metadata/post-campaign/post-analysis-git-commit.txt: SUCESSO",
+            "./status.json: SUCESSO",
+            "./v1/results.csv: SUCESSO",
+            "./v1/results.json: SUCESSO",
+            "./v1/warmup.json: SUCESSO",
+            "./v2/results.csv: SUCESSO",
+            "./v2/results.json: SUCESSO",
+            "./v2/warmup.json: SUCESSO"
+          ]
+        },
+        {
+          "path": "results/e2e/sensitivity/latency-sensitivity-v1-v2-20260729T191418Z/SHA256SUMS",
+          "valid": true,
+          "return_code": 0,
+          "output_tail": [
+            "metadata/configuration.json: SUCESSO",
+            "metadata/correlation-engine.v1.startup.log: SUCESSO",
+            "metadata/correlation-engine.v2.startup.log: SUCESSO",
+            "metadata/docker-compose.resolved.yml: SUCESSO",
+            "metadata/docker-compose.v1.resolved.yml: SUCESSO",
+            "metadata/docker-compose.v2.resolved.yml: SUCESSO",
+            "metadata/docker-images.txt: SUCESSO",
+            "metadata/docker-ps.txt: SUCESSO",
+            "metadata/git-branch.txt: SUCESSO",
+            "metadata/git-commit.txt: SUCESSO",
+            "metadata/git-status.txt: SUCESSO",
+            "status.json: SUCESSO",
+            "v1/results.csv: SUCESSO",
+            "v1/results.json: SUCESSO",
+            "v1/warmup.json: SUCESSO",
+            "v2/results.csv: SUCESSO",
+            "v2/results.json: SUCESSO",
+            "v2/warmup.json: SUCESSO"
+          ]
+        },
+        {
+          "path": "results/e2e/sensitivity/latency-sensitivity-v1-v2-20260729T191418Z/analysis/SHA256SUMS",
+          "valid": true,
+          "return_code": 0,
+          "output_tail": [
+            "analysis.json: SUCESSO",
+            "condition_metrics.csv: SUCESSO",
+            "empirical_thresholds.csv: SUCESSO",
+            "healthy_controls.csv: SUCESSO",
+            "report.md: SUCESSO",
+            "run_level_results.csv: SUCESSO",
+            "version_comparisons.csv: SUCESSO"
+          ]
+        },
+        {
+          "path": "results/e2e/sensitivity/latency-sensitivity-v1-v2-20260729T191418Z/analysis-before-top1-field-fix/SHA256SUMS",
+          "valid": true,
+          "return_code": 0,
+          "output_tail": [
+            "analysis.json: SUCESSO",
+            "condition_metrics.csv: SUCESSO",
+            "empirical_thresholds.csv: SUCESSO",
+            "healthy_controls.csv: SUCESSO",
+            "report.md: SUCESSO",
+            "run_level_results.csv: SUCESSO",
+            "version_comparisons.csv: SUCESSO"
+          ]
+        }
+      ],
+      "key_json": {
+        "status.json": {
+          "campaign_id": "latency-sensitivity-v1-v2-20260729T191418Z",
+          "state": "completed",
+          "started_at": "2026-07-29T19:14:39.266436+00:00",
+          "finished_at": "2026-07-29T22:30:38.358249+00:00",
+          "current_version": null,
+          "current_condition": null,
+          "configuration": {
+            "schema_version": "1.0",
+            "campaign_id": "latency-sensitivity-v1-v2-20260729T191418Z",
+            "versions": [
+              "v1",
+              "v2"
+            ],
+            "services": [
+              "payment-service",
+              "order-service"
+            ],
+            "delays_ms": [
+              250,
+              500,
+              750,
+              1000,
+              1500,
+              2000,
+              2500
+            ],
+            "repeat": 10,
+            "random_seed": 20260729,
+            "fault_seed": 42,
+            "include_healthy_control": true,
+            "final_runtime": "v2",
+            "settle_seconds": 12.0,
+            "runtime_warmup_per_version": 1,
+            "warmup_included_in_analysis": false,
+            "expected_runs_per_version": 150
+          },
+          "phases": {
+            "v1": {
+              "rows": 150,
+              "technical_valid": 150,
+              "detected": 0,
+              "incidents": 0,
+              "passed": 10,
+              "failed": 140,
+              "condition_counts": [
+                {
+                  "condition_kind": "healthy",
+                  "service": null,
+                  "delay_ms": 0,
+                  "count": 10
+                },
+                {
+                  "condition_kind": "latency",
+                  "service": "order-service",
+                  "delay_ms": 1000,
+                  "count": 10
+                },
+                {
+                  "condition_kind": "latency",
+                  "service": "order-service",
+                  "delay_ms": 1500,
+                  "count": 10
+                },
+                {
+                  "condition_kind": "latency",
+                  "service": "order-service",
+                  "delay_ms": 2000,
+                  "count": 10
+                },
+                {
+                  "condition_kind": "latency",
+                  "service": "order-service",
+                  "delay_ms": 250,
+                  "count": 10
+                },
+                {
+                  "condition_kind": "latency",
+                  "service": "order-service",
+                  "delay_ms": 2500,
+                  "count": 10
+                },
+                {
+                  "condition_kind": "latency",
+                  "service": "order-service",
+                  "delay_ms": 500,
+                  "count": 10
+                },
+                {
+                  "condition_kind": "latency",
+                  "service": "order-service",
+                  "delay_ms": 750,
+                  "count": 10
+                },
+                {
+                  "condition_kind": "latency",
+                  "service": "payment-service",
+                  "delay_ms": 1000,
+                  "count": 10
+                },
+                {
+                  "condition_kind": "latency",
+                  "service": "payment-service",
+                  "delay_ms": 1500,
+                  "count": 10
+                },
+                {
+                  "condition_kind": "latency",
+                  "service": "payment-service",
+                  "delay_ms": 2000,
+                  "count": 10
+                },
+                {
+                  "condition_kind": "latency",
+                  "service": "payment-service",
+                  "delay_ms": 250,
+                  "count": 10
+                },
+                {
+                  "condition_kind": "latency",
+                  "service": "payment-service",
+                  "delay_ms": 2500,
+                  "count": 10
+                },
+                {
+                  "condition_kind": "latency",
+                  "service": "payment-service",
+                  "delay_ms": 500,
+                  "count": 10
+                },
+                {
+                  "condition_kind": "latency",
+                  "service": "payment-service",
+                  "delay_ms": 750,
+                  "count": 10
+                }
+              ],
+              "state": "completed",
+              "updated_at": "2026-07-29T20:56:43.874847+00:00",
+              "expected_rows": 150
+            },
+            "v2": {
+              "rows": 150,
+              "technical_valid": 150,
+              "detected": 138,
+              "incidents": 138,
+              "passed": 148,
+              "failed": 2,
+              "condition_counts": [
+                {
+                  "condition_kind": "healthy",
+                  "service": null,
+                  "delay_ms": 0,
+                  "count": 10
+                },
+                {
+                  "condition_kind": "latency",
+                  "service": "order-service",
+                  "delay_ms": 1000,
+                  "count": 10
+                },
+                {
+                  "condition_kind": "latency",
+                  "service": "order-service",
+                  "delay_ms": 1500,
+                  "count": 10
+                },
+                {
+                  "condition_kind": "latency",
+                  "service": "order-service",
+                  "delay_ms": 2000,
+                  "count": 10
+                },
+                {
+                  "condition_kind": "latency",
+                  "service": "order-service",
+                  "delay_ms": 250,
+                  "count": 10
+                },
+                {
+                  "condition_kind": "latency",
+                  "service": "order-service",
+                  "delay_ms": 2500,
+                  "count": 10
+                },
+                {
+                  "condition_kind": "latency",
+                  "service": "order-service",
+                  "delay_ms": 500,
+                  "count": 10
+                },
+                {
+                  "condition_kind": "latency",
+                  "service": "order-service",
+                  "delay_ms": 750,
+                  "count": 10
+                },
+                {
+                  "condition_kind": "latency",
+                  "service": "payment-service",
+                  "delay_ms": 1000,
+                  "count": 10
+                },
+                {
+                  "condition_kind": "latency",
+                  "service": "payment-service",
+                  "delay_ms": 1500,
+                  "count": 10
+                },
+                {
+                  "condition_kind": "latency",
+                  "service": "payment-service",
+                  "delay_ms": 2000,
+                  "count": 10
+                },
+                {
+                  "condition_kind": "latency",
+                  "service": "payment-service",
+                  "delay_ms": 250,
+                  "count": 10
+                },
+                {
+                  "condition_kind": "latency",
+                  "service": "payment-service",
+                  "delay_ms": 2500,
+                  "count": 10
+                },
+                {
+                  "condition_kind": "latency",
+                  "service": "payment-service",
+                  "delay_ms": 500,
+                  "count": 10
+                },
+                {
+                  "condition_kind": "latency",
+                  "service": "payment-service",
+                  "delay_ms": 750,
+                  "count": 10
+                }
+              ],
+              "state": "completed",
+              "updated_at": "2026-07-29T22:30:03.611896+00:00",
+              "expected_rows": 150
+            }
+          },
+          "errors": [],
+          "original_runtime": "v2",
+          "final_runtime": "v2"
+        }
+      },
+      "reports": [
+        "analysis/report.md",
+        "analysis-before-top1-field-fix/report.md"
+      ]
+    },
+    {
+      "id": "explanations_final",
+      "category": "explanations",
+      "path": "results/offline-explanations/final-v1-v2-50",
+      "description": "Explicações geradas para a campanha final.",
+      "exists": true,
+      "type": "directory",
+      "file_count": 4,
+      "total_bytes": 3013876,
+      "manifests": [
+        {
+          "path": "results/offline-explanations/final-v1-v2-50/SHA256SUMS",
+          "valid": true,
+          "return_code": 0,
+          "output_tail": [
+            "explanations.csv: SUCESSO",
+            "explanations.json: SUCESSO",
+            "report.md: SUCESSO"
+          ]
+        }
+      ],
+      "key_json": {},
+      "reports": [
+        "report.md"
+      ]
+    },
+    {
+      "id": "explanations_evaluation",
+      "category": "explanations",
+      "path": "results/offline-explanations/v1.1-evaluation",
+      "description": "Avaliação de cobertura e consistência das explicações v1.1.",
+      "exists": true,
+      "type": "directory",
+      "file_count": 4,
+      "total_bytes": 1997,
+      "manifests": [
+        {
+          "path": "results/offline-explanations/v1.1-evaluation/SHA256SUMS",
+          "valid": true,
+          "return_code": 0,
+          "output_tail": [
+            "evaluation.json: SUCESSO",
+            "failures.csv: SUCESSO",
+            "report.md: SUCESSO"
+          ]
+        }
+      ],
+      "key_json": {
+        "evaluation.json": {
+          "schema_version": "1.0",
+          "source_count": 500,
+          "explanation_count": 500,
+          "coverage_rate": 1.0,
+          "faithfulness_failure_count": 0,
+          "deterministic_id_count": 500,
+          "deterministic_id_rate": 1.0,
+          "provenance_complete_count": 500,
+          "provenance_complete_rate": 1.0,
+          "semantic_consistency_count": 500,
+          "semantic_consistency_rate": 1.0,
+          "first_run_sha256": "e165782244e2b0c5eca1c0f1bd3291899fbba2b53cccabff7b79525f1a8bf53b",
+          "second_run_sha256": "e165782244e2b0c5eca1c0f1bd3291899fbba2b53cccabff7b79525f1a8bf53b",
+          "byte_deterministic": true,
+          "evidence_source_coverage": [
+            {
+              "source": "anomaly",
+              "explanations_with_source": 500,
+              "coverage_rate": 1.0
+            },
+            {
+              "source": "graph",
+              "explanations_with_source": 500,
+              "coverage_rate": 1.0
+            },
+            {
+              "source": "model",
+              "explanations_with_source": 500,
+              "coverage_rate": 1.0
+            },
+            {
+              "source": "score_breakdown",
+              "explanations_with_source": 500,
+              "coverage_rate": 1.0
+            },
+            {
+              "source": "shap",
+              "explanations_with_source": 500,
+              "coverage_rate": 1.0
+            },
+            {
+              "source": "temporal",
+              "explanations_with_source": 500,
+              "coverage_rate": 1.0
+            }
+          ],
+          "valid": true
+        }
+      },
+      "reports": [
+        "report.md"
+      ]
+    },
+    {
+      "id": "explanations_run_a",
+      "category": "explanations",
+      "path": "results/offline-explanations/v1.1-run-a",
+      "description": "Primeira execução usada na avaliação de determinismo.",
+      "exists": true,
+      "type": "directory",
+      "file_count": 6,
+      "total_bytes": 5005200,
+      "manifests": [
+        {
+          "path": "results/offline-explanations/v1.1-run-a/SHA256SUMS",
+          "valid": true,
+          "return_code": 0,
+          "output_tail": [
+            "evidence_coverage.csv: SUCESSO",
+            "evidence_coverage.json: SUCESSO",
+            "explanations.csv: SUCESSO",
+            "explanations.json: SUCESSO",
+            "report.md: SUCESSO"
+          ]
+        }
+      ],
+      "key_json": {},
+      "reports": [
+        "report.md"
+      ]
+    },
+    {
+      "id": "explanations_run_b",
+      "category": "explanations",
+      "path": "results/offline-explanations/v1.1-run-b",
+      "description": "Segunda execução usada na avaliação de determinismo.",
+      "exists": true,
+      "type": "directory",
+      "file_count": 6,
+      "total_bytes": 5005200,
+      "manifests": [
+        {
+          "path": "results/offline-explanations/v1.1-run-b/SHA256SUMS",
+          "valid": true,
+          "return_code": 0,
+          "output_tail": [
+            "evidence_coverage.csv: SUCESSO",
+            "evidence_coverage.json: SUCESSO",
+            "explanations.csv: SUCESSO",
+            "explanations.json: SUCESSO",
+            "report.md: SUCESSO"
+          ]
+        }
+      ],
+      "key_json": {},
+      "reports": [
+        "report.md"
+      ]
+    },
+    {
+      "id": "robustness_original",
+      "category": "robustness",
+      "path": "results/robustness/live/robustness-live-v2-repeat10",
+      "description": "Campanha original de backlog Kafka, indisponibilidade do OpenSearch e tentativa inicial de restart.",
+      "exists": true,
+      "type": "directory",
+      "file_count": 8,
+      "total_bytes": 72057,
+      "manifests": [
+        {
+          "path": "results/robustness/live/robustness-live-v2-repeat10/IMPORTED_SHA256SUMS",
+          "valid": true,
+          "return_code": 0,
+          "output_tail": [
+            "results.json: SUCESSO",
+            "status.json: SUCESSO"
+          ]
+        },
+        {
+          "path": "results/robustness/live/robustness-live-v2-repeat10/analysis/SHA256SUMS",
+          "valid": true,
+          "return_code": 0,
+          "output_tail": [
+            "analysis.json: SUCESSO",
+            "report.md: SUCESSO",
+            "scenario_metrics.csv: SUCESSO"
+          ]
+        }
+      ],
+      "key_json": {
+        "status.json": {
+          "campaign_id": "robustness-live-v2-repeat10",
+          "runtime": "v2",
+          "scenarios": [
+            "kafka_backlog",
+            "opensearch_unavailable",
+            "correlation_engine_restart"
+          ],
+          "repeat": 10,
+          "fault_delay_ms": 1500,
+          "fault_seed": 42,
+          "hold_seconds": 8.0,
+          "result_timeout": 90.0,
+          "recovery_timeout": 120.0,
+          "started_at": "2026-07-31T20:02:28.401339+00:00",
+          "state": "completed",
+          "completed": 30,
+          "total": 30,
+          "current_scenario": "correlation_engine_restart",
+          "current_iteration": 10,
+          "finished_at": "2026-07-31T20:56:01.946197+00:00"
+        }
+      },
+      "reports": [
+        "analysis/report.md"
+      ]
+    },
+    {
+      "id": "robustness_restart",
+      "category": "robustness",
+      "path": "results/robustness/live/robustness-live-restart-v2-repeat10-ubuntu-warm-20260802T024249Z",
+      "description": "Campanha corrigida de reinicialização do Correlation Engine.",
+      "exists": true,
+      "type": "directory",
+      "file_count": 44,
+      "total_bytes": 204813,
+      "manifests": [
+        {
+          "path": "results/robustness/live/robustness-live-restart-v2-repeat10-ubuntu-warm-20260802T024249Z/FINAL_SHA256SUMS",
+          "valid": true,
+          "return_code": 0,
+          "output_tail": [
+            "./provenance/docker-info.json: SUCESSO",
+            "./provenance/docker-ps.txt: SUCESSO",
+            "./provenance/docker-version.txt: SUCESSO",
+            "./provenance/git-branch.txt: SUCESSO",
+            "./provenance/git-commit.txt: SUCESSO",
+            "./provenance/git-index.patch: SUCESSO",
+            "./provenance/git-status.txt: SUCESSO",
+            "./provenance/git-working-tree.patch: SUCESSO",
+            "./provenance/model-artifact-checksums.txt: SUCESSO",
+            "./provenance/os-release.txt: SUCESSO",
+            "./provenance/provenance-created-at.txt: SUCESSO",
+            "./provenance/python-packages.txt: SUCESSO",
+            "./provenance/python-version.txt: SUCESSO",
+            "./provenance/rca-runtime-version.txt: SUCESSO",
+            "./provenance/uname.txt: SUCESSO",
+            "./results.csv: SUCESSO",
+            "./results.json: SUCESSO",
+            "./SHA256SUMS: SUCESSO",
+            "./status.json: SUCESSO",
+            "./warmups.json: SUCESSO"
+          ]
+        },
+        {
+          "path": "results/robustness/live/robustness-live-restart-v2-repeat10-ubuntu-warm-20260802T024249Z/SHA256SUMS",
+          "valid": true,
+          "return_code": 0,
+          "output_tail": [
+            "configuration.json: SUCESSO",
+            "controls.json: SUCESSO",
+            "metadata/after/docker-compose.resolved.yml: SUCESSO",
+            "metadata/after/docker-images.txt: SUCESSO",
+            "metadata/after/docker-ps.txt: SUCESSO",
+            "metadata/after/git-commit.txt: SUCESSO",
+            "metadata/after/git-status.txt: SUCESSO",
+            "metadata/before/docker-compose.resolved.yml: SUCESSO",
+            "metadata/before/docker-images.txt: SUCESSO",
+            "metadata/before/docker-ps.txt: SUCESSO",
+            "metadata/before/git-commit.txt: SUCESSO",
+            "metadata/before/git-status.txt: SUCESSO",
+            "results.csv: SUCESSO",
+            "results.json: SUCESSO",
+            "status.json: SUCESSO",
+            "warmups.json: SUCESSO"
+          ]
+        },
+        {
+          "path": "results/robustness/live/robustness-live-restart-v2-repeat10-ubuntu-warm-20260802T024249Z/analysis/SHA256SUMS",
+          "valid": true,
+          "return_code": 0,
+          "output_tail": [
+            "analysis.json: SUCESSO",
+            "control-cadence.md: SUCESSO",
+            "report.md: SUCESSO",
+            "scenario_metrics.csv: SUCESSO"
+          ]
+        }
+      ],
+      "key_json": {
+        "analysis/restart-scientific-summary.json": {
+          "campaign_id": "robustness-live-restart-v2-repeat10-ubuntu-warm-20260802T024249Z",
+          "scenario": "correlation_engine_restart",
+          "experimental_runs": 10,
+          "technical_valid": 10,
+          "validation_valid": 10,
+          "restart_observed": 10,
+          "lag_recovered_to_zero": 10,
+          "correct_top1": 10,
+          "reliable_results": 10,
+          "single_rca_result": 10,
+          "healthy_controls": 11,
+          "healthy_controls_total": 11,
+          "warmups_excluded": 22,
+          "unique_run_ids": 10,
+          "unique_trace_ids": 10,
+          "lag_during_distribution": {
+            "2": 4,
+            "3": 6
+          },
+          "recovery_time_ms": {
+            "count": 10,
+            "min": 10642.751256997144,
+            "mean": 12124.583946300481,
+            "median": 12553.358660501544,
+            "max": 14651.567147000605,
+            "stdev": 1248.6105016647705
+          },
+          "processing_latency_ms": {
+            "count": 10,
+            "min": 59964.797835000354,
+            "mean": 86982.71992689988,
+            "median": 80046.92224550126,
+            "max": 131689.56062099824,
+            "stdev": 27194.663221069928
+          }
+        },
+        "status.json": {
+          "campaign_id": "robustness-live-restart-v2-repeat10-ubuntu-warm-20260802T024249Z",
+          "runtime": "v2",
+          "scenarios": [
+            "correlation_engine_restart"
+          ],
+          "repeat": 10,
+          "fault_delay_ms": 1500,
+          "fault_seed": 42,
+          "hold_seconds": 8.0,
+          "result_timeout": 90.0,
+          "recovery_timeout": 120.0,
+          "warmup_attempts": 2,
+          "started_at": "2026-08-02T02:45:17.526381+00:00",
+          "state": "completed",
+          "completed": 10,
+          "total": 10,
+          "current_scenario": "correlation_engine_restart",
+          "current_iteration": 10,
+          "finished_at": "2026-08-02T03:20:11.483013+00:00"
+        }
+      },
+      "reports": [
+        "analysis/control-cadence.md",
+        "analysis/report.md",
+        "analysis/restart-methodology.md"
+      ]
+    },
+    {
+      "id": "robustness_consolidated",
+      "category": "robustness",
+      "path": "results/robustness/consolidated/final-robustness-v2",
+      "description": "Conjunto consolidado com trinta execuções válidas de robustez.",
+      "exists": true,
+      "type": "directory",
+      "file_count": 2,
+      "total_bytes": 91164,
+      "manifests": [],
+      "key_json": {
+        "summary.json": {
+          "total_runs": 30,
+          "scenario_counts": {
+            "kafka_backlog": 10,
+            "opensearch_unavailable": 10,
+            "correlation_engine_restart": 10
+          },
+          "technical_valid": 30,
+          "validation_valid": 30,
+          "restoration_ok": 30,
+          "unique_run_ids": 30,
+          "unique_trace_ids": 30,
+          "excluded_original_restart_reason": "As execuções antigas de correlation_engine_restart foram excluídas por falha técnica do driver, que dependia de reinicialização automática do container."
+        }
+      },
+      "reports": []
+    }
+  ]
+}
