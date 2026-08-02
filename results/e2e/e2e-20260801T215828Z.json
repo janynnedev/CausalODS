@@ -1,0 +1,37 @@
+[
+  {
+    "run_id": "877d38977af5",
+    "scenario": "healthy",
+    "iteration": 1,
+    "started_at": "2026-08-01T21:57:58.695812+00:00",
+    "finished_at": "2026-08-01T21:58:13.376010+00:00",
+    "duration_ms": 14680.198,
+    "runtime_model_version": "v2",
+    "model_version": null,
+    "pipeline_version": null,
+    "fault_target": null,
+    "fault_mode": "none",
+    "fault_rate": 0.0,
+    "fault_delay_ms": 0,
+    "fault_seed": 42,
+    "http_status": null,
+    "request_duration_ms": null,
+    "rca_count_before": null,
+    "rca_count_after": null,
+    "incident_count_before": null,
+    "incident_count_after": null,
+    "rca_result_id": null,
+    "trace_id": null,
+    "top_service": null,
+    "confidence": null,
+    "is_reliable": null,
+    "incident_id": null,
+    "incident_root_cause": null,
+    "restart_count_before": null,
+    "restart_count_after": null,
+    "passed": false,
+    "failures": [
+      "RuntimeError: Comando falhou:\ndocker compose up -d --force-recreate --no-deps order-service\n\nSTDOUT:\n\n\nSTDERR:\n Container order-service  Recreate\n Container order-service  Error response from daemon: cannot stop container: 7f685e49d7d8de53311b2d37c4857b34c2f2bf69f4ac082514a34f5aadd36a1a: permission denied\nError response from daemon: cannot stop container: 7f685e49d7d8de53311b2d37c4857b34c2f2bf69f4ac082514a34f5aadd36a1a: permission denied\n"
+    ]
+  }
+]
