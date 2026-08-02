@@ -1,0 +1,19 @@
+{
+  "campaign_id": "robustness-live-smoke-kafka",
+  "runtime": "v2",
+  "scenarios": [
+    "kafka_backlog"
+  ],
+  "repeat": 1,
+  "fault_delay_ms": 1500,
+  "fault_seed": 42,
+  "hold_seconds": 8.0,
+  "result_timeout": 90.0,
+  "recovery_timeout": 120.0,
+  "started_at": "2026-08-01T19:39:09.002601+00:00",
+  "state": "failed",
+  "completed": 0,
+  "total": 1,
+  "error": "RuntimeError: Comando falhou:\ndocker compose up -d --force-recreate --no-deps order-service\n\nSTDOUT:\n\n\nSTDERR:\n Container order-service  Recreate\n Container order-service  Error response from daemon: cannot stop container: 7f685e49d7d8de53311b2d37c4857b34c2f2bf69f4ac082514a34f5aadd36a1a: permission denied\nError response from daemon: cannot stop container: 7f685e49d7d8de53311b2d37c4857b34c2f2bf69f4ac082514a34f5aadd36a1a: permission denied\n",
+  "finished_at": "2026-08-01T19:39:24.292871+00:00"
+}

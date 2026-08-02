@@ -1,0 +1,2782 @@
+[
+  {
+    "campaign_id": "robustness-live-v2-repeat10",
+    "scenario": "kafka_backlog",
+    "iteration": 1,
+    "run_id": "9714681967b1",
+    "started_at": "2026-07-31T20:02:56.472204+00:00",
+    "finished_at": "2026-07-31T20:03:58.439544+00:00",
+    "duration_ms": 61967.34,
+    "trace_id": "f938b4fa59d7b08c41b4db8b0d046880",
+    "product": "e2e-robustness-kafka_backlog-9714681967b1",
+    "http_status": 200,
+    "request_duration_ms": 1568.3165999944322,
+    "lag_before": 0,
+    "lag_during": 2,
+    "lag_after": 0,
+    "restart_count_before": 0,
+    "restart_count_after": 0,
+    "started_at_before": "2026-07-31T19:58:18.3777473Z",
+    "started_at_after": "2026-07-31T19:58:18.3777473Z",
+    "recovery_time_ms": 9122.474920994136,
+    "processing_latency_ms": 53593.00211397931,
+    "explicit_failure_observed": false,
+    "restoration_ok": true,
+    "technical_valid": true,
+    "observation": {
+      "scenario": "kafka_backlog",
+      "trace_id": "f938b4fa59d7b08c41b4db8b0d046880",
+      "rca_result_count": 1,
+      "incident_count": 0,
+      "top_service": "payment-service",
+      "is_reliable": true,
+      "data_loss_count": 0,
+      "restart_count_before": 0,
+      "restart_count_after": 0,
+      "recovery_time_ms": 9122.474920994136,
+      "processing_latency_ms": 53593.00211397931,
+      "provenance_valid": true,
+      "metadata": {
+        "explicit_failure_observed": false,
+        "lag_before": 0,
+        "lag_during": 2,
+        "lag_after": 0
+      }
+    },
+    "validation": {
+      "scenario": "kafka_backlog",
+      "valid": true,
+      "issues": [],
+      "metrics": {
+        "rca_result_count": 1,
+        "incident_count": 0,
+        "top_service": "payment-service",
+        "is_reliable": true,
+        "data_loss_count": 0,
+        "recovery_time_ms": 9122.474920994136,
+        "processing_latency_ms": 53593.00211397931,
+        "provenance_valid": true
+      }
+    },
+    "rca_summary": {
+      "count": 1,
+      "document_ids": [
+        "5051634c-28f0-4fcf-a530-6dac3ed6c4a6"
+      ],
+      "top_service": "payment-service",
+      "is_reliable": true,
+      "confidence": 0.8227036865982317,
+      "model_version": "xgboost-rca-v2",
+      "pipeline_version": "causalods-rca-v2"
+    },
+    "incident_summary": {
+      "count": 0,
+      "document_ids": [],
+      "root_cause": null
+    },
+    "provenance": {
+      "expected_model_version": "xgboost-rca-v2",
+      "expected_pipeline_version": "causalods-rca-v2",
+      "actual_model_version": "xgboost-rca-v2",
+      "actual_pipeline_version": "causalods-rca-v2"
+    },
+    "driver_metadata": {
+      "mechanism": "docker_pause",
+      "container": "correlation-engine"
+    },
+    "error": null,
+    "notes": [],
+    "evidence_source": "results/robustness/live/robustness-live-v2-repeat10",
+    "included_in_final_metrics": true
+  },
+  {
+    "campaign_id": "robustness-live-v2-repeat10",
+    "scenario": "kafka_backlog",
+    "iteration": 2,
+    "run_id": "3360dfec95ba",
+    "started_at": "2026-07-31T20:03:58.440725+00:00",
+    "finished_at": "2026-07-31T20:04:56.595504+00:00",
+    "duration_ms": 58154.778999999995,
+    "trace_id": "8536a23d98215e17d59d39b2fe113fe3",
+    "product": "e2e-robustness-kafka_backlog-3360dfec95ba",
+    "http_status": 200,
+    "request_duration_ms": 1561.712910013739,
+    "lag_before": 0,
+    "lag_during": 1,
+    "lag_after": 0,
+    "restart_count_before": 0,
+    "restart_count_after": 0,
+    "started_at_before": "2026-07-31T19:58:18.3777473Z",
+    "started_at_after": "2026-07-31T19:58:18.3777473Z",
+    "recovery_time_ms": 7100.3733719699085,
+    "processing_latency_ms": 49708.71698303381,
+    "explicit_failure_observed": false,
+    "restoration_ok": true,
+    "technical_valid": true,
+    "observation": {
+      "scenario": "kafka_backlog",
+      "trace_id": "8536a23d98215e17d59d39b2fe113fe3",
+      "rca_result_count": 1,
+      "incident_count": 0,
+      "top_service": "payment-service",
+      "is_reliable": true,
+      "data_loss_count": 0,
+      "restart_count_before": 0,
+      "restart_count_after": 0,
+      "recovery_time_ms": 7100.3733719699085,
+      "processing_latency_ms": 49708.71698303381,
+      "provenance_valid": true,
+      "metadata": {
+        "explicit_failure_observed": false,
+        "lag_before": 0,
+        "lag_during": 1,
+        "lag_after": 0
+      }
+    },
+    "validation": {
+      "scenario": "kafka_backlog",
+      "valid": true,
+      "issues": [],
+      "metrics": {
+        "rca_result_count": 1,
+        "incident_count": 0,
+        "top_service": "payment-service",
+        "is_reliable": true,
+        "data_loss_count": 0,
+        "recovery_time_ms": 7100.3733719699085,
+        "processing_latency_ms": 49708.71698303381,
+        "provenance_valid": true
+      }
+    },
+    "rca_summary": {
+      "count": 1,
+      "document_ids": [
+        "156a2d09-0f5a-43cc-abde-148b00e83984"
+      ],
+      "top_service": "payment-service",
+      "is_reliable": true,
+      "confidence": 0.8229509031642407,
+      "model_version": "xgboost-rca-v2",
+      "pipeline_version": "causalods-rca-v2"
+    },
+    "incident_summary": {
+      "count": 0,
+      "document_ids": [],
+      "root_cause": null
+    },
+    "provenance": {
+      "expected_model_version": "xgboost-rca-v2",
+      "expected_pipeline_version": "causalods-rca-v2",
+      "actual_model_version": "xgboost-rca-v2",
+      "actual_pipeline_version": "causalods-rca-v2"
+    },
+    "driver_metadata": {
+      "mechanism": "docker_pause",
+      "container": "correlation-engine"
+    },
+    "error": null,
+    "notes": [],
+    "evidence_source": "results/robustness/live/robustness-live-v2-repeat10",
+    "included_in_final_metrics": true
+  },
+  {
+    "campaign_id": "robustness-live-v2-repeat10",
+    "scenario": "kafka_backlog",
+    "iteration": 3,
+    "run_id": "3ce044a5ab41",
+    "started_at": "2026-07-31T20:04:56.596694+00:00",
+    "finished_at": "2026-07-31T20:05:55.626259+00:00",
+    "duration_ms": 59029.564999999995,
+    "trace_id": "58ba1641b63ff4b70d0cc296dda4a3df",
+    "product": "e2e-robustness-kafka_backlog-3ce044a5ab41",
+    "http_status": 200,
+    "request_duration_ms": 1572.3846849869005,
+    "lag_before": 0,
+    "lag_during": 3,
+    "lag_after": 0,
+    "restart_count_before": 0,
+    "restart_count_after": 0,
+    "started_at_before": "2026-07-31T19:58:18.3777473Z",
+    "started_at_after": "2026-07-31T19:58:18.3777473Z",
+    "recovery_time_ms": 9116.97237601038,
+    "processing_latency_ms": 49662.15795703465,
+    "explicit_failure_observed": false,
+    "restoration_ok": true,
+    "technical_valid": true,
+    "observation": {
+      "scenario": "kafka_backlog",
+      "trace_id": "58ba1641b63ff4b70d0cc296dda4a3df",
+      "rca_result_count": 1,
+      "incident_count": 0,
+      "top_service": "payment-service",
+      "is_reliable": true,
+      "data_loss_count": 0,
+      "restart_count_before": 0,
+      "restart_count_after": 0,
+      "recovery_time_ms": 9116.97237601038,
+      "processing_latency_ms": 49662.15795703465,
+      "provenance_valid": true,
+      "metadata": {
+        "explicit_failure_observed": false,
+        "lag_before": 0,
+        "lag_during": 3,
+        "lag_after": 0
+      }
+    },
+    "validation": {
+      "scenario": "kafka_backlog",
+      "valid": true,
+      "issues": [],
+      "metrics": {
+        "rca_result_count": 1,
+        "incident_count": 0,
+        "top_service": "payment-service",
+        "is_reliable": true,
+        "data_loss_count": 0,
+        "recovery_time_ms": 9116.97237601038,
+        "processing_latency_ms": 49662.15795703465,
+        "provenance_valid": true
+      }
+    },
+    "rca_summary": {
+      "count": 1,
+      "document_ids": [
+        "b83f5597-a308-4fff-aeec-7c972cab0142"
+      ],
+      "top_service": "payment-service",
+      "is_reliable": true,
+      "confidence": 0.8225307169773106,
+      "model_version": "xgboost-rca-v2",
+      "pipeline_version": "causalods-rca-v2"
+    },
+    "incident_summary": {
+      "count": 0,
+      "document_ids": [],
+      "root_cause": null
+    },
+    "provenance": {
+      "expected_model_version": "xgboost-rca-v2",
+      "expected_pipeline_version": "causalods-rca-v2",
+      "actual_model_version": "xgboost-rca-v2",
+      "actual_pipeline_version": "causalods-rca-v2"
+    },
+    "driver_metadata": {
+      "mechanism": "docker_pause",
+      "container": "correlation-engine"
+    },
+    "error": null,
+    "notes": [],
+    "evidence_source": "results/robustness/live/robustness-live-v2-repeat10",
+    "included_in_final_metrics": true
+  },
+  {
+    "campaign_id": "robustness-live-v2-repeat10",
+    "scenario": "kafka_backlog",
+    "iteration": 4,
+    "run_id": "5fca2d1ff73f",
+    "started_at": "2026-07-31T20:05:55.627566+00:00",
+    "finished_at": "2026-07-31T20:07:11.799903+00:00",
+    "duration_ms": 76172.337,
+    "trace_id": "0f057ff302aca4f81eabad5b8ca6e9d4",
+    "product": "e2e-robustness-kafka_backlog-5fca2d1ff73f",
+    "http_status": 200,
+    "request_duration_ms": 1560.152788006235,
+    "lag_before": 0,
+    "lag_during": 3,
+    "lag_after": 0,
+    "restart_count_before": 0,
+    "restart_count_after": 0,
+    "started_at_before": "2026-07-31T19:58:18.3777473Z",
+    "started_at_after": "2026-07-31T19:58:18.3777473Z",
+    "recovery_time_ms": 9128.509527014103,
+    "processing_latency_ms": 66848.19560096366,
+    "explicit_failure_observed": false,
+    "restoration_ok": true,
+    "technical_valid": true,
+    "observation": {
+      "scenario": "kafka_backlog",
+      "trace_id": "0f057ff302aca4f81eabad5b8ca6e9d4",
+      "rca_result_count": 1,
+      "incident_count": 0,
+      "top_service": "payment-service",
+      "is_reliable": true,
+      "data_loss_count": 0,
+      "restart_count_before": 0,
+      "restart_count_after": 0,
+      "recovery_time_ms": 9128.509527014103,
+      "processing_latency_ms": 66848.19560096366,
+      "provenance_valid": true,
+      "metadata": {
+        "explicit_failure_observed": false,
+        "lag_before": 0,
+        "lag_during": 3,
+        "lag_after": 0
+      }
+    },
+    "validation": {
+      "scenario": "kafka_backlog",
+      "valid": true,
+      "issues": [],
+      "metrics": {
+        "rca_result_count": 1,
+        "incident_count": 0,
+        "top_service": "payment-service",
+        "is_reliable": true,
+        "data_loss_count": 0,
+        "recovery_time_ms": 9128.509527014103,
+        "processing_latency_ms": 66848.19560096366,
+        "provenance_valid": true
+      }
+    },
+    "rca_summary": {
+      "count": 1,
+      "document_ids": [
+        "9e75a6d7-63aa-4ce6-83d9-527a34029182"
+      ],
+      "top_service": "payment-service",
+      "is_reliable": true,
+      "confidence": 0.8228099887729345,
+      "model_version": "xgboost-rca-v2",
+      "pipeline_version": "causalods-rca-v2"
+    },
+    "incident_summary": {
+      "count": 0,
+      "document_ids": [],
+      "root_cause": null
+    },
+    "provenance": {
+      "expected_model_version": "xgboost-rca-v2",
+      "expected_pipeline_version": "causalods-rca-v2",
+      "actual_model_version": "xgboost-rca-v2",
+      "actual_pipeline_version": "causalods-rca-v2"
+    },
+    "driver_metadata": {
+      "mechanism": "docker_pause",
+      "container": "correlation-engine"
+    },
+    "error": null,
+    "notes": [],
+    "evidence_source": "results/robustness/live/robustness-live-v2-repeat10",
+    "included_in_final_metrics": true
+  },
+  {
+    "campaign_id": "robustness-live-v2-repeat10",
+    "scenario": "kafka_backlog",
+    "iteration": 5,
+    "run_id": "a35bd7c513c7",
+    "started_at": "2026-07-31T20:07:11.801091+00:00",
+    "finished_at": "2026-07-31T20:08:41.904128+00:00",
+    "duration_ms": 90103.037,
+    "trace_id": "3718523c176bde5aaa00c65f4614f815",
+    "product": "e2e-robustness-kafka_backlog-a35bd7c513c7",
+    "http_status": 200,
+    "request_duration_ms": 1571.5629459591582,
+    "lag_before": 0,
+    "lag_during": 2,
+    "lag_after": 0,
+    "restart_count_before": 0,
+    "restart_count_after": 0,
+    "started_at_before": "2026-07-31T19:58:18.3777473Z",
+    "started_at_after": "2026-07-31T19:58:18.3777473Z",
+    "recovery_time_ms": 9110.85145297693,
+    "processing_latency_ms": 80693.04928998463,
+    "explicit_failure_observed": false,
+    "restoration_ok": true,
+    "technical_valid": true,
+    "observation": {
+      "scenario": "kafka_backlog",
+      "trace_id": "3718523c176bde5aaa00c65f4614f815",
+      "rca_result_count": 1,
+      "incident_count": 0,
+      "top_service": "payment-service",
+      "is_reliable": true,
+      "data_loss_count": 0,
+      "restart_count_before": 0,
+      "restart_count_after": 0,
+      "recovery_time_ms": 9110.85145297693,
+      "processing_latency_ms": 80693.04928998463,
+      "provenance_valid": true,
+      "metadata": {
+        "explicit_failure_observed": false,
+        "lag_before": 0,
+        "lag_during": 2,
+        "lag_after": 0
+      }
+    },
+    "validation": {
+      "scenario": "kafka_backlog",
+      "valid": true,
+      "issues": [],
+      "metrics": {
+        "rca_result_count": 1,
+        "incident_count": 0,
+        "top_service": "payment-service",
+        "is_reliable": true,
+        "data_loss_count": 0,
+        "recovery_time_ms": 9110.85145297693,
+        "processing_latency_ms": 80693.04928998463,
+        "provenance_valid": true
+      }
+    },
+    "rca_summary": {
+      "count": 1,
+      "document_ids": [
+        "f35a6658-6cd7-482e-85b8-052721cdb545"
+      ],
+      "top_service": "payment-service",
+      "is_reliable": true,
+      "confidence": 0.8225652126785905,
+      "model_version": "xgboost-rca-v2",
+      "pipeline_version": "causalods-rca-v2"
+    },
+    "incident_summary": {
+      "count": 0,
+      "document_ids": [],
+      "root_cause": null
+    },
+    "provenance": {
+      "expected_model_version": "xgboost-rca-v2",
+      "expected_pipeline_version": "causalods-rca-v2",
+      "actual_model_version": "xgboost-rca-v2",
+      "actual_pipeline_version": "causalods-rca-v2"
+    },
+    "driver_metadata": {
+      "mechanism": "docker_pause",
+      "container": "correlation-engine"
+    },
+    "error": null,
+    "notes": [],
+    "evidence_source": "results/robustness/live/robustness-live-v2-repeat10",
+    "included_in_final_metrics": true
+  },
+  {
+    "campaign_id": "robustness-live-v2-repeat10",
+    "scenario": "kafka_backlog",
+    "iteration": 6,
+    "run_id": "62a916389781",
+    "started_at": "2026-07-31T20:08:41.905736+00:00",
+    "finished_at": "2026-07-31T20:10:23.332364+00:00",
+    "duration_ms": 101426.628,
+    "trace_id": "00e67c1c54b2d328a1224816e1f9610e",
+    "product": "e2e-robustness-kafka_backlog-62a916389781",
+    "http_status": 200,
+    "request_duration_ms": 1567.0555690303445,
+    "lag_before": 0,
+    "lag_during": 2,
+    "lag_after": 0,
+    "restart_count_before": 0,
+    "restart_count_after": 0,
+    "started_at_before": "2026-07-31T19:58:18.3777473Z",
+    "started_at_after": "2026-07-31T19:58:18.3777473Z",
+    "recovery_time_ms": 9114.718789001927,
+    "processing_latency_ms": 90744.93181903381,
+    "explicit_failure_observed": false,
+    "restoration_ok": true,
+    "technical_valid": true,
+    "observation": {
+      "scenario": "kafka_backlog",
+      "trace_id": "00e67c1c54b2d328a1224816e1f9610e",
+      "rca_result_count": 1,
+      "incident_count": 0,
+      "top_service": "payment-service",
+      "is_reliable": true,
+      "data_loss_count": 0,
+      "restart_count_before": 0,
+      "restart_count_after": 0,
+      "recovery_time_ms": 9114.718789001927,
+      "processing_latency_ms": 90744.93181903381,
+      "provenance_valid": true,
+      "metadata": {
+        "explicit_failure_observed": false,
+        "lag_before": 0,
+        "lag_during": 2,
+        "lag_after": 0
+      }
+    },
+    "validation": {
+      "scenario": "kafka_backlog",
+      "valid": true,
+      "issues": [],
+      "metrics": {
+        "rca_result_count": 1,
+        "incident_count": 0,
+        "top_service": "payment-service",
+        "is_reliable": true,
+        "data_loss_count": 0,
+        "recovery_time_ms": 9114.718789001927,
+        "processing_latency_ms": 90744.93181903381,
+        "provenance_valid": true
+      }
+    },
+    "rca_summary": {
+      "count": 1,
+      "document_ids": [
+        "54e0c851-169d-4422-8d7f-256392ddbeca"
+      ],
+      "top_service": "payment-service",
+      "is_reliable": true,
+      "confidence": 0.8226603134467397,
+      "model_version": "xgboost-rca-v2",
+      "pipeline_version": "causalods-rca-v2"
+    },
+    "incident_summary": {
+      "count": 0,
+      "document_ids": [],
+      "root_cause": null
+    },
+    "provenance": {
+      "expected_model_version": "xgboost-rca-v2",
+      "expected_pipeline_version": "causalods-rca-v2",
+      "actual_model_version": "xgboost-rca-v2",
+      "actual_pipeline_version": "causalods-rca-v2"
+    },
+    "driver_metadata": {
+      "mechanism": "docker_pause",
+      "container": "correlation-engine"
+    },
+    "error": null,
+    "notes": [],
+    "evidence_source": "results/robustness/live/robustness-live-v2-repeat10",
+    "included_in_final_metrics": true
+  },
+  {
+    "campaign_id": "robustness-live-v2-repeat10",
+    "scenario": "kafka_backlog",
+    "iteration": 7,
+    "run_id": "480c40ae35aa",
+    "started_at": "2026-07-31T20:10:23.334123+00:00",
+    "finished_at": "2026-07-31T20:11:24.237457+00:00",
+    "duration_ms": 60903.334,
+    "trace_id": "3ae31c81a773cc18ff468b62887563ba",
+    "product": "e2e-robustness-kafka_backlog-480c40ae35aa",
+    "http_status": 200,
+    "request_duration_ms": 1562.4764669919387,
+    "lag_before": 0,
+    "lag_during": 2,
+    "lag_after": 0,
+    "restart_count_before": 0,
+    "restart_count_after": 0,
+    "started_at_before": "2026-07-31T19:58:18.3777473Z",
+    "started_at_after": "2026-07-31T19:58:18.3777473Z",
+    "recovery_time_ms": 9121.743883006275,
+    "processing_latency_ms": 51494.46302902652,
+    "explicit_failure_observed": false,
+    "restoration_ok": true,
+    "technical_valid": true,
+    "observation": {
+      "scenario": "kafka_backlog",
+      "trace_id": "3ae31c81a773cc18ff468b62887563ba",
+      "rca_result_count": 1,
+      "incident_count": 0,
+      "top_service": "payment-service",
+      "is_reliable": true,
+      "data_loss_count": 0,
+      "restart_count_before": 0,
+      "restart_count_after": 0,
+      "recovery_time_ms": 9121.743883006275,
+      "processing_latency_ms": 51494.46302902652,
+      "provenance_valid": true,
+      "metadata": {
+        "explicit_failure_observed": false,
+        "lag_before": 0,
+        "lag_during": 2,
+        "lag_after": 0
+      }
+    },
+    "validation": {
+      "scenario": "kafka_backlog",
+      "valid": true,
+      "issues": [],
+      "metrics": {
+        "rca_result_count": 1,
+        "incident_count": 0,
+        "top_service": "payment-service",
+        "is_reliable": true,
+        "data_loss_count": 0,
+        "recovery_time_ms": 9121.743883006275,
+        "processing_latency_ms": 51494.46302902652,
+        "provenance_valid": true
+      }
+    },
+    "rca_summary": {
+      "count": 1,
+      "document_ids": [
+        "9dd759b9-88f2-4f38-9a51-991c1c5b4071"
+      ],
+      "top_service": "payment-service",
+      "is_reliable": true,
+      "confidence": 0.8230375622074135,
+      "model_version": "xgboost-rca-v2",
+      "pipeline_version": "causalods-rca-v2"
+    },
+    "incident_summary": {
+      "count": 0,
+      "document_ids": [],
+      "root_cause": null
+    },
+    "provenance": {
+      "expected_model_version": "xgboost-rca-v2",
+      "expected_pipeline_version": "causalods-rca-v2",
+      "actual_model_version": "xgboost-rca-v2",
+      "actual_pipeline_version": "causalods-rca-v2"
+    },
+    "driver_metadata": {
+      "mechanism": "docker_pause",
+      "container": "correlation-engine"
+    },
+    "error": null,
+    "notes": [],
+    "evidence_source": "results/robustness/live/robustness-live-v2-repeat10",
+    "included_in_final_metrics": true
+  },
+  {
+    "campaign_id": "robustness-live-v2-repeat10",
+    "scenario": "kafka_backlog",
+    "iteration": 8,
+    "run_id": "3b0e7f2a8c9a",
+    "started_at": "2026-07-31T20:11:24.239128+00:00",
+    "finished_at": "2026-07-31T20:13:04.381910+00:00",
+    "duration_ms": 100142.78199999999,
+    "trace_id": "857c930c9a2b32b40e32b5706699a053",
+    "product": "e2e-robustness-kafka_backlog-3b0e7f2a8c9a",
+    "http_status": 200,
+    "request_duration_ms": 1555.5421560420655,
+    "lag_before": 0,
+    "lag_during": 3,
+    "lag_after": 0,
+    "restart_count_before": 0,
+    "restart_count_after": 0,
+    "started_at_before": "2026-07-31T19:58:18.3777473Z",
+    "started_at_after": "2026-07-31T19:58:18.3777473Z",
+    "recovery_time_ms": 9117.657975992188,
+    "processing_latency_ms": 91731.40858800616,
+    "explicit_failure_observed": false,
+    "restoration_ok": true,
+    "technical_valid": true,
+    "observation": {
+      "scenario": "kafka_backlog",
+      "trace_id": "857c930c9a2b32b40e32b5706699a053",
+      "rca_result_count": 1,
+      "incident_count": 0,
+      "top_service": "payment-service",
+      "is_reliable": true,
+      "data_loss_count": 0,
+      "restart_count_before": 0,
+      "restart_count_after": 0,
+      "recovery_time_ms": 9117.657975992188,
+      "processing_latency_ms": 91731.40858800616,
+      "provenance_valid": true,
+      "metadata": {
+        "explicit_failure_observed": false,
+        "lag_before": 0,
+        "lag_during": 3,
+        "lag_after": 0
+      }
+    },
+    "validation": {
+      "scenario": "kafka_backlog",
+      "valid": true,
+      "issues": [],
+      "metrics": {
+        "rca_result_count": 1,
+        "incident_count": 0,
+        "top_service": "payment-service",
+        "is_reliable": true,
+        "data_loss_count": 0,
+        "recovery_time_ms": 9117.657975992188,
+        "processing_latency_ms": 91731.40858800616,
+        "provenance_valid": true
+      }
+    },
+    "rca_summary": {
+      "count": 1,
+      "document_ids": [
+        "0c03e415-c994-41bb-9041-e8d4d0ed1602"
+      ],
+      "top_service": "payment-service",
+      "is_reliable": true,
+      "confidence": 0.82285989480412,
+      "model_version": "xgboost-rca-v2",
+      "pipeline_version": "causalods-rca-v2"
+    },
+    "incident_summary": {
+      "count": 0,
+      "document_ids": [],
+      "root_cause": null
+    },
+    "provenance": {
+      "expected_model_version": "xgboost-rca-v2",
+      "expected_pipeline_version": "causalods-rca-v2",
+      "actual_model_version": "xgboost-rca-v2",
+      "actual_pipeline_version": "causalods-rca-v2"
+    },
+    "driver_metadata": {
+      "mechanism": "docker_pause",
+      "container": "correlation-engine"
+    },
+    "error": null,
+    "notes": [],
+    "evidence_source": "results/robustness/live/robustness-live-v2-repeat10",
+    "included_in_final_metrics": true
+  },
+  {
+    "campaign_id": "robustness-live-v2-repeat10",
+    "scenario": "kafka_backlog",
+    "iteration": 9,
+    "run_id": "4d7ad0e96dd3",
+    "started_at": "2026-07-31T20:13:04.383820+00:00",
+    "finished_at": "2026-07-31T20:14:06.555966+00:00",
+    "duration_ms": 62172.146,
+    "trace_id": "bcdada4e063749c99d543acfa08216c1",
+    "product": "e2e-robustness-kafka_backlog-4d7ad0e96dd3",
+    "http_status": 200,
+    "request_duration_ms": 1557.0572839933448,
+    "lag_before": 0,
+    "lag_during": 2,
+    "lag_after": 0,
+    "restart_count_before": 0,
+    "restart_count_after": 0,
+    "started_at_before": "2026-07-31T19:58:18.3777473Z",
+    "started_at_after": "2026-07-31T19:58:18.3777473Z",
+    "recovery_time_ms": 9106.512917962391,
+    "processing_latency_ms": 52827.40766403731,
+    "explicit_failure_observed": false,
+    "restoration_ok": true,
+    "technical_valid": true,
+    "observation": {
+      "scenario": "kafka_backlog",
+      "trace_id": "bcdada4e063749c99d543acfa08216c1",
+      "rca_result_count": 1,
+      "incident_count": 0,
+      "top_service": "payment-service",
+      "is_reliable": true,
+      "data_loss_count": 0,
+      "restart_count_before": 0,
+      "restart_count_after": 0,
+      "recovery_time_ms": 9106.512917962391,
+      "processing_latency_ms": 52827.40766403731,
+      "provenance_valid": true,
+      "metadata": {
+        "explicit_failure_observed": false,
+        "lag_before": 0,
+        "lag_during": 2,
+        "lag_after": 0
+      }
+    },
+    "validation": {
+      "scenario": "kafka_backlog",
+      "valid": true,
+      "issues": [],
+      "metrics": {
+        "rca_result_count": 1,
+        "incident_count": 0,
+        "top_service": "payment-service",
+        "is_reliable": true,
+        "data_loss_count": 0,
+        "recovery_time_ms": 9106.512917962391,
+        "processing_latency_ms": 52827.40766403731,
+        "provenance_valid": true
+      }
+    },
+    "rca_summary": {
+      "count": 1,
+      "document_ids": [
+        "f5a43ada-f067-4fb0-adec-94ac3967a044"
+      ],
+      "top_service": "payment-service",
+      "is_reliable": true,
+      "confidence": 0.8228644570401508,
+      "model_version": "xgboost-rca-v2",
+      "pipeline_version": "causalods-rca-v2"
+    },
+    "incident_summary": {
+      "count": 0,
+      "document_ids": [],
+      "root_cause": null
+    },
+    "provenance": {
+      "expected_model_version": "xgboost-rca-v2",
+      "expected_pipeline_version": "causalods-rca-v2",
+      "actual_model_version": "xgboost-rca-v2",
+      "actual_pipeline_version": "causalods-rca-v2"
+    },
+    "driver_metadata": {
+      "mechanism": "docker_pause",
+      "container": "correlation-engine"
+    },
+    "error": null,
+    "notes": [],
+    "evidence_source": "results/robustness/live/robustness-live-v2-repeat10",
+    "included_in_final_metrics": true
+  },
+  {
+    "campaign_id": "robustness-live-v2-repeat10",
+    "scenario": "kafka_backlog",
+    "iteration": 10,
+    "run_id": "c002faaa55aa",
+    "started_at": "2026-07-31T20:14:06.557954+00:00",
+    "finished_at": "2026-07-31T20:15:45.646657+00:00",
+    "duration_ms": 99088.703,
+    "trace_id": "695fcf4954d5041c7b1a425512aecca1",
+    "product": "e2e-robustness-kafka_backlog-c002faaa55aa",
+    "http_status": 200,
+    "request_duration_ms": 1561.9739459943958,
+    "lag_before": 0,
+    "lag_during": 1,
+    "lag_after": 0,
+    "restart_count_before": 0,
+    "restart_count_after": 0,
+    "started_at_before": "2026-07-31T19:58:18.3777473Z",
+    "started_at_after": "2026-07-31T19:58:18.3777473Z",
+    "recovery_time_ms": 9117.836075951345,
+    "processing_latency_ms": 89761.07961602975,
+    "explicit_failure_observed": false,
+    "restoration_ok": true,
+    "technical_valid": true,
+    "observation": {
+      "scenario": "kafka_backlog",
+      "trace_id": "695fcf4954d5041c7b1a425512aecca1",
+      "rca_result_count": 1,
+      "incident_count": 0,
+      "top_service": "payment-service",
+      "is_reliable": true,
+      "data_loss_count": 0,
+      "restart_count_before": 0,
+      "restart_count_after": 0,
+      "recovery_time_ms": 9117.836075951345,
+      "processing_latency_ms": 89761.07961602975,
+      "provenance_valid": true,
+      "metadata": {
+        "explicit_failure_observed": false,
+        "lag_before": 0,
+        "lag_during": 1,
+        "lag_after": 0
+      }
+    },
+    "validation": {
+      "scenario": "kafka_backlog",
+      "valid": true,
+      "issues": [],
+      "metrics": {
+        "rca_result_count": 1,
+        "incident_count": 0,
+        "top_service": "payment-service",
+        "is_reliable": true,
+        "data_loss_count": 0,
+        "recovery_time_ms": 9117.836075951345,
+        "processing_latency_ms": 89761.07961602975,
+        "provenance_valid": true
+      }
+    },
+    "rca_summary": {
+      "count": 1,
+      "document_ids": [
+        "2fa80bb1-4dc3-4b90-a10b-88202e4fb326"
+      ],
+      "top_service": "payment-service",
+      "is_reliable": true,
+      "confidence": 0.8226218161066003,
+      "model_version": "xgboost-rca-v2",
+      "pipeline_version": "causalods-rca-v2"
+    },
+    "incident_summary": {
+      "count": 0,
+      "document_ids": [],
+      "root_cause": null
+    },
+    "provenance": {
+      "expected_model_version": "xgboost-rca-v2",
+      "expected_pipeline_version": "causalods-rca-v2",
+      "actual_model_version": "xgboost-rca-v2",
+      "actual_pipeline_version": "causalods-rca-v2"
+    },
+    "driver_metadata": {
+      "mechanism": "docker_pause",
+      "container": "correlation-engine"
+    },
+    "error": null,
+    "notes": [],
+    "evidence_source": "results/robustness/live/robustness-live-v2-repeat10",
+    "included_in_final_metrics": true
+  },
+  {
+    "campaign_id": "robustness-live-v2-repeat10",
+    "scenario": "opensearch_unavailable",
+    "iteration": 1,
+    "run_id": "589d4c14ffa3",
+    "started_at": "2026-07-31T20:16:39.035773+00:00",
+    "finished_at": "2026-07-31T20:18:05.152540+00:00",
+    "duration_ms": 86116.76699999999,
+    "trace_id": "7333fdd64675645820d1c104d941d432",
+    "product": "e2e-robustness-opensearch_unavailable-589d4c14ffa3",
+    "http_status": 200,
+    "request_duration_ms": 1562.3241649591364,
+    "lag_before": 0,
+    "lag_during": null,
+    "lag_after": 0,
+    "restart_count_before": 0,
+    "restart_count_after": 0,
+    "started_at_before": "2026-07-31T19:58:18.3777473Z",
+    "started_at_after": "2026-07-31T19:58:18.3777473Z",
+    "recovery_time_ms": 2083.092516986653,
+    "processing_latency_ms": 76768.7683760305,
+    "explicit_failure_observed": false,
+    "restoration_ok": true,
+    "technical_valid": true,
+    "observation": {
+      "scenario": "opensearch_unavailable",
+      "trace_id": "7333fdd64675645820d1c104d941d432",
+      "rca_result_count": 1,
+      "incident_count": 0,
+      "top_service": "payment-service",
+      "is_reliable": true,
+      "data_loss_count": 0,
+      "restart_count_before": 0,
+      "restart_count_after": 0,
+      "recovery_time_ms": 2083.092516986653,
+      "processing_latency_ms": 76768.7683760305,
+      "provenance_valid": true,
+      "metadata": {
+        "explicit_failure_observed": false,
+        "lag_before": 0,
+        "lag_during": null,
+        "lag_after": 0
+      }
+    },
+    "validation": {
+      "scenario": "opensearch_unavailable",
+      "valid": true,
+      "issues": [],
+      "metrics": {
+        "rca_result_count": 1,
+        "incident_count": 0,
+        "top_service": "payment-service",
+        "is_reliable": true,
+        "data_loss_count": 0,
+        "recovery_time_ms": 2083.092516986653,
+        "processing_latency_ms": 76768.7683760305,
+        "provenance_valid": true
+      }
+    },
+    "rca_summary": {
+      "count": 1,
+      "document_ids": [
+        "51488dd4-13cd-4b08-b875-8ec81a64a757"
+      ],
+      "top_service": "payment-service",
+      "is_reliable": true,
+      "confidence": 0.822889095250483,
+      "model_version": "xgboost-rca-v2",
+      "pipeline_version": "causalods-rca-v2"
+    },
+    "incident_summary": {
+      "count": 0,
+      "document_ids": [],
+      "root_cause": null
+    },
+    "provenance": {
+      "expected_model_version": "xgboost-rca-v2",
+      "expected_pipeline_version": "causalods-rca-v2",
+      "actual_model_version": "xgboost-rca-v2",
+      "actual_pipeline_version": "causalods-rca-v2"
+    },
+    "driver_metadata": {
+      "mechanism": "docker_pause",
+      "container": "causalods-opensearch"
+    },
+    "error": null,
+    "notes": [],
+    "evidence_source": "results/robustness/live/robustness-live-v2-repeat10",
+    "included_in_final_metrics": true
+  },
+  {
+    "campaign_id": "robustness-live-v2-repeat10",
+    "scenario": "opensearch_unavailable",
+    "iteration": 2,
+    "run_id": "d07d262ec4f6",
+    "started_at": "2026-07-31T20:18:05.154774+00:00",
+    "finished_at": "2026-07-31T20:19:06.578693+00:00",
+    "duration_ms": 61423.918999999994,
+    "trace_id": "117a0e2d0e4e7ddee6b99459e47f9e8e",
+    "product": "e2e-robustness-opensearch_unavailable-d07d262ec4f6",
+    "http_status": 200,
+    "request_duration_ms": 1560.9297210467048,
+    "lag_before": 0,
+    "lag_during": null,
+    "lag_after": 0,
+    "restart_count_before": 0,
+    "restart_count_after": 0,
+    "started_at_before": "2026-07-31T19:58:18.3777473Z",
+    "started_at_after": "2026-07-31T19:58:18.3777473Z",
+    "recovery_time_ms": 2094.8740590247326,
+    "processing_latency_ms": 52084.906703967135,
+    "explicit_failure_observed": false,
+    "restoration_ok": true,
+    "technical_valid": true,
+    "observation": {
+      "scenario": "opensearch_unavailable",
+      "trace_id": "117a0e2d0e4e7ddee6b99459e47f9e8e",
+      "rca_result_count": 1,
+      "incident_count": 0,
+      "top_service": "payment-service",
+      "is_reliable": true,
+      "data_loss_count": 0,
+      "restart_count_before": 0,
+      "restart_count_after": 0,
+      "recovery_time_ms": 2094.8740590247326,
+      "processing_latency_ms": 52084.906703967135,
+      "provenance_valid": true,
+      "metadata": {
+        "explicit_failure_observed": false,
+        "lag_before": 0,
+        "lag_during": null,
+        "lag_after": 0
+      }
+    },
+    "validation": {
+      "scenario": "opensearch_unavailable",
+      "valid": true,
+      "issues": [],
+      "metrics": {
+        "rca_result_count": 1,
+        "incident_count": 0,
+        "top_service": "payment-service",
+        "is_reliable": true,
+        "data_loss_count": 0,
+        "recovery_time_ms": 2094.8740590247326,
+        "processing_latency_ms": 52084.906703967135,
+        "provenance_valid": true
+      }
+    },
+    "rca_summary": {
+      "count": 1,
+      "document_ids": [
+        "c5ba42b0-2434-473d-a92d-1d06d7ef4065"
+      ],
+      "top_service": "payment-service",
+      "is_reliable": true,
+      "confidence": 0.8228862685528764,
+      "model_version": "xgboost-rca-v2",
+      "pipeline_version": "causalods-rca-v2"
+    },
+    "incident_summary": {
+      "count": 0,
+      "document_ids": [],
+      "root_cause": null
+    },
+    "provenance": {
+      "expected_model_version": "xgboost-rca-v2",
+      "expected_pipeline_version": "causalods-rca-v2",
+      "actual_model_version": "xgboost-rca-v2",
+      "actual_pipeline_version": "causalods-rca-v2"
+    },
+    "driver_metadata": {
+      "mechanism": "docker_pause",
+      "container": "causalods-opensearch"
+    },
+    "error": null,
+    "notes": [],
+    "evidence_source": "results/robustness/live/robustness-live-v2-repeat10",
+    "included_in_final_metrics": true
+  },
+  {
+    "campaign_id": "robustness-live-v2-repeat10",
+    "scenario": "opensearch_unavailable",
+    "iteration": 3,
+    "run_id": "50bcfb76cc78",
+    "started_at": "2026-07-31T20:19:06.580691+00:00",
+    "finished_at": "2026-07-31T20:20:04.986735+00:00",
+    "duration_ms": 58406.044,
+    "trace_id": "92bbffed9490e757f16562c33dbfbb6a",
+    "product": "e2e-robustness-opensearch_unavailable-50bcfb76cc78",
+    "http_status": 200,
+    "request_duration_ms": 1569.8926689801738,
+    "lag_before": 0,
+    "lag_during": null,
+    "lag_after": 0,
+    "restart_count_before": 0,
+    "restart_count_after": 0,
+    "started_at_before": "2026-07-31T19:58:18.3777473Z",
+    "started_at_after": "2026-07-31T19:58:18.3777473Z",
+    "recovery_time_ms": 2084.0212019975297,
+    "processing_latency_ms": 50057.59271699935,
+    "explicit_failure_observed": false,
+    "restoration_ok": true,
+    "technical_valid": true,
+    "observation": {
+      "scenario": "opensearch_unavailable",
+      "trace_id": "92bbffed9490e757f16562c33dbfbb6a",
+      "rca_result_count": 1,
+      "incident_count": 0,
+      "top_service": "payment-service",
+      "is_reliable": true,
+      "data_loss_count": 0,
+      "restart_count_before": 0,
+      "restart_count_after": 0,
+      "recovery_time_ms": 2084.0212019975297,
+      "processing_latency_ms": 50057.59271699935,
+      "provenance_valid": true,
+      "metadata": {
+        "explicit_failure_observed": false,
+        "lag_before": 0,
+        "lag_during": null,
+        "lag_after": 0
+      }
+    },
+    "validation": {
+      "scenario": "opensearch_unavailable",
+      "valid": true,
+      "issues": [],
+      "metrics": {
+        "rca_result_count": 1,
+        "incident_count": 0,
+        "top_service": "payment-service",
+        "is_reliable": true,
+        "data_loss_count": 0,
+        "recovery_time_ms": 2084.0212019975297,
+        "processing_latency_ms": 50057.59271699935,
+        "provenance_valid": true
+      }
+    },
+    "rca_summary": {
+      "count": 1,
+      "document_ids": [
+        "5c3641cf-7288-4d1a-ac2a-5b7c1fe24ef0"
+      ],
+      "top_service": "payment-service",
+      "is_reliable": true,
+      "confidence": 0.8227492130375909,
+      "model_version": "xgboost-rca-v2",
+      "pipeline_version": "causalods-rca-v2"
+    },
+    "incident_summary": {
+      "count": 0,
+      "document_ids": [],
+      "root_cause": null
+    },
+    "provenance": {
+      "expected_model_version": "xgboost-rca-v2",
+      "expected_pipeline_version": "causalods-rca-v2",
+      "actual_model_version": "xgboost-rca-v2",
+      "actual_pipeline_version": "causalods-rca-v2"
+    },
+    "driver_metadata": {
+      "mechanism": "docker_pause",
+      "container": "causalods-opensearch"
+    },
+    "error": null,
+    "notes": [],
+    "evidence_source": "results/robustness/live/robustness-live-v2-repeat10",
+    "included_in_final_metrics": true
+  },
+  {
+    "campaign_id": "robustness-live-v2-repeat10",
+    "scenario": "opensearch_unavailable",
+    "iteration": 4,
+    "run_id": "7e95be50a96f",
+    "started_at": "2026-07-31T20:20:04.989210+00:00",
+    "finished_at": "2026-07-31T20:21:06.751222+00:00",
+    "duration_ms": 61762.011999999995,
+    "trace_id": "127dde7d0fa88769b42075253a4251d8",
+    "product": "e2e-robustness-opensearch_unavailable-7e95be50a96f",
+    "http_status": 200,
+    "request_duration_ms": 1567.0410430175252,
+    "lag_before": 0,
+    "lag_during": null,
+    "lag_after": 0,
+    "restart_count_before": 0,
+    "restart_count_after": 0,
+    "started_at_before": "2026-07-31T19:58:18.3777473Z",
+    "started_at_after": "2026-07-31T19:58:18.3777473Z",
+    "recovery_time_ms": 2095.679967023898,
+    "processing_latency_ms": 52305.57008902542,
+    "explicit_failure_observed": false,
+    "restoration_ok": true,
+    "technical_valid": true,
+    "observation": {
+      "scenario": "opensearch_unavailable",
+      "trace_id": "127dde7d0fa88769b42075253a4251d8",
+      "rca_result_count": 1,
+      "incident_count": 0,
+      "top_service": "payment-service",
+      "is_reliable": true,
+      "data_loss_count": 0,
+      "restart_count_before": 0,
+      "restart_count_after": 0,
+      "recovery_time_ms": 2095.679967023898,
+      "processing_latency_ms": 52305.57008902542,
+      "provenance_valid": true,
+      "metadata": {
+        "explicit_failure_observed": false,
+        "lag_before": 0,
+        "lag_during": null,
+        "lag_after": 0
+      }
+    },
+    "validation": {
+      "scenario": "opensearch_unavailable",
+      "valid": true,
+      "issues": [],
+      "metrics": {
+        "rca_result_count": 1,
+        "incident_count": 0,
+        "top_service": "payment-service",
+        "is_reliable": true,
+        "data_loss_count": 0,
+        "recovery_time_ms": 2095.679967023898,
+        "processing_latency_ms": 52305.57008902542,
+        "provenance_valid": true
+      }
+    },
+    "rca_summary": {
+      "count": 1,
+      "document_ids": [
+        "9701835a-8f83-46d4-b81c-363acab66d6c"
+      ],
+      "top_service": "payment-service",
+      "is_reliable": true,
+      "confidence": 0.8216815610372851,
+      "model_version": "xgboost-rca-v2",
+      "pipeline_version": "causalods-rca-v2"
+    },
+    "incident_summary": {
+      "count": 0,
+      "document_ids": [],
+      "root_cause": null
+    },
+    "provenance": {
+      "expected_model_version": "xgboost-rca-v2",
+      "expected_pipeline_version": "causalods-rca-v2",
+      "actual_model_version": "xgboost-rca-v2",
+      "actual_pipeline_version": "causalods-rca-v2"
+    },
+    "driver_metadata": {
+      "mechanism": "docker_pause",
+      "container": "causalods-opensearch"
+    },
+    "error": null,
+    "notes": [],
+    "evidence_source": "results/robustness/live/robustness-live-v2-repeat10",
+    "included_in_final_metrics": true
+  },
+  {
+    "campaign_id": "robustness-live-v2-repeat10",
+    "scenario": "opensearch_unavailable",
+    "iteration": 5,
+    "run_id": "0c73b0089f2d",
+    "started_at": "2026-07-31T20:21:06.753898+00:00",
+    "finished_at": "2026-07-31T20:22:39.796346+00:00",
+    "duration_ms": 93042.44799999999,
+    "trace_id": "cf066009273bcd55c7a774661ad3c8d9",
+    "product": "e2e-robustness-opensearch_unavailable-0c73b0089f2d",
+    "http_status": 200,
+    "request_duration_ms": 1573.2434050296433,
+    "lag_before": 0,
+    "lag_during": null,
+    "lag_after": 0,
+    "restart_count_before": 0,
+    "restart_count_after": 0,
+    "started_at_before": "2026-07-31T19:58:18.3777473Z",
+    "started_at_after": "2026-07-31T19:58:18.3777473Z",
+    "recovery_time_ms": 2098.6909809871577,
+    "processing_latency_ms": 84614.65939000482,
+    "explicit_failure_observed": false,
+    "restoration_ok": true,
+    "technical_valid": true,
+    "observation": {
+      "scenario": "opensearch_unavailable",
+      "trace_id": "cf066009273bcd55c7a774661ad3c8d9",
+      "rca_result_count": 1,
+      "incident_count": 0,
+      "top_service": "payment-service",
+      "is_reliable": true,
+      "data_loss_count": 0,
+      "restart_count_before": 0,
+      "restart_count_after": 0,
+      "recovery_time_ms": 2098.6909809871577,
+      "processing_latency_ms": 84614.65939000482,
+      "provenance_valid": true,
+      "metadata": {
+        "explicit_failure_observed": false,
+        "lag_before": 0,
+        "lag_during": null,
+        "lag_after": 0
+      }
+    },
+    "validation": {
+      "scenario": "opensearch_unavailable",
+      "valid": true,
+      "issues": [],
+      "metrics": {
+        "rca_result_count": 1,
+        "incident_count": 0,
+        "top_service": "payment-service",
+        "is_reliable": true,
+        "data_loss_count": 0,
+        "recovery_time_ms": 2098.6909809871577,
+        "processing_latency_ms": 84614.65939000482,
+        "provenance_valid": true
+      }
+    },
+    "rca_summary": {
+      "count": 1,
+      "document_ids": [
+        "c5077159-590a-47e5-9f05-fc0312837a44"
+      ],
+      "top_service": "payment-service",
+      "is_reliable": true,
+      "confidence": 0.8222922995514601,
+      "model_version": "xgboost-rca-v2",
+      "pipeline_version": "causalods-rca-v2"
+    },
+    "incident_summary": {
+      "count": 0,
+      "document_ids": [],
+      "root_cause": null
+    },
+    "provenance": {
+      "expected_model_version": "xgboost-rca-v2",
+      "expected_pipeline_version": "causalods-rca-v2",
+      "actual_model_version": "xgboost-rca-v2",
+      "actual_pipeline_version": "causalods-rca-v2"
+    },
+    "driver_metadata": {
+      "mechanism": "docker_pause",
+      "container": "causalods-opensearch"
+    },
+    "error": null,
+    "notes": [],
+    "evidence_source": "results/robustness/live/robustness-live-v2-repeat10",
+    "included_in_final_metrics": true
+  },
+  {
+    "campaign_id": "robustness-live-v2-repeat10",
+    "scenario": "opensearch_unavailable",
+    "iteration": 6,
+    "run_id": "56093daf89ec",
+    "started_at": "2026-07-31T20:22:39.798751+00:00",
+    "finished_at": "2026-07-31T20:23:45.963391+00:00",
+    "duration_ms": 66164.64,
+    "trace_id": "84f9bb7711a2823b0fcfe30fd26eec88",
+    "product": "e2e-robustness-opensearch_unavailable-56093daf89ec",
+    "http_status": 200,
+    "request_duration_ms": 1569.6119429776445,
+    "lag_before": 0,
+    "lag_during": null,
+    "lag_after": 0,
+    "restart_count_before": 0,
+    "restart_count_after": 0,
+    "started_at_before": "2026-07-31T19:58:18.3777473Z",
+    "started_at_after": "2026-07-31T19:58:18.3777473Z",
+    "recovery_time_ms": 1083.2769580301829,
+    "processing_latency_ms": 56979.32592098368,
+    "explicit_failure_observed": false,
+    "restoration_ok": true,
+    "technical_valid": true,
+    "observation": {
+      "scenario": "opensearch_unavailable",
+      "trace_id": "84f9bb7711a2823b0fcfe30fd26eec88",
+      "rca_result_count": 1,
+      "incident_count": 0,
+      "top_service": "payment-service",
+      "is_reliable": true,
+      "data_loss_count": 0,
+      "restart_count_before": 0,
+      "restart_count_after": 0,
+      "recovery_time_ms": 1083.2769580301829,
+      "processing_latency_ms": 56979.32592098368,
+      "provenance_valid": true,
+      "metadata": {
+        "explicit_failure_observed": false,
+        "lag_before": 0,
+        "lag_during": null,
+        "lag_after": 0
+      }
+    },
+    "validation": {
+      "scenario": "opensearch_unavailable",
+      "valid": true,
+      "issues": [],
+      "metrics": {
+        "rca_result_count": 1,
+        "incident_count": 0,
+        "top_service": "payment-service",
+        "is_reliable": true,
+        "data_loss_count": 0,
+        "recovery_time_ms": 1083.2769580301829,
+        "processing_latency_ms": 56979.32592098368,
+        "provenance_valid": true
+      }
+    },
+    "rca_summary": {
+      "count": 1,
+      "document_ids": [
+        "c53e4f5b-700f-4a52-bb5b-f18c943dd772"
+      ],
+      "top_service": "payment-service",
+      "is_reliable": true,
+      "confidence": 0.8225638588094649,
+      "model_version": "xgboost-rca-v2",
+      "pipeline_version": "causalods-rca-v2"
+    },
+    "incident_summary": {
+      "count": 0,
+      "document_ids": [],
+      "root_cause": null
+    },
+    "provenance": {
+      "expected_model_version": "xgboost-rca-v2",
+      "expected_pipeline_version": "causalods-rca-v2",
+      "actual_model_version": "xgboost-rca-v2",
+      "actual_pipeline_version": "causalods-rca-v2"
+    },
+    "driver_metadata": {
+      "mechanism": "docker_pause",
+      "container": "causalods-opensearch"
+    },
+    "error": null,
+    "notes": [],
+    "evidence_source": "results/robustness/live/robustness-live-v2-repeat10",
+    "included_in_final_metrics": true
+  },
+  {
+    "campaign_id": "robustness-live-v2-repeat10",
+    "scenario": "opensearch_unavailable",
+    "iteration": 7,
+    "run_id": "c918a0fe1cc0",
+    "started_at": "2026-07-31T20:23:45.965918+00:00",
+    "finished_at": "2026-07-31T20:24:46.575171+00:00",
+    "duration_ms": 60609.253000000004,
+    "trace_id": "fd3a604f60b1fb387bab950388ed33f1",
+    "product": "e2e-robustness-opensearch_unavailable-c918a0fe1cc0",
+    "http_status": 200,
+    "request_duration_ms": 1567.1752709895372,
+    "lag_before": 0,
+    "lag_during": null,
+    "lag_after": 0,
+    "restart_count_before": 0,
+    "restart_count_after": 0,
+    "started_at_before": "2026-07-31T19:58:18.3777473Z",
+    "started_at_after": "2026-07-31T19:58:18.3777473Z",
+    "recovery_time_ms": 2079.179863038007,
+    "processing_latency_ms": 51109.94364699582,
+    "explicit_failure_observed": false,
+    "restoration_ok": true,
+    "technical_valid": true,
+    "observation": {
+      "scenario": "opensearch_unavailable",
+      "trace_id": "fd3a604f60b1fb387bab950388ed33f1",
+      "rca_result_count": 1,
+      "incident_count": 0,
+      "top_service": "payment-service",
+      "is_reliable": true,
+      "data_loss_count": 0,
+      "restart_count_before": 0,
+      "restart_count_after": 0,
+      "recovery_time_ms": 2079.179863038007,
+      "processing_latency_ms": 51109.94364699582,
+      "provenance_valid": true,
+      "metadata": {
+        "explicit_failure_observed": false,
+        "lag_before": 0,
+        "lag_during": null,
+        "lag_after": 0
+      }
+    },
+    "validation": {
+      "scenario": "opensearch_unavailable",
+      "valid": true,
+      "issues": [],
+      "metrics": {
+        "rca_result_count": 1,
+        "incident_count": 0,
+        "top_service": "payment-service",
+        "is_reliable": true,
+        "data_loss_count": 0,
+        "recovery_time_ms": 2079.179863038007,
+        "processing_latency_ms": 51109.94364699582,
+        "provenance_valid": true
+      }
+    },
+    "rca_summary": {
+      "count": 1,
+      "document_ids": [
+        "bdb0aba8-81df-4e1a-ae2c-1015effd808b"
+      ],
+      "top_service": "payment-service",
+      "is_reliable": true,
+      "confidence": 0.8225391723488749,
+      "model_version": "xgboost-rca-v2",
+      "pipeline_version": "causalods-rca-v2"
+    },
+    "incident_summary": {
+      "count": 0,
+      "document_ids": [],
+      "root_cause": null
+    },
+    "provenance": {
+      "expected_model_version": "xgboost-rca-v2",
+      "expected_pipeline_version": "causalods-rca-v2",
+      "actual_model_version": "xgboost-rca-v2",
+      "actual_pipeline_version": "causalods-rca-v2"
+    },
+    "driver_metadata": {
+      "mechanism": "docker_pause",
+      "container": "causalods-opensearch"
+    },
+    "error": null,
+    "notes": [],
+    "evidence_source": "results/robustness/live/robustness-live-v2-repeat10",
+    "included_in_final_metrics": true
+  },
+  {
+    "campaign_id": "robustness-live-v2-repeat10",
+    "scenario": "opensearch_unavailable",
+    "iteration": 8,
+    "run_id": "3c67f2cc2ed7",
+    "started_at": "2026-07-31T20:24:46.578024+00:00",
+    "finished_at": "2026-07-31T20:26:20.635320+00:00",
+    "duration_ms": 94057.29599999999,
+    "trace_id": "c0cd165e5b80cc945959871b0da0a0e7",
+    "product": "e2e-robustness-opensearch_unavailable-3c67f2cc2ed7",
+    "http_status": 200,
+    "request_duration_ms": 1565.7055460033007,
+    "lag_before": 0,
+    "lag_during": null,
+    "lag_after": 0,
+    "restart_count_before": 0,
+    "restart_count_after": 0,
+    "started_at_before": "2026-07-31T19:58:18.3777473Z",
+    "started_at_after": "2026-07-31T19:58:18.3777473Z",
+    "recovery_time_ms": 2085.4672819841653,
+    "processing_latency_ms": 84603.36290701525,
+    "explicit_failure_observed": false,
+    "restoration_ok": true,
+    "technical_valid": true,
+    "observation": {
+      "scenario": "opensearch_unavailable",
+      "trace_id": "c0cd165e5b80cc945959871b0da0a0e7",
+      "rca_result_count": 1,
+      "incident_count": 0,
+      "top_service": "payment-service",
+      "is_reliable": true,
+      "data_loss_count": 0,
+      "restart_count_before": 0,
+      "restart_count_after": 0,
+      "recovery_time_ms": 2085.4672819841653,
+      "processing_latency_ms": 84603.36290701525,
+      "provenance_valid": true,
+      "metadata": {
+        "explicit_failure_observed": false,
+        "lag_before": 0,
+        "lag_during": null,
+        "lag_after": 0
+      }
+    },
+    "validation": {
+      "scenario": "opensearch_unavailable",
+      "valid": true,
+      "issues": [],
+      "metrics": {
+        "rca_result_count": 1,
+        "incident_count": 0,
+        "top_service": "payment-service",
+        "is_reliable": true,
+        "data_loss_count": 0,
+        "recovery_time_ms": 2085.4672819841653,
+        "processing_latency_ms": 84603.36290701525,
+        "provenance_valid": true
+      }
+    },
+    "rca_summary": {
+      "count": 1,
+      "document_ids": [
+        "edccb75f-e7e3-4014-9f42-35db03607a32"
+      ],
+      "top_service": "payment-service",
+      "is_reliable": true,
+      "confidence": 0.8228683016526357,
+      "model_version": "xgboost-rca-v2",
+      "pipeline_version": "causalods-rca-v2"
+    },
+    "incident_summary": {
+      "count": 0,
+      "document_ids": [],
+      "root_cause": null
+    },
+    "provenance": {
+      "expected_model_version": "xgboost-rca-v2",
+      "expected_pipeline_version": "causalods-rca-v2",
+      "actual_model_version": "xgboost-rca-v2",
+      "actual_pipeline_version": "causalods-rca-v2"
+    },
+    "driver_metadata": {
+      "mechanism": "docker_pause",
+      "container": "causalods-opensearch"
+    },
+    "error": null,
+    "notes": [],
+    "evidence_source": "results/robustness/live/robustness-live-v2-repeat10",
+    "included_in_final_metrics": true
+  },
+  {
+    "campaign_id": "robustness-live-v2-repeat10",
+    "scenario": "opensearch_unavailable",
+    "iteration": 9,
+    "run_id": "71bd02fd7252",
+    "started_at": "2026-07-31T20:26:20.638095+00:00",
+    "finished_at": "2026-07-31T20:27:18.858851+00:00",
+    "duration_ms": 58220.756,
+    "trace_id": "64279716fff831476978e20140c9f48f",
+    "product": "e2e-robustness-opensearch_unavailable-71bd02fd7252",
+    "http_status": 200,
+    "request_duration_ms": 1563.8694710214622,
+    "lag_before": 0,
+    "lag_during": null,
+    "lag_after": 0,
+    "restart_count_before": 0,
+    "restart_count_after": 0,
+    "started_at_before": "2026-07-31T19:58:18.3777473Z",
+    "started_at_after": "2026-07-31T19:58:18.3777473Z",
+    "recovery_time_ms": 1075.177791994065,
+    "processing_latency_ms": 49895.151149015874,
+    "explicit_failure_observed": false,
+    "restoration_ok": true,
+    "technical_valid": true,
+    "observation": {
+      "scenario": "opensearch_unavailable",
+      "trace_id": "64279716fff831476978e20140c9f48f",
+      "rca_result_count": 1,
+      "incident_count": 0,
+      "top_service": "payment-service",
+      "is_reliable": true,
+      "data_loss_count": 0,
+      "restart_count_before": 0,
+      "restart_count_after": 0,
+      "recovery_time_ms": 1075.177791994065,
+      "processing_latency_ms": 49895.151149015874,
+      "provenance_valid": true,
+      "metadata": {
+        "explicit_failure_observed": false,
+        "lag_before": 0,
+        "lag_during": null,
+        "lag_after": 0
+      }
+    },
+    "validation": {
+      "scenario": "opensearch_unavailable",
+      "valid": true,
+      "issues": [],
+      "metrics": {
+        "rca_result_count": 1,
+        "incident_count": 0,
+        "top_service": "payment-service",
+        "is_reliable": true,
+        "data_loss_count": 0,
+        "recovery_time_ms": 1075.177791994065,
+        "processing_latency_ms": 49895.151149015874,
+        "provenance_valid": true
+      }
+    },
+    "rca_summary": {
+      "count": 1,
+      "document_ids": [
+        "82a86d4f-e94e-4ebc-a02f-76aafcc1a104"
+      ],
+      "top_service": "payment-service",
+      "is_reliable": true,
+      "confidence": 0.8226939156706767,
+      "model_version": "xgboost-rca-v2",
+      "pipeline_version": "causalods-rca-v2"
+    },
+    "incident_summary": {
+      "count": 0,
+      "document_ids": [],
+      "root_cause": null
+    },
+    "provenance": {
+      "expected_model_version": "xgboost-rca-v2",
+      "expected_pipeline_version": "causalods-rca-v2",
+      "actual_model_version": "xgboost-rca-v2",
+      "actual_pipeline_version": "causalods-rca-v2"
+    },
+    "driver_metadata": {
+      "mechanism": "docker_pause",
+      "container": "causalods-opensearch"
+    },
+    "error": null,
+    "notes": [],
+    "evidence_source": "results/robustness/live/robustness-live-v2-repeat10",
+    "included_in_final_metrics": true
+  },
+  {
+    "campaign_id": "robustness-live-v2-repeat10",
+    "scenario": "opensearch_unavailable",
+    "iteration": 10,
+    "run_id": "cd170c039992",
+    "started_at": "2026-07-31T20:27:18.861672+00:00",
+    "finished_at": "2026-07-31T20:28:18.668384+00:00",
+    "duration_ms": 59806.712,
+    "trace_id": "eb8bba534e45f747b2d7ff80c9573fa4",
+    "product": "e2e-robustness-opensearch_unavailable-cd170c039992",
+    "http_status": 200,
+    "request_duration_ms": 1555.1921330043115,
+    "lag_before": 0,
+    "lag_during": null,
+    "lag_after": 0,
+    "restart_count_before": 0,
+    "restart_count_after": 0,
+    "started_at_before": "2026-07-31T19:58:18.3777473Z",
+    "started_at_after": "2026-07-31T19:58:18.3777473Z",
+    "recovery_time_ms": 2081.1989000067115,
+    "processing_latency_ms": 51525.867536023725,
+    "explicit_failure_observed": false,
+    "restoration_ok": true,
+    "technical_valid": true,
+    "observation": {
+      "scenario": "opensearch_unavailable",
+      "trace_id": "eb8bba534e45f747b2d7ff80c9573fa4",
+      "rca_result_count": 1,
+      "incident_count": 0,
+      "top_service": "payment-service",
+      "is_reliable": true,
+      "data_loss_count": 0,
+      "restart_count_before": 0,
+      "restart_count_after": 0,
+      "recovery_time_ms": 2081.1989000067115,
+      "processing_latency_ms": 51525.867536023725,
+      "provenance_valid": true,
+      "metadata": {
+        "explicit_failure_observed": false,
+        "lag_before": 0,
+        "lag_during": null,
+        "lag_after": 0
+      }
+    },
+    "validation": {
+      "scenario": "opensearch_unavailable",
+      "valid": true,
+      "issues": [],
+      "metrics": {
+        "rca_result_count": 1,
+        "incident_count": 0,
+        "top_service": "payment-service",
+        "is_reliable": true,
+        "data_loss_count": 0,
+        "recovery_time_ms": 2081.1989000067115,
+        "processing_latency_ms": 51525.867536023725,
+        "provenance_valid": true
+      }
+    },
+    "rca_summary": {
+      "count": 1,
+      "document_ids": [
+        "f1e2e53d-27a0-4a5c-95f1-42bcce0a6eb1"
+      ],
+      "top_service": "payment-service",
+      "is_reliable": true,
+      "confidence": 0.8230493933187049,
+      "model_version": "xgboost-rca-v2",
+      "pipeline_version": "causalods-rca-v2"
+    },
+    "incident_summary": {
+      "count": 0,
+      "document_ids": [],
+      "root_cause": null
+    },
+    "provenance": {
+      "expected_model_version": "xgboost-rca-v2",
+      "expected_pipeline_version": "causalods-rca-v2",
+      "actual_model_version": "xgboost-rca-v2",
+      "actual_pipeline_version": "causalods-rca-v2"
+    },
+    "driver_metadata": {
+      "mechanism": "docker_pause",
+      "container": "causalods-opensearch"
+    },
+    "error": null,
+    "notes": [],
+    "evidence_source": "results/robustness/live/robustness-live-v2-repeat10",
+    "included_in_final_metrics": true
+  },
+  {
+    "campaign_id": "robustness-live-restart-v2-repeat10-ubuntu-warm-20260802T024249Z",
+    "scenario": "correlation_engine_restart",
+    "iteration": 1,
+    "run_id": "c4e123918222",
+    "started_at": "2026-08-02T02:46:50.825656+00:00",
+    "finished_at": "2026-08-02T02:48:33.944368+00:00",
+    "duration_ms": 103118.712,
+    "trace_id": "2acfc8dfede6ddcc519f43283d7280e3",
+    "product": "e2e-robustness-correlation_engine_restart-c4e123918222",
+    "http_status": 200,
+    "request_duration_ms": 1585.4500510031357,
+    "lag_before": 0,
+    "lag_during": 2,
+    "lag_after": 0,
+    "restart_count_before": 0,
+    "restart_count_after": 0,
+    "started_at_before": "2026-08-02T00:05:30.96071757Z",
+    "started_at_after": "2026-08-02T02:47:22.507704903Z",
+    "recovery_time_ms": 11583.363657002337,
+    "processing_latency_ms": 87799.00302700116,
+    "explicit_failure_observed": false,
+    "restoration_ok": true,
+    "technical_valid": true,
+    "observation": {
+      "scenario": "correlation_engine_restart",
+      "trace_id": "2acfc8dfede6ddcc519f43283d7280e3",
+      "rca_result_count": 1,
+      "incident_count": 0,
+      "top_service": "payment-service",
+      "is_reliable": true,
+      "data_loss_count": 0,
+      "restart_count_before": 0,
+      "restart_count_after": 0,
+      "recovery_time_ms": 11583.363657002337,
+      "processing_latency_ms": 87799.00302700116,
+      "provenance_valid": true,
+      "metadata": {
+        "explicit_failure_observed": false,
+        "lag_before": 0,
+        "lag_during": 2,
+        "lag_after": 0,
+        "restart_observed": true,
+        "started_at_before": "2026-08-02T00:05:30.96071757Z",
+        "started_at_after": "2026-08-02T02:47:22.507704903Z"
+      }
+    },
+    "validation": {
+      "scenario": "correlation_engine_restart",
+      "valid": true,
+      "issues": [],
+      "metrics": {
+        "rca_result_count": 1,
+        "incident_count": 0,
+        "top_service": "payment-service",
+        "is_reliable": true,
+        "data_loss_count": 0,
+        "recovery_time_ms": 11583.363657002337,
+        "processing_latency_ms": 87799.00302700116,
+        "provenance_valid": true,
+        "restart_observed": true,
+        "lag_after": 0
+      }
+    },
+    "rca_summary": {
+      "count": 1,
+      "document_ids": [
+        "473fa9b4-d801-49a6-ab95-1843aba9b69c"
+      ],
+      "top_service": "payment-service",
+      "is_reliable": true,
+      "confidence": 0.8227166125046288,
+      "model_version": "xgboost-rca-v2",
+      "pipeline_version": "causalods-rca-v2"
+    },
+    "incident_summary": {
+      "count": 0,
+      "document_ids": [],
+      "root_cause": null
+    },
+    "provenance": {
+      "expected_model_version": "xgboost-rca-v2",
+      "expected_pipeline_version": "causalods-rca-v2",
+      "actual_model_version": "xgboost-rca-v2",
+      "actual_pipeline_version": "causalods-rca-v2"
+    },
+    "driver_metadata": {
+      "mechanism": "pause_then_sigkill_then_explicit_start",
+      "container": "correlation-engine",
+      "started_at_before": "2026-08-02T00:05:30.96071757Z",
+      "started_at_after": "2026-08-02T02:47:22.507704903Z",
+      "restart_observed": true
+    },
+    "error": null,
+    "notes": [],
+    "evidence_source": "results/robustness/live/robustness-live-restart-v2-repeat10-ubuntu-warm-20260802T024249Z",
+    "included_in_final_metrics": true
+  },
+  {
+    "campaign_id": "robustness-live-restart-v2-repeat10-ubuntu-warm-20260802T024249Z",
+    "scenario": "correlation_engine_restart",
+    "iteration": 2,
+    "run_id": "4da46ee846d4",
+    "started_at": "2026-08-02T02:50:07.170891+00:00",
+    "finished_at": "2026-08-02T02:51:44.125189+00:00",
+    "duration_ms": 96954.298,
+    "trace_id": "d99a125dc6c867f86a606dd1e684b928",
+    "product": "e2e-robustness-correlation_engine_restart-4da46ee846d4",
+    "http_status": 200,
+    "request_duration_ms": 1598.9191890002985,
+    "lag_before": 0,
+    "lag_during": 2,
+    "lag_after": 0,
+    "restart_count_before": 0,
+    "restart_count_after": 0,
+    "started_at_before": "2026-08-02T02:47:22.507704903Z",
+    "started_at_after": "2026-08-02T02:50:38.448317638Z",
+    "recovery_time_ms": 10642.751256997144,
+    "processing_latency_ms": 81532.48143100063,
+    "explicit_failure_observed": false,
+    "restoration_ok": true,
+    "technical_valid": true,
+    "observation": {
+      "scenario": "correlation_engine_restart",
+      "trace_id": "d99a125dc6c867f86a606dd1e684b928",
+      "rca_result_count": 1,
+      "incident_count": 0,
+      "top_service": "payment-service",
+      "is_reliable": true,
+      "data_loss_count": 0,
+      "restart_count_before": 0,
+      "restart_count_after": 0,
+      "recovery_time_ms": 10642.751256997144,
+      "processing_latency_ms": 81532.48143100063,
+      "provenance_valid": true,
+      "metadata": {
+        "explicit_failure_observed": false,
+        "lag_before": 0,
+        "lag_during": 2,
+        "lag_after": 0,
+        "restart_observed": true,
+        "started_at_before": "2026-08-02T02:47:22.507704903Z",
+        "started_at_after": "2026-08-02T02:50:38.448317638Z"
+      }
+    },
+    "validation": {
+      "scenario": "correlation_engine_restart",
+      "valid": true,
+      "issues": [],
+      "metrics": {
+        "rca_result_count": 1,
+        "incident_count": 0,
+        "top_service": "payment-service",
+        "is_reliable": true,
+        "data_loss_count": 0,
+        "recovery_time_ms": 10642.751256997144,
+        "processing_latency_ms": 81532.48143100063,
+        "provenance_valid": true,
+        "restart_observed": true,
+        "lag_after": 0
+      }
+    },
+    "rca_summary": {
+      "count": 1,
+      "document_ids": [
+        "5a250780-f315-47f7-bfeb-ec256001a81e"
+      ],
+      "top_service": "payment-service",
+      "is_reliable": true,
+      "confidence": 0.8226444357670261,
+      "model_version": "xgboost-rca-v2",
+      "pipeline_version": "causalods-rca-v2"
+    },
+    "incident_summary": {
+      "count": 0,
+      "document_ids": [],
+      "root_cause": null
+    },
+    "provenance": {
+      "expected_model_version": "xgboost-rca-v2",
+      "expected_pipeline_version": "causalods-rca-v2",
+      "actual_model_version": "xgboost-rca-v2",
+      "actual_pipeline_version": "causalods-rca-v2"
+    },
+    "driver_metadata": {
+      "mechanism": "pause_then_sigkill_then_explicit_start",
+      "container": "correlation-engine",
+      "started_at_before": "2026-08-02T02:47:22.507704903Z",
+      "started_at_after": "2026-08-02T02:50:38.448317638Z",
+      "restart_observed": true
+    },
+    "error": null,
+    "notes": [],
+    "evidence_source": "results/robustness/live/robustness-live-restart-v2-repeat10-ubuntu-warm-20260802T024249Z",
+    "included_in_final_metrics": true
+  },
+  {
+    "campaign_id": "robustness-live-restart-v2-repeat10-ubuntu-warm-20260802T024249Z",
+    "scenario": "correlation_engine_restart",
+    "iteration": 3,
+    "run_id": "7791179e948f",
+    "started_at": "2026-08-02T02:53:16.828496+00:00",
+    "finished_at": "2026-08-02T02:54:36.937514+00:00",
+    "duration_ms": 80109.01800000001,
+    "trace_id": "136456c76704b25c329bf0f2a8bea8cb",
+    "product": "e2e-robustness-correlation_engine_restart-7791179e948f",
+    "http_status": 200,
+    "request_duration_ms": 1591.0764470027061,
+    "lag_before": 0,
+    "lag_during": 3,
+    "lag_after": 0,
+    "restart_count_before": 0,
+    "restart_count_after": 0,
+    "started_at_before": "2026-08-02T02:50:38.448317638Z",
+    "started_at_after": "2026-08-02T02:53:46.001593742Z",
+    "recovery_time_ms": 12594.483954999305,
+    "processing_latency_ms": 65930.1058050005,
+    "explicit_failure_observed": false,
+    "restoration_ok": true,
+    "technical_valid": true,
+    "observation": {
+      "scenario": "correlation_engine_restart",
+      "trace_id": "136456c76704b25c329bf0f2a8bea8cb",
+      "rca_result_count": 1,
+      "incident_count": 0,
+      "top_service": "payment-service",
+      "is_reliable": true,
+      "data_loss_count": 0,
+      "restart_count_before": 0,
+      "restart_count_after": 0,
+      "recovery_time_ms": 12594.483954999305,
+      "processing_latency_ms": 65930.1058050005,
+      "provenance_valid": true,
+      "metadata": {
+        "explicit_failure_observed": false,
+        "lag_before": 0,
+        "lag_during": 3,
+        "lag_after": 0,
+        "restart_observed": true,
+        "started_at_before": "2026-08-02T02:50:38.448317638Z",
+        "started_at_after": "2026-08-02T02:53:46.001593742Z"
+      }
+    },
+    "validation": {
+      "scenario": "correlation_engine_restart",
+      "valid": true,
+      "issues": [],
+      "metrics": {
+        "rca_result_count": 1,
+        "incident_count": 0,
+        "top_service": "payment-service",
+        "is_reliable": true,
+        "data_loss_count": 0,
+        "recovery_time_ms": 12594.483954999305,
+        "processing_latency_ms": 65930.1058050005,
+        "provenance_valid": true,
+        "restart_observed": true,
+        "lag_after": 0
+      }
+    },
+    "rca_summary": {
+      "count": 1,
+      "document_ids": [
+        "34391017-5807-4835-830a-0425561ea78b"
+      ],
+      "top_service": "payment-service",
+      "is_reliable": true,
+      "confidence": 0.822737005069794,
+      "model_version": "xgboost-rca-v2",
+      "pipeline_version": "causalods-rca-v2"
+    },
+    "incident_summary": {
+      "count": 0,
+      "document_ids": [],
+      "root_cause": null
+    },
+    "provenance": {
+      "expected_model_version": "xgboost-rca-v2",
+      "expected_pipeline_version": "causalods-rca-v2",
+      "actual_model_version": "xgboost-rca-v2",
+      "actual_pipeline_version": "causalods-rca-v2"
+    },
+    "driver_metadata": {
+      "mechanism": "pause_then_sigkill_then_explicit_start",
+      "container": "correlation-engine",
+      "started_at_before": "2026-08-02T02:50:38.448317638Z",
+      "started_at_after": "2026-08-02T02:53:46.001593742Z",
+      "restart_observed": true
+    },
+    "error": null,
+    "notes": [],
+    "evidence_source": "results/robustness/live/robustness-live-restart-v2-repeat10-ubuntu-warm-20260802T024249Z",
+    "included_in_final_metrics": true
+  },
+  {
+    "campaign_id": "robustness-live-restart-v2-repeat10-ubuntu-warm-20260802T024249Z",
+    "scenario": "correlation_engine_restart",
+    "iteration": 4,
+    "run_id": "7ab2bcdf6b74",
+    "started_at": "2026-08-02T02:56:05.871348+00:00",
+    "finished_at": "2026-08-02T02:57:19.996362+00:00",
+    "duration_ms": 74125.014,
+    "trace_id": "40d49549a890d59211cba3cb97b0d6c8",
+    "product": "e2e-robustness-correlation_engine_restart-7ab2bcdf6b74",
+    "http_status": 200,
+    "request_duration_ms": 1581.0420039997553,
+    "lag_before": 0,
+    "lag_during": 3,
+    "lag_after": 0,
+    "restart_count_before": 0,
+    "restart_count_after": 0,
+    "started_at_before": "2026-08-02T02:53:46.001593742Z",
+    "started_at_after": "2026-08-02T02:56:34.534993301Z",
+    "recovery_time_ms": 12545.599846002006,
+    "processing_latency_ms": 59964.797835000354,
+    "explicit_failure_observed": false,
+    "restoration_ok": true,
+    "technical_valid": true,
+    "observation": {
+      "scenario": "correlation_engine_restart",
+      "trace_id": "40d49549a890d59211cba3cb97b0d6c8",
+      "rca_result_count": 1,
+      "incident_count": 0,
+      "top_service": "payment-service",
+      "is_reliable": true,
+      "data_loss_count": 0,
+      "restart_count_before": 0,
+      "restart_count_after": 0,
+      "recovery_time_ms": 12545.599846002006,
+      "processing_latency_ms": 59964.797835000354,
+      "provenance_valid": true,
+      "metadata": {
+        "explicit_failure_observed": false,
+        "lag_before": 0,
+        "lag_during": 3,
+        "lag_after": 0,
+        "restart_observed": true,
+        "started_at_before": "2026-08-02T02:53:46.001593742Z",
+        "started_at_after": "2026-08-02T02:56:34.534993301Z"
+      }
+    },
+    "validation": {
+      "scenario": "correlation_engine_restart",
+      "valid": true,
+      "issues": [],
+      "metrics": {
+        "rca_result_count": 1,
+        "incident_count": 0,
+        "top_service": "payment-service",
+        "is_reliable": true,
+        "data_loss_count": 0,
+        "recovery_time_ms": 12545.599846002006,
+        "processing_latency_ms": 59964.797835000354,
+        "provenance_valid": true,
+        "restart_observed": true,
+        "lag_after": 0
+      }
+    },
+    "rca_summary": {
+      "count": 1,
+      "document_ids": [
+        "8f8a7c27-bdf0-457a-b6ba-130f23cd21ad"
+      ],
+      "top_service": "payment-service",
+      "is_reliable": true,
+      "confidence": 0.8229319091271913,
+      "model_version": "xgboost-rca-v2",
+      "pipeline_version": "causalods-rca-v2"
+    },
+    "incident_summary": {
+      "count": 0,
+      "document_ids": [],
+      "root_cause": null
+    },
+    "provenance": {
+      "expected_model_version": "xgboost-rca-v2",
+      "expected_pipeline_version": "causalods-rca-v2",
+      "actual_model_version": "xgboost-rca-v2",
+      "actual_pipeline_version": "causalods-rca-v2"
+    },
+    "driver_metadata": {
+      "mechanism": "pause_then_sigkill_then_explicit_start",
+      "container": "correlation-engine",
+      "started_at_before": "2026-08-02T02:53:46.001593742Z",
+      "started_at_after": "2026-08-02T02:56:34.534993301Z",
+      "restart_observed": true
+    },
+    "error": null,
+    "notes": [],
+    "evidence_source": "results/robustness/live/robustness-live-restart-v2-repeat10-ubuntu-warm-20260802T024249Z",
+    "included_in_final_metrics": true
+  },
+  {
+    "campaign_id": "robustness-live-restart-v2-repeat10-ubuntu-warm-20260802T024249Z",
+    "scenario": "correlation_engine_restart",
+    "iteration": 5,
+    "run_id": "4e0e320827df",
+    "started_at": "2026-08-02T02:59:01.483258+00:00",
+    "finished_at": "2026-08-02T03:01:11.336393+00:00",
+    "duration_ms": 129853.13500000001,
+    "trace_id": "d9a41a0d7fc558d44748475d544bb5e1",
+    "product": "e2e-robustness-correlation_engine_restart-4e0e320827df",
+    "http_status": 200,
+    "request_duration_ms": 1575.8161719968484,
+    "lag_before": 0,
+    "lag_during": 3,
+    "lag_after": 0,
+    "restart_count_before": 0,
+    "restart_count_after": 0,
+    "started_at_before": "2026-08-02T02:56:34.534993301Z",
+    "started_at_after": "2026-08-02T02:59:33.111038765Z",
+    "recovery_time_ms": 14651.567147000605,
+    "processing_latency_ms": 115422.61564599903,
+    "explicit_failure_observed": false,
+    "restoration_ok": true,
+    "technical_valid": true,
+    "observation": {
+      "scenario": "correlation_engine_restart",
+      "trace_id": "d9a41a0d7fc558d44748475d544bb5e1",
+      "rca_result_count": 1,
+      "incident_count": 0,
+      "top_service": "payment-service",
+      "is_reliable": true,
+      "data_loss_count": 0,
+      "restart_count_before": 0,
+      "restart_count_after": 0,
+      "recovery_time_ms": 14651.567147000605,
+      "processing_latency_ms": 115422.61564599903,
+      "provenance_valid": true,
+      "metadata": {
+        "explicit_failure_observed": false,
+        "lag_before": 0,
+        "lag_during": 3,
+        "lag_after": 0,
+        "restart_observed": true,
+        "started_at_before": "2026-08-02T02:56:34.534993301Z",
+        "started_at_after": "2026-08-02T02:59:33.111038765Z"
+      }
+    },
+    "validation": {
+      "scenario": "correlation_engine_restart",
+      "valid": true,
+      "issues": [],
+      "metrics": {
+        "rca_result_count": 1,
+        "incident_count": 0,
+        "top_service": "payment-service",
+        "is_reliable": true,
+        "data_loss_count": 0,
+        "recovery_time_ms": 14651.567147000605,
+        "processing_latency_ms": 115422.61564599903,
+        "provenance_valid": true,
+        "restart_observed": true,
+        "lag_after": 0
+      }
+    },
+    "rca_summary": {
+      "count": 1,
+      "document_ids": [
+        "af20512a-1e2b-43ec-9197-16894b9b5349"
+      ],
+      "top_service": "payment-service",
+      "is_reliable": true,
+      "confidence": 0.8229351651100631,
+      "model_version": "xgboost-rca-v2",
+      "pipeline_version": "causalods-rca-v2"
+    },
+    "incident_summary": {
+      "count": 0,
+      "document_ids": [],
+      "root_cause": null
+    },
+    "provenance": {
+      "expected_model_version": "xgboost-rca-v2",
+      "expected_pipeline_version": "causalods-rca-v2",
+      "actual_model_version": "xgboost-rca-v2",
+      "actual_pipeline_version": "causalods-rca-v2"
+    },
+    "driver_metadata": {
+      "mechanism": "pause_then_sigkill_then_explicit_start",
+      "container": "correlation-engine",
+      "started_at_before": "2026-08-02T02:56:34.534993301Z",
+      "started_at_after": "2026-08-02T02:59:33.111038765Z",
+      "restart_observed": true
+    },
+    "error": null,
+    "notes": [],
+    "evidence_source": "results/robustness/live/robustness-live-restart-v2-repeat10-ubuntu-warm-20260802T024249Z",
+    "included_in_final_metrics": true
+  },
+  {
+    "campaign_id": "robustness-live-restart-v2-repeat10-ubuntu-warm-20260802T024249Z",
+    "scenario": "correlation_engine_restart",
+    "iteration": 6,
+    "run_id": "9b89f480e81f",
+    "started_at": "2026-08-02T03:03:01.028387+00:00",
+    "finished_at": "2026-08-02T03:05:19.658964+00:00",
+    "duration_ms": 138630.577,
+    "trace_id": "811d49d7fdd75e05d9112da244505214",
+    "product": "e2e-robustness-correlation_engine_restart-9b89f480e81f",
+    "http_status": 200,
+    "request_duration_ms": 1593.146376999357,
+    "lag_before": 0,
+    "lag_during": 2,
+    "lag_after": 0,
+    "restart_count_before": 0,
+    "restart_count_after": 0,
+    "started_at_before": "2026-08-02T02:59:33.111038765Z",
+    "started_at_after": "2026-08-02T03:04:17.158021711Z",
+    "recovery_time_ms": 10702.009261000057,
+    "processing_latency_ms": 123965.45933899688,
+    "explicit_failure_observed": false,
+    "restoration_ok": true,
+    "technical_valid": true,
+    "observation": {
+      "scenario": "correlation_engine_restart",
+      "trace_id": "811d49d7fdd75e05d9112da244505214",
+      "rca_result_count": 1,
+      "incident_count": 0,
+      "top_service": "payment-service",
+      "is_reliable": true,
+      "data_loss_count": 0,
+      "restart_count_before": 0,
+      "restart_count_after": 0,
+      "recovery_time_ms": 10702.009261000057,
+      "processing_latency_ms": 123965.45933899688,
+      "provenance_valid": true,
+      "metadata": {
+        "explicit_failure_observed": false,
+        "lag_before": 0,
+        "lag_during": 2,
+        "lag_after": 0,
+        "restart_observed": true,
+        "started_at_before": "2026-08-02T02:59:33.111038765Z",
+        "started_at_after": "2026-08-02T03:04:17.158021711Z"
+      }
+    },
+    "validation": {
+      "scenario": "correlation_engine_restart",
+      "valid": true,
+      "issues": [],
+      "metrics": {
+        "rca_result_count": 1,
+        "incident_count": 0,
+        "top_service": "payment-service",
+        "is_reliable": true,
+        "data_loss_count": 0,
+        "recovery_time_ms": 10702.009261000057,
+        "processing_latency_ms": 123965.45933899688,
+        "provenance_valid": true,
+        "restart_observed": true,
+        "lag_after": 0
+      }
+    },
+    "rca_summary": {
+      "count": 1,
+      "document_ids": [
+        "213ec213-6a9e-46e8-8b9b-8bcee74db3ec"
+      ],
+      "top_service": "payment-service",
+      "is_reliable": true,
+      "confidence": 0.8230664912738127,
+      "model_version": "xgboost-rca-v2",
+      "pipeline_version": "causalods-rca-v2"
+    },
+    "incident_summary": {
+      "count": 0,
+      "document_ids": [],
+      "root_cause": null
+    },
+    "provenance": {
+      "expected_model_version": "xgboost-rca-v2",
+      "expected_pipeline_version": "causalods-rca-v2",
+      "actual_model_version": "xgboost-rca-v2",
+      "actual_pipeline_version": "causalods-rca-v2"
+    },
+    "driver_metadata": {
+      "mechanism": "pause_then_sigkill_then_explicit_start",
+      "container": "correlation-engine",
+      "started_at_before": "2026-08-02T02:59:33.111038765Z",
+      "started_at_after": "2026-08-02T03:04:17.158021711Z",
+      "restart_observed": true
+    },
+    "error": null,
+    "notes": [],
+    "evidence_source": "results/robustness/live/robustness-live-restart-v2-repeat10-ubuntu-warm-20260802T024249Z",
+    "included_in_final_metrics": true
+  },
+  {
+    "campaign_id": "robustness-live-restart-v2-repeat10-ubuntu-warm-20260802T024249Z",
+    "scenario": "correlation_engine_restart",
+    "iteration": 7,
+    "run_id": "90e380cd0821",
+    "started_at": "2026-08-02T03:06:52.399532+00:00",
+    "finished_at": "2026-08-02T03:09:18.367961+00:00",
+    "duration_ms": 145968.42899999997,
+    "trace_id": "cc3d977b952692fe6f84a1110d06cede",
+    "product": "e2e-robustness-correlation_engine_restart-90e380cd0821",
+    "http_status": 200,
+    "request_duration_ms": 1572.5537999969674,
+    "lag_before": 0,
+    "lag_during": 3,
+    "lag_after": 0,
+    "restart_count_before": 0,
+    "restart_count_after": 0,
+    "started_at_before": "2026-08-02T03:04:17.158021711Z",
+    "started_at_after": "2026-08-02T03:08:32.550181538Z",
+    "recovery_time_ms": 12561.117475001083,
+    "processing_latency_ms": 131689.56062099824,
+    "explicit_failure_observed": false,
+    "restoration_ok": true,
+    "technical_valid": true,
+    "observation": {
+      "scenario": "correlation_engine_restart",
+      "trace_id": "cc3d977b952692fe6f84a1110d06cede",
+      "rca_result_count": 1,
+      "incident_count": 0,
+      "top_service": "payment-service",
+      "is_reliable": true,
+      "data_loss_count": 0,
+      "restart_count_before": 0,
+      "restart_count_after": 0,
+      "recovery_time_ms": 12561.117475001083,
+      "processing_latency_ms": 131689.56062099824,
+      "provenance_valid": true,
+      "metadata": {
+        "explicit_failure_observed": false,
+        "lag_before": 0,
+        "lag_during": 3,
+        "lag_after": 0,
+        "restart_observed": true,
+        "started_at_before": "2026-08-02T03:04:17.158021711Z",
+        "started_at_after": "2026-08-02T03:08:32.550181538Z"
+      }
+    },
+    "validation": {
+      "scenario": "correlation_engine_restart",
+      "valid": true,
+      "issues": [],
+      "metrics": {
+        "rca_result_count": 1,
+        "incident_count": 0,
+        "top_service": "payment-service",
+        "is_reliable": true,
+        "data_loss_count": 0,
+        "recovery_time_ms": 12561.117475001083,
+        "processing_latency_ms": 131689.56062099824,
+        "provenance_valid": true,
+        "restart_observed": true,
+        "lag_after": 0
+      }
+    },
+    "rca_summary": {
+      "count": 1,
+      "document_ids": [
+        "d92f52b2-2082-44e6-88b6-8840fdb677ad"
+      ],
+      "top_service": "payment-service",
+      "is_reliable": true,
+      "confidence": 0.8231094815713559,
+      "model_version": "xgboost-rca-v2",
+      "pipeline_version": "causalods-rca-v2"
+    },
+    "incident_summary": {
+      "count": 0,
+      "document_ids": [],
+      "root_cause": null
+    },
+    "provenance": {
+      "expected_model_version": "xgboost-rca-v2",
+      "expected_pipeline_version": "causalods-rca-v2",
+      "actual_model_version": "xgboost-rca-v2",
+      "actual_pipeline_version": "causalods-rca-v2"
+    },
+    "driver_metadata": {
+      "mechanism": "pause_then_sigkill_then_explicit_start",
+      "container": "correlation-engine",
+      "started_at_before": "2026-08-02T03:04:17.158021711Z",
+      "started_at_after": "2026-08-02T03:08:32.550181538Z",
+      "restart_observed": true
+    },
+    "error": null,
+    "notes": [],
+    "evidence_source": "results/robustness/live/robustness-live-restart-v2-repeat10-ubuntu-warm-20260802T024249Z",
+    "included_in_final_metrics": true
+  },
+  {
+    "campaign_id": "robustness-live-restart-v2-repeat10-ubuntu-warm-20260802T024249Z",
+    "scenario": "correlation_engine_restart",
+    "iteration": 8,
+    "run_id": "ceb12cbb47e5",
+    "started_at": "2026-08-02T03:10:46.356305+00:00",
+    "finished_at": "2026-08-02T03:12:01.284514+00:00",
+    "duration_ms": 74928.209,
+    "trace_id": "28bab804b6c6523c52eb1e95e0e77688",
+    "product": "e2e-robustness-correlation_engine_restart-ceb12cbb47e5",
+    "http_status": 200,
+    "request_duration_ms": 1655.3921949998767,
+    "lag_before": 0,
+    "lag_during": 3,
+    "lag_after": 0,
+    "restart_count_before": 0,
+    "restart_count_after": 0,
+    "started_at_before": "2026-08-02T03:08:32.550181538Z",
+    "started_at_after": "2026-08-02T03:11:15.951269826Z",
+    "recovery_time_ms": 12630.71773000047,
+    "processing_latency_ms": 60815.67501600148,
+    "explicit_failure_observed": false,
+    "restoration_ok": true,
+    "technical_valid": true,
+    "observation": {
+      "scenario": "correlation_engine_restart",
+      "trace_id": "28bab804b6c6523c52eb1e95e0e77688",
+      "rca_result_count": 1,
+      "incident_count": 0,
+      "top_service": "payment-service",
+      "is_reliable": true,
+      "data_loss_count": 0,
+      "restart_count_before": 0,
+      "restart_count_after": 0,
+      "recovery_time_ms": 12630.71773000047,
+      "processing_latency_ms": 60815.67501600148,
+      "provenance_valid": true,
+      "metadata": {
+        "explicit_failure_observed": false,
+        "lag_before": 0,
+        "lag_during": 3,
+        "lag_after": 0,
+        "restart_observed": true,
+        "started_at_before": "2026-08-02T03:08:32.550181538Z",
+        "started_at_after": "2026-08-02T03:11:15.951269826Z"
+      }
+    },
+    "validation": {
+      "scenario": "correlation_engine_restart",
+      "valid": true,
+      "issues": [],
+      "metrics": {
+        "rca_result_count": 1,
+        "incident_count": 0,
+        "top_service": "payment-service",
+        "is_reliable": true,
+        "data_loss_count": 0,
+        "recovery_time_ms": 12630.71773000047,
+        "processing_latency_ms": 60815.67501600148,
+        "provenance_valid": true,
+        "restart_observed": true,
+        "lag_after": 0
+      }
+    },
+    "rca_summary": {
+      "count": 1,
+      "document_ids": [
+        "3e83234b-a410-43b6-b797-e0aedcca5248"
+      ],
+      "top_service": "payment-service",
+      "is_reliable": true,
+      "confidence": 0.8225230492496953,
+      "model_version": "xgboost-rca-v2",
+      "pipeline_version": "causalods-rca-v2"
+    },
+    "incident_summary": {
+      "count": 0,
+      "document_ids": [],
+      "root_cause": null
+    },
+    "provenance": {
+      "expected_model_version": "xgboost-rca-v2",
+      "expected_pipeline_version": "causalods-rca-v2",
+      "actual_model_version": "xgboost-rca-v2",
+      "actual_pipeline_version": "causalods-rca-v2"
+    },
+    "driver_metadata": {
+      "mechanism": "pause_then_sigkill_then_explicit_start",
+      "container": "correlation-engine",
+      "started_at_before": "2026-08-02T03:08:32.550181538Z",
+      "started_at_after": "2026-08-02T03:11:15.951269826Z",
+      "restart_observed": true
+    },
+    "error": null,
+    "notes": [],
+    "evidence_source": "results/robustness/live/robustness-live-restart-v2-repeat10-ubuntu-warm-20260802T024249Z",
+    "included_in_final_metrics": true
+  },
+  {
+    "campaign_id": "robustness-live-restart-v2-repeat10-ubuntu-warm-20260802T024249Z",
+    "scenario": "correlation_engine_restart",
+    "iteration": 9,
+    "run_id": "a3719bc4fc94",
+    "started_at": "2026-08-02T03:13:46.713773+00:00",
+    "finished_at": "2026-08-02T03:15:20.046310+00:00",
+    "duration_ms": 93332.537,
+    "trace_id": "4781c95d6ea8dd8e113cf3896fbbc7e3",
+    "product": "e2e-robustness-correlation_engine_restart-a3719bc4fc94",
+    "http_status": 200,
+    "request_duration_ms": 1584.5771490021434,
+    "lag_before": 0,
+    "lag_during": 3,
+    "lag_after": 0,
+    "restart_count_before": 0,
+    "restart_count_after": 0,
+    "started_at_before": "2026-08-02T03:11:15.951269826Z",
+    "started_at_after": "2026-08-02T03:14:23.617498888Z",
+    "recovery_time_ms": 12634.015160001582,
+    "processing_latency_ms": 78561.3630600019,
+    "explicit_failure_observed": false,
+    "restoration_ok": true,
+    "technical_valid": true,
+    "observation": {
+      "scenario": "correlation_engine_restart",
+      "trace_id": "4781c95d6ea8dd8e113cf3896fbbc7e3",
+      "rca_result_count": 1,
+      "incident_count": 0,
+      "top_service": "payment-service",
+      "is_reliable": true,
+      "data_loss_count": 0,
+      "restart_count_before": 0,
+      "restart_count_after": 0,
+      "recovery_time_ms": 12634.015160001582,
+      "processing_latency_ms": 78561.3630600019,
+      "provenance_valid": true,
+      "metadata": {
+        "explicit_failure_observed": false,
+        "lag_before": 0,
+        "lag_during": 3,
+        "lag_after": 0,
+        "restart_observed": true,
+        "started_at_before": "2026-08-02T03:11:15.951269826Z",
+        "started_at_after": "2026-08-02T03:14:23.617498888Z"
+      }
+    },
+    "validation": {
+      "scenario": "correlation_engine_restart",
+      "valid": true,
+      "issues": [],
+      "metrics": {
+        "rca_result_count": 1,
+        "incident_count": 0,
+        "top_service": "payment-service",
+        "is_reliable": true,
+        "data_loss_count": 0,
+        "recovery_time_ms": 12634.015160001582,
+        "processing_latency_ms": 78561.3630600019,
+        "provenance_valid": true,
+        "restart_observed": true,
+        "lag_after": 0
+      }
+    },
+    "rca_summary": {
+      "count": 1,
+      "document_ids": [
+        "2c2f3bed-f77a-403d-9660-1da0b254843e"
+      ],
+      "top_service": "payment-service",
+      "is_reliable": true,
+      "confidence": 0.8230230872173605,
+      "model_version": "xgboost-rca-v2",
+      "pipeline_version": "causalods-rca-v2"
+    },
+    "incident_summary": {
+      "count": 0,
+      "document_ids": [],
+      "root_cause": null
+    },
+    "provenance": {
+      "expected_model_version": "xgboost-rca-v2",
+      "expected_pipeline_version": "causalods-rca-v2",
+      "actual_model_version": "xgboost-rca-v2",
+      "actual_pipeline_version": "causalods-rca-v2"
+    },
+    "driver_metadata": {
+      "mechanism": "pause_then_sigkill_then_explicit_start",
+      "container": "correlation-engine",
+      "started_at_before": "2026-08-02T03:11:15.951269826Z",
+      "started_at_after": "2026-08-02T03:14:23.617498888Z",
+      "restart_observed": true
+    },
+    "error": null,
+    "notes": [],
+    "evidence_source": "results/robustness/live/robustness-live-restart-v2-repeat10-ubuntu-warm-20260802T024249Z",
+    "included_in_final_metrics": true
+  },
+  {
+    "campaign_id": "robustness-live-restart-v2-repeat10-ubuntu-warm-20260802T024249Z",
+    "scenario": "correlation_engine_restart",
+    "iteration": 10,
+    "run_id": "f032624a5608",
+    "started_at": "2026-08-02T03:16:53.230194+00:00",
+    "finished_at": "2026-08-02T03:18:12.258004+00:00",
+    "duration_ms": 79027.81,
+    "trace_id": "b85fb58697ce9449ed60d167edf76d7d",
+    "product": "e2e-robustness-correlation_engine_restart-f032624a5608",
+    "http_status": 200,
+    "request_duration_ms": 1585.7280959971831,
+    "lag_before": 0,
+    "lag_during": 2,
+    "lag_after": 0,
+    "restart_count_before": 0,
+    "restart_count_after": 0,
+    "started_at_before": "2026-08-02T03:14:23.617498888Z",
+    "started_at_after": "2026-08-02T03:17:25.51001322Z",
+    "recovery_time_ms": 10700.213975000224,
+    "processing_latency_ms": 64146.13748899865,
+    "explicit_failure_observed": false,
+    "restoration_ok": true,
+    "technical_valid": true,
+    "observation": {
+      "scenario": "correlation_engine_restart",
+      "trace_id": "b85fb58697ce9449ed60d167edf76d7d",
+      "rca_result_count": 1,
+      "incident_count": 0,
+      "top_service": "payment-service",
+      "is_reliable": true,
+      "data_loss_count": 0,
+      "restart_count_before": 0,
+      "restart_count_after": 0,
+      "recovery_time_ms": 10700.213975000224,
+      "processing_latency_ms": 64146.13748899865,
+      "provenance_valid": true,
+      "metadata": {
+        "explicit_failure_observed": false,
+        "lag_before": 0,
+        "lag_during": 2,
+        "lag_after": 0,
+        "restart_observed": true,
+        "started_at_before": "2026-08-02T03:14:23.617498888Z",
+        "started_at_after": "2026-08-02T03:17:25.51001322Z"
+      }
+    },
+    "validation": {
+      "scenario": "correlation_engine_restart",
+      "valid": true,
+      "issues": [],
+      "metrics": {
+        "rca_result_count": 1,
+        "incident_count": 0,
+        "top_service": "payment-service",
+        "is_reliable": true,
+        "data_loss_count": 0,
+        "recovery_time_ms": 10700.213975000224,
+        "processing_latency_ms": 64146.13748899865,
+        "provenance_valid": true,
+        "restart_observed": true,
+        "lag_after": 0
+      }
+    },
+    "rca_summary": {
+      "count": 1,
+      "document_ids": [
+        "0afdc740-7885-4618-8d68-88bb79e74ac8"
+      ],
+      "top_service": "payment-service",
+      "is_reliable": true,
+      "confidence": 0.8229281024632029,
+      "model_version": "xgboost-rca-v2",
+      "pipeline_version": "causalods-rca-v2"
+    },
+    "incident_summary": {
+      "count": 0,
+      "document_ids": [],
+      "root_cause": null
+    },
+    "provenance": {
+      "expected_model_version": "xgboost-rca-v2",
+      "expected_pipeline_version": "causalods-rca-v2",
+      "actual_model_version": "xgboost-rca-v2",
+      "actual_pipeline_version": "causalods-rca-v2"
+    },
+    "driver_metadata": {
+      "mechanism": "pause_then_sigkill_then_explicit_start",
+      "container": "correlation-engine",
+      "started_at_before": "2026-08-02T03:14:23.617498888Z",
+      "started_at_after": "2026-08-02T03:17:25.51001322Z",
+      "restart_observed": true
+    },
+    "error": null,
+    "notes": [],
+    "evidence_source": "results/robustness/live/robustness-live-restart-v2-repeat10-ubuntu-warm-20260802T024249Z",
+    "included_in_final_metrics": true
+  }
+]

@@ -1,0 +1,545 @@
+Fault configuration unchanged | service=payment-service | mode=none
+Fault configuration unchanged | service=order-service | mode=none
+Faults configured | target=None | requested_mode=none | order_mode=none | payment_mode=none | target_rate=0.0 | target_delay_ms=0 | seed=42 | recreated=['none']
+Healthy warm-up started | position=before_correlation_engine_restart | attempts=2
+
+======================================================================
+Scenario: healthy | iteration=1 | run_id=c05c5e15d899
+======================================================================
+Fault configuration unchanged | service=payment-service | mode=none
+Fault configuration unchanged | service=order-service | mode=none
+Faults configured | target=None | requested_mode=none | order_mode=none | payment_mode=none | target_rate=0.0 | target_delay_ms=0 | seed=42 | recreated=['none']
+Preparation traces settled | rca_count=30
+Order request | scenario=healthy | http_status=200 | duration_ms=60.456 | response={'id': 1785638726559, 'product': 'e2e-healthy-c05c5e15d899', 'quantity': 2, 'status': 'APPROVED'}
+Order trace resolved | run_id=c05c5e15d899 | trace_id=7bd7119411b5d893b2bb6eb8ecbcf035
+RCAResult matched | trace_id=7bd7119411b5d893b2bb6eb8ecbcf035 | document_id=1cadb61b-5d9e-4acc-9292-b72ac8564e28
+Result: PASSED | scenario=healthy | top_service=payment-service | reliable=False | confidence=0.01563671598692177 | incident=None | runtime=v2 | model_version=xgboost-rca-v2 | pipeline_version=causalods-rca-v2
+Healthy warm-up completed | position=before_correlation_engine_restart | iteration=1 | passed=True | reliable=None | confidence=0.01563671598692177
+
+======================================================================
+Scenario: healthy | iteration=2 | run_id=8d937a72dea9
+======================================================================
+Fault configuration unchanged | service=payment-service | mode=none
+Fault configuration unchanged | service=order-service | mode=none
+Faults configured | target=None | requested_mode=none | order_mode=none | payment_mode=none | target_rate=0.0 | target_delay_ms=0 | seed=42 | recreated=['none']
+Preparation traces settled | rca_count=31
+Order request | scenario=healthy | http_status=200 | duration_ms=18.395 | response={'id': 1785638753699, 'product': 'e2e-healthy-8d937a72dea9', 'quantity': 2, 'status': 'APPROVED'}
+Order trace resolved | run_id=8d937a72dea9 | trace_id=dae498a866629fff3acb6825da43df5d
+RCAResult matched | trace_id=dae498a866629fff3acb6825da43df5d | document_id=27f0e453-1db1-4daf-881c-959f5b877ff7
+Result: PASSED | scenario=healthy | top_service=payment-service | reliable=False | confidence=0.01563671598692177 | incident=None | runtime=v2 | model_version=xgboost-rca-v2 | pipeline_version=causalods-rca-v2
+Healthy warm-up completed | position=before_correlation_engine_restart | iteration=2 | passed=True | reliable=None | confidence=0.01563671598692177
+Healthy warm-up settled | position=before_correlation_engine_restart
+
+======================================================================
+Scenario: healthy | iteration=0 | run_id=d39e8b2699f4
+======================================================================
+Fault configuration unchanged | service=payment-service | mode=none
+Fault configuration unchanged | service=order-service | mode=none
+Faults configured | target=None | requested_mode=none | order_mode=none | payment_mode=none | target_rate=0.0 | target_delay_ms=0 | seed=42 | recreated=['none']
+Preparation traces settled | rca_count=32
+Order request | scenario=healthy | http_status=200 | duration_ms=16.649 | response={'id': 1785638792541, 'product': 'e2e-healthy-d39e8b2699f4', 'quantity': 2, 'status': 'APPROVED'}
+Order trace resolved | run_id=d39e8b2699f4 | trace_id=aeea320d44fc19a9c66160c364ff72bf
+RCAResult matched | trace_id=aeea320d44fc19a9c66160c364ff72bf | document_id=b45842f8-a10c-4875-af30-1cced4fb32d3
+Result: PASSED | scenario=healthy | top_service=payment-service | reliable=False | confidence=0.01563671598692177 | incident=None | runtime=v2 | model_version=xgboost-rca-v2 | pipeline_version=causalods-rca-v2
+Fault configuration unchanged | service=payment-service | mode=none
+Fault configuration unchanged | service=order-service | mode=none
+Faults configured | target=None | requested_mode=none | order_mode=none | payment_mode=none | target_rate=0.0 | target_delay_ms=0 | seed=42 | recreated=['none']
+payment-service ready | attempts=15 | check=http | status=200 | application_status=UP
+Fault configuration unchanged | service=order-service | mode=none
+Faults configured | target=payment-service | requested_mode=latency | order_mode=none | payment_mode=latency | target_rate=1.0 | target_delay_ms=1500 | seed=42 | recreated=['payment-service']
+Order trace resolved | run_id=c4e123918222 | trace_id=2acfc8dfede6ddcc519f43283d7280e3
+payment-service ready | attempts=14 | check=http | status=200 | application_status=UP
+Fault configuration unchanged | service=order-service | mode=none
+Faults configured | target=None | requested_mode=none | order_mode=none | payment_mode=none | target_rate=0.0 | target_delay_ms=0 | seed=42 | recreated=['payment-service']
+Healthy warm-up started | position=after_correlation_engine_restart | attempts=2
+
+======================================================================
+Scenario: healthy | iteration=1 | run_id=b2f623ea1998
+======================================================================
+Fault configuration unchanged | service=payment-service | mode=none
+Fault configuration unchanged | service=order-service | mode=none
+Faults configured | target=None | requested_mode=none | order_mode=none | payment_mode=none | target_rate=0.0 | target_delay_ms=0 | seed=42 | recreated=['none']
+Preparation traces settled | rca_count=34
+Order request | scenario=healthy | http_status=200 | duration_ms=147.143 | response={'id': 1785638921873, 'product': 'e2e-healthy-b2f623ea1998', 'quantity': 2, 'status': 'APPROVED'}
+Order trace resolved | run_id=b2f623ea1998 | trace_id=3dbbe247aa6ef477f090d991ef3338c1
+RCAResult matched | trace_id=3dbbe247aa6ef477f090d991ef3338c1 | document_id=d6c7a160-93a8-43fe-a382-4ee751ffe98b
+Result: PASSED | scenario=healthy | top_service=payment-service | reliable=False | confidence=0.01658646041227024 | incident=None | runtime=v2 | model_version=xgboost-rca-v2 | pipeline_version=causalods-rca-v2
+Healthy warm-up completed | position=after_correlation_engine_restart | iteration=1 | passed=True | reliable=None | confidence=0.01658646041227024
+
+======================================================================
+Scenario: healthy | iteration=2 | run_id=ea9c6ff214ce
+======================================================================
+Fault configuration unchanged | service=payment-service | mode=none
+Fault configuration unchanged | service=order-service | mode=none
+Faults configured | target=None | requested_mode=none | order_mode=none | payment_mode=none | target_rate=0.0 | target_delay_ms=0 | seed=42 | recreated=['none']
+Preparation traces settled | rca_count=35
+Order request | scenario=healthy | http_status=200 | duration_ms=13.637 | response={'id': 1785638948963, 'product': 'e2e-healthy-ea9c6ff214ce', 'quantity': 2, 'status': 'APPROVED'}
+Order trace resolved | run_id=ea9c6ff214ce | trace_id=8efd0acc2b6d3c12de3bf5afcac0003e
+RCAResult matched | trace_id=8efd0acc2b6d3c12de3bf5afcac0003e | document_id=4fea5e7b-64ca-4b91-a62b-e9c7311f6b74
+Result: PASSED | scenario=healthy | top_service=payment-service | reliable=False | confidence=0.01563671598692177 | incident=None | runtime=v2 | model_version=xgboost-rca-v2 | pipeline_version=causalods-rca-v2
+Healthy warm-up completed | position=after_correlation_engine_restart | iteration=2 | passed=True | reliable=None | confidence=0.01563671598692177
+Healthy warm-up settled | position=after_correlation_engine_restart
+
+======================================================================
+Scenario: healthy | iteration=0 | run_id=c1c50b24249f
+======================================================================
+Fault configuration unchanged | service=payment-service | mode=none
+Fault configuration unchanged | service=order-service | mode=none
+Faults configured | target=None | requested_mode=none | order_mode=none | payment_mode=none | target_rate=0.0 | target_delay_ms=0 | seed=42 | recreated=['none']
+Preparation traces settled | rca_count=36
+Order request | scenario=healthy | http_status=200 | duration_ms=17.370 | response={'id': 1785638988908, 'product': 'e2e-healthy-c1c50b24249f', 'quantity': 2, 'status': 'APPROVED'}
+Order trace resolved | run_id=c1c50b24249f | trace_id=5e6ca86525beb3cba559070c30fb7438
+RCAResult matched | trace_id=5e6ca86525beb3cba559070c30fb7438 | document_id=40e5c1f9-a591-46a8-a3b8-734dd372a2be
+Result: PASSED | scenario=healthy | top_service=payment-service | reliable=False | confidence=0.01563671598692177 | incident=None | runtime=v2 | model_version=xgboost-rca-v2 | pipeline_version=causalods-rca-v2
+Fault configuration unchanged | service=payment-service | mode=none
+Fault configuration unchanged | service=order-service | mode=none
+Faults configured | target=None | requested_mode=none | order_mode=none | payment_mode=none | target_rate=0.0 | target_delay_ms=0 | seed=42 | recreated=['none']
+payment-service ready | attempts=15 | check=http | status=200 | application_status=UP
+Fault configuration unchanged | service=order-service | mode=none
+Faults configured | target=payment-service | requested_mode=latency | order_mode=none | payment_mode=latency | target_rate=1.0 | target_delay_ms=1500 | seed=42 | recreated=['payment-service']
+Order trace resolved | run_id=4da46ee846d4 | trace_id=d99a125dc6c867f86a606dd1e684b928
+payment-service ready | attempts=14 | check=http | status=200 | application_status=UP
+Fault configuration unchanged | service=order-service | mode=none
+Faults configured | target=None | requested_mode=none | order_mode=none | payment_mode=none | target_rate=0.0 | target_delay_ms=0 | seed=42 | recreated=['payment-service']
+Healthy warm-up started | position=after_correlation_engine_restart | attempts=2
+
+======================================================================
+Scenario: healthy | iteration=1 | run_id=3c6aafd1c5ca
+======================================================================
+Fault configuration unchanged | service=payment-service | mode=none
+Fault configuration unchanged | service=order-service | mode=none
+Faults configured | target=None | requested_mode=none | order_mode=none | payment_mode=none | target_rate=0.0 | target_delay_ms=0 | seed=42 | recreated=['none']
+Preparation traces settled | rca_count=38
+Order request | scenario=healthy | http_status=200 | duration_ms=151.367 | response={'id': 1785639112038, 'product': 'e2e-healthy-3c6aafd1c5ca', 'quantity': 2, 'status': 'APPROVED'}
+Order trace resolved | run_id=3c6aafd1c5ca | trace_id=9d65a065971c596255e90620e633fe8f
+RCAResult matched | trace_id=9d65a065971c596255e90620e633fe8f | document_id=333df42c-bc9d-433a-b2b4-6999af3a4e80
+Result: PASSED | scenario=healthy | top_service=payment-service | reliable=False | confidence=0.01641743953275458 | incident=None | runtime=v2 | model_version=xgboost-rca-v2 | pipeline_version=causalods-rca-v2
+Healthy warm-up completed | position=after_correlation_engine_restart | iteration=1 | passed=True | reliable=None | confidence=0.01641743953275458
+
+======================================================================
+Scenario: healthy | iteration=2 | run_id=27c06243d0c3
+======================================================================
+Fault configuration unchanged | service=payment-service | mode=none
+Fault configuration unchanged | service=order-service | mode=none
+Faults configured | target=None | requested_mode=none | order_mode=none | payment_mode=none | target_rate=0.0 | target_delay_ms=0 | seed=42 | recreated=['none']
+Preparation traces settled | rca_count=39
+Order request | scenario=healthy | http_status=200 | duration_ms=38.594 | response={'id': 1785639139336, 'product': 'e2e-healthy-27c06243d0c3', 'quantity': 2, 'status': 'APPROVED'}
+Order trace resolved | run_id=27c06243d0c3 | trace_id=1853e2662dae89613a82a96050d1ce44
+RCAResult matched | trace_id=1853e2662dae89613a82a96050d1ce44 | document_id=d0f44fa1-8f19-48e1-a589-00851302a5d4
+Result: PASSED | scenario=healthy | top_service=payment-service | reliable=False | confidence=0.01563671598692177 | incident=None | runtime=v2 | model_version=xgboost-rca-v2 | pipeline_version=causalods-rca-v2
+Healthy warm-up completed | position=after_correlation_engine_restart | iteration=2 | passed=True | reliable=None | confidence=0.01563671598692177
+Healthy warm-up settled | position=after_correlation_engine_restart
+
+======================================================================
+Scenario: healthy | iteration=0 | run_id=8620f0cc319a
+======================================================================
+Fault configuration unchanged | service=payment-service | mode=none
+Fault configuration unchanged | service=order-service | mode=none
+Faults configured | target=None | requested_mode=none | order_mode=none | payment_mode=none | target_rate=0.0 | target_delay_ms=0 | seed=42 | recreated=['none']
+Preparation traces settled | rca_count=40
+Order request | scenario=healthy | http_status=200 | duration_ms=14.941 | response={'id': 1785639178594, 'product': 'e2e-healthy-8620f0cc319a', 'quantity': 2, 'status': 'APPROVED'}
+Order trace resolved | run_id=8620f0cc319a | trace_id=d023f249a63feb5f471aaeb4a157d29b
+RCAResult matched | trace_id=d023f249a63feb5f471aaeb4a157d29b | document_id=030d9e37-2c3d-4225-b48a-62506710a34f
+Result: PASSED | scenario=healthy | top_service=payment-service | reliable=False | confidence=0.01563671598692177 | incident=None | runtime=v2 | model_version=xgboost-rca-v2 | pipeline_version=causalods-rca-v2
+Fault configuration unchanged | service=payment-service | mode=none
+Fault configuration unchanged | service=order-service | mode=none
+Faults configured | target=None | requested_mode=none | order_mode=none | payment_mode=none | target_rate=0.0 | target_delay_ms=0 | seed=42 | recreated=['none']
+payment-service ready | attempts=13 | check=http | status=200 | application_status=UP
+Fault configuration unchanged | service=order-service | mode=none
+Faults configured | target=payment-service | requested_mode=latency | order_mode=none | payment_mode=latency | target_rate=1.0 | target_delay_ms=1500 | seed=42 | recreated=['payment-service']
+Order trace resolved | run_id=7791179e948f | trace_id=136456c76704b25c329bf0f2a8bea8cb
+payment-service ready | attempts=13 | check=http | status=200 | application_status=UP
+Fault configuration unchanged | service=order-service | mode=none
+Faults configured | target=None | requested_mode=none | order_mode=none | payment_mode=none | target_rate=0.0 | target_delay_ms=0 | seed=42 | recreated=['payment-service']
+Healthy warm-up started | position=after_correlation_engine_restart | attempts=2
+
+======================================================================
+Scenario: healthy | iteration=1 | run_id=32863b6ffeb2
+======================================================================
+Fault configuration unchanged | service=payment-service | mode=none
+Fault configuration unchanged | service=order-service | mode=none
+Faults configured | target=None | requested_mode=none | order_mode=none | payment_mode=none | target_rate=0.0 | target_delay_ms=0 | seed=42 | recreated=['none']
+Preparation traces settled | rca_count=42
+Order request | scenario=healthy | http_status=200 | duration_ms=78.378 | response={'id': 1785639284769, 'product': 'e2e-healthy-32863b6ffeb2', 'quantity': 2, 'status': 'APPROVED'}
+Order trace resolved | run_id=32863b6ffeb2 | trace_id=ef81aec530f646bde2f707ac4340581d
+RCAResult matched | trace_id=ef81aec530f646bde2f707ac4340581d | document_id=e7b8f1a8-2651-4a8f-abe9-9d0070be6c13
+Result: PASSED | scenario=healthy | top_service=payment-service | reliable=False | confidence=0.03650185106674766 | incident=None | runtime=v2 | model_version=xgboost-rca-v2 | pipeline_version=causalods-rca-v2
+Healthy warm-up completed | position=after_correlation_engine_restart | iteration=1 | passed=True | reliable=None | confidence=0.03650185106674766
+
+======================================================================
+Scenario: healthy | iteration=2 | run_id=eb7d3046012b
+======================================================================
+Fault configuration unchanged | service=payment-service | mode=none
+Fault configuration unchanged | service=order-service | mode=none
+Faults configured | target=None | requested_mode=none | order_mode=none | payment_mode=none | target_rate=0.0 | target_delay_ms=0 | seed=42 | recreated=['none']
+Preparation traces settled | rca_count=43
+Order request | scenario=healthy | http_status=200 | duration_ms=11.503 | response={'id': 1785639308746, 'product': 'e2e-healthy-eb7d3046012b', 'quantity': 2, 'status': 'APPROVED'}
+Order trace resolved | run_id=eb7d3046012b | trace_id=188647c0090ca219a13f2b32162958a5
+RCAResult matched | trace_id=188647c0090ca219a13f2b32162958a5 | document_id=c26cd379-7a86-4789-b3dc-6dd987ff6a8d
+Result: PASSED | scenario=healthy | top_service=payment-service | reliable=False | confidence=0.01563671598692177 | incident=None | runtime=v2 | model_version=xgboost-rca-v2 | pipeline_version=causalods-rca-v2
+Healthy warm-up completed | position=after_correlation_engine_restart | iteration=2 | passed=True | reliable=None | confidence=0.01563671598692177
+Healthy warm-up settled | position=after_correlation_engine_restart
+
+======================================================================
+Scenario: healthy | iteration=0 | run_id=37365d92e3e9
+======================================================================
+Fault configuration unchanged | service=payment-service | mode=none
+Fault configuration unchanged | service=order-service | mode=none
+Faults configured | target=None | requested_mode=none | order_mode=none | payment_mode=none | target_rate=0.0 | target_delay_ms=0 | seed=42 | recreated=['none']
+Preparation traces settled | rca_count=44
+Order request | scenario=healthy | http_status=200 | duration_ms=14.867 | response={'id': 1785639347615, 'product': 'e2e-healthy-37365d92e3e9', 'quantity': 2, 'status': 'APPROVED'}
+Order trace resolved | run_id=37365d92e3e9 | trace_id=0d2526df68d64489c0da08400137892b
+RCAResult matched | trace_id=0d2526df68d64489c0da08400137892b | document_id=e9782538-9f47-411e-9f46-195f9f31eee2
+Result: PASSED | scenario=healthy | top_service=payment-service | reliable=False | confidence=0.01644759804119649 | incident=None | runtime=v2 | model_version=xgboost-rca-v2 | pipeline_version=causalods-rca-v2
+Fault configuration unchanged | service=payment-service | mode=none
+Fault configuration unchanged | service=order-service | mode=none
+Faults configured | target=None | requested_mode=none | order_mode=none | payment_mode=none | target_rate=0.0 | target_delay_ms=0 | seed=42 | recreated=['none']
+payment-service ready | attempts=13 | check=http | status=200 | application_status=UP
+Fault configuration unchanged | service=order-service | mode=none
+Faults configured | target=payment-service | requested_mode=latency | order_mode=none | payment_mode=latency | target_rate=1.0 | target_delay_ms=1500 | seed=42 | recreated=['payment-service']
+Order trace resolved | run_id=7ab2bcdf6b74 | trace_id=40d49549a890d59211cba3cb97b0d6c8
+payment-service ready | attempts=13 | check=http | status=200 | application_status=UP
+Fault configuration unchanged | service=order-service | mode=none
+Faults configured | target=None | requested_mode=none | order_mode=none | payment_mode=none | target_rate=0.0 | target_delay_ms=0 | seed=42 | recreated=['payment-service']
+Healthy warm-up started | position=after_correlation_engine_restart | attempts=2
+
+======================================================================
+Scenario: healthy | iteration=1 | run_id=c05d0afcb815
+======================================================================
+Fault configuration unchanged | service=payment-service | mode=none
+Fault configuration unchanged | service=order-service | mode=none
+Faults configured | target=None | requested_mode=none | order_mode=none | payment_mode=none | target_rate=0.0 | target_delay_ms=0 | seed=42 | recreated=['none']
+Preparation traces settled | rca_count=46
+Order request | scenario=healthy | http_status=200 | duration_ms=112.452 | response={'id': 1785639447827, 'product': 'e2e-healthy-c05d0afcb815', 'quantity': 2, 'status': 'APPROVED'}
+Order trace resolved | run_id=c05d0afcb815 | trace_id=cdc44a194a61031e33438ac1bb2dbce8
+RCAResult matched | trace_id=cdc44a194a61031e33438ac1bb2dbce8 | document_id=bfe9b565-2a4c-40e6-aea2-974ad720e6cb
+Result: PASSED | scenario=healthy | top_service=payment-service | reliable=False | confidence=0.011266192008418162 | incident=None | runtime=v2 | model_version=xgboost-rca-v2 | pipeline_version=causalods-rca-v2
+Healthy warm-up completed | position=after_correlation_engine_restart | iteration=1 | passed=True | reliable=None | confidence=0.011266192008418162
+
+======================================================================
+Scenario: healthy | iteration=2 | run_id=604d2dcdf044
+======================================================================
+Fault configuration unchanged | service=payment-service | mode=none
+Fault configuration unchanged | service=order-service | mode=none
+Faults configured | target=None | requested_mode=none | order_mode=none | payment_mode=none | target_rate=0.0 | target_delay_ms=0 | seed=42 | recreated=['none']
+Preparation traces settled | rca_count=47
+Order request | scenario=healthy | http_status=200 | duration_ms=14.674 | response={'id': 1785639473819, 'product': 'e2e-healthy-604d2dcdf044', 'quantity': 2, 'status': 'APPROVED'}
+Order trace resolved | run_id=604d2dcdf044 | trace_id=c975e2e87475c5800a521bcf896c2325
+RCAResult matched | trace_id=c975e2e87475c5800a521bcf896c2325 | document_id=cb44cf8c-461b-44f0-87e1-86cedbc6f6c4
+Result: PASSED | scenario=healthy | top_service=payment-service | reliable=False | confidence=0.01563671598692177 | incident=None | runtime=v2 | model_version=xgboost-rca-v2 | pipeline_version=causalods-rca-v2
+Healthy warm-up completed | position=after_correlation_engine_restart | iteration=2 | passed=True | reliable=None | confidence=0.01563671598692177
+Healthy warm-up settled | position=after_correlation_engine_restart
+
+======================================================================
+Scenario: healthy | iteration=0 | run_id=1bfde6831b6d
+======================================================================
+Fault configuration unchanged | service=payment-service | mode=none
+Fault configuration unchanged | service=order-service | mode=none
+Faults configured | target=None | requested_mode=none | order_mode=none | payment_mode=none | target_rate=0.0 | target_delay_ms=0 | seed=42 | recreated=['none']
+Preparation traces settled | rca_count=48
+Order request | scenario=healthy | http_status=200 | duration_ms=16.689 | response={'id': 1785639523254, 'product': 'e2e-healthy-1bfde6831b6d', 'quantity': 2, 'status': 'APPROVED'}
+Order trace resolved | run_id=1bfde6831b6d | trace_id=988e826b2706271ab852198e0399c18c
+RCAResult matched | trace_id=988e826b2706271ab852198e0399c18c | document_id=b42a06ea-8cb7-4b56-812a-1b7da70994bb
+Result: PASSED | scenario=healthy | top_service=payment-service | reliable=False | confidence=0.01563671598692177 | incident=None | runtime=v2 | model_version=xgboost-rca-v2 | pipeline_version=causalods-rca-v2
+Fault configuration unchanged | service=payment-service | mode=none
+Fault configuration unchanged | service=order-service | mode=none
+Faults configured | target=None | requested_mode=none | order_mode=none | payment_mode=none | target_rate=0.0 | target_delay_ms=0 | seed=42 | recreated=['none']
+payment-service ready | attempts=15 | check=http | status=200 | application_status=UP
+Fault configuration unchanged | service=order-service | mode=none
+Faults configured | target=payment-service | requested_mode=latency | order_mode=none | payment_mode=latency | target_rate=1.0 | target_delay_ms=1500 | seed=42 | recreated=['payment-service']
+Order trace resolved | run_id=4e0e320827df | trace_id=d9a41a0d7fc558d44748475d544bb5e1
+payment-service ready | attempts=13 | check=http | status=200 | application_status=UP
+Fault configuration unchanged | service=order-service | mode=none
+Faults configured | target=None | requested_mode=none | order_mode=none | payment_mode=none | target_rate=0.0 | target_delay_ms=0 | seed=42 | recreated=['payment-service']
+Healthy warm-up started | position=after_correlation_engine_restart | attempts=2
+
+======================================================================
+Scenario: healthy | iteration=1 | run_id=a3e24a4fc251
+======================================================================
+Fault configuration unchanged | service=payment-service | mode=none
+Fault configuration unchanged | service=order-service | mode=none
+Faults configured | target=None | requested_mode=none | order_mode=none | payment_mode=none | target_rate=0.0 | target_delay_ms=0 | seed=42 | recreated=['none']
+Preparation traces settled | rca_count=50
+Order request | scenario=healthy | http_status=200 | duration_ms=81.034 | response={'id': 1785639679205, 'product': 'e2e-healthy-a3e24a4fc251', 'quantity': 2, 'status': 'APPROVED'}
+Order trace resolved | run_id=a3e24a4fc251 | trace_id=23b6f648622f254efb658c5551eeecc6
+RCAResult matched | trace_id=23b6f648622f254efb658c5551eeecc6 | document_id=ed112451-904f-4146-9154-c497129f8847
+Result: PASSED | scenario=healthy | top_service=payment-service | reliable=False | confidence=0.03650185106674766 | incident=None | runtime=v2 | model_version=xgboost-rca-v2 | pipeline_version=causalods-rca-v2
+Healthy warm-up completed | position=after_correlation_engine_restart | iteration=1 | passed=True | reliable=None | confidence=0.03650185106674766
+
+======================================================================
+Scenario: healthy | iteration=2 | run_id=0fae8efda119
+======================================================================
+Fault configuration unchanged | service=payment-service | mode=none
+Fault configuration unchanged | service=order-service | mode=none
+Faults configured | target=None | requested_mode=none | order_mode=none | payment_mode=none | target_rate=0.0 | target_delay_ms=0 | seed=42 | recreated=['none']
+Preparation traces settled | rca_count=51
+Order request | scenario=healthy | http_status=200 | duration_ms=11.009 | response={'id': 1785639704199, 'product': 'e2e-healthy-0fae8efda119', 'quantity': 2, 'status': 'APPROVED'}
+Order trace resolved | run_id=0fae8efda119 | trace_id=0ba896c44313d85fbf524aa53f6e8b58
+RCAResult matched | trace_id=0ba896c44313d85fbf524aa53f6e8b58 | document_id=2138e1dd-6b7f-4eef-8156-5dd55e1638ae
+Result: PASSED | scenario=healthy | top_service=payment-service | reliable=False | confidence=0.01563671598692177 | incident=None | runtime=v2 | model_version=xgboost-rca-v2 | pipeline_version=causalods-rca-v2
+Healthy warm-up completed | position=after_correlation_engine_restart | iteration=2 | passed=True | reliable=None | confidence=0.01563671598692177
+Healthy warm-up settled | position=after_correlation_engine_restart
+
+======================================================================
+Scenario: healthy | iteration=0 | run_id=ada44c1563dd
+======================================================================
+Fault configuration unchanged | service=payment-service | mode=none
+Fault configuration unchanged | service=order-service | mode=none
+Faults configured | target=None | requested_mode=none | order_mode=none | payment_mode=none | target_rate=0.0 | target_delay_ms=0 | seed=42 | recreated=['none']
+Preparation traces settled | rca_count=52
+Order request | scenario=healthy | http_status=200 | duration_ms=14.345 | response={'id': 1785639764814, 'product': 'e2e-healthy-ada44c1563dd', 'quantity': 2, 'status': 'APPROVED'}
+Order trace resolved | run_id=ada44c1563dd | trace_id=b7a9666f872e047c657207e0a0fb445f
+RCAResult matched | trace_id=b7a9666f872e047c657207e0a0fb445f | document_id=ff475aaf-ddf6-4680-ac29-9db9056126a7
+Result: PASSED | scenario=healthy | top_service=payment-service | reliable=False | confidence=0.01563671598692177 | incident=None | runtime=v2 | model_version=xgboost-rca-v2 | pipeline_version=causalods-rca-v2
+Fault configuration unchanged | service=payment-service | mode=none
+Fault configuration unchanged | service=order-service | mode=none
+Faults configured | target=None | requested_mode=none | order_mode=none | payment_mode=none | target_rate=0.0 | target_delay_ms=0 | seed=42 | recreated=['none']
+payment-service ready | attempts=13 | check=http | status=200 | application_status=UP
+Fault configuration unchanged | service=order-service | mode=none
+Faults configured | target=payment-service | requested_mode=latency | order_mode=none | payment_mode=latency | target_rate=1.0 | target_delay_ms=1500 | seed=42 | recreated=['payment-service']
+Order trace resolved | run_id=9b89f480e81f | trace_id=811d49d7fdd75e05d9112da244505214
+payment-service ready | attempts=13 | check=http | status=200 | application_status=UP
+Fault configuration unchanged | service=order-service | mode=none
+Faults configured | target=None | requested_mode=none | order_mode=none | payment_mode=none | target_rate=0.0 | target_delay_ms=0 | seed=42 | recreated=['payment-service']
+Healthy warm-up started | position=after_correlation_engine_restart | attempts=2
+
+======================================================================
+Scenario: healthy | iteration=1 | run_id=4b7c2b55771f
+======================================================================
+Fault configuration unchanged | service=payment-service | mode=none
+Fault configuration unchanged | service=order-service | mode=none
+Faults configured | target=None | requested_mode=none | order_mode=none | payment_mode=none | target_rate=0.0 | target_delay_ms=0 | seed=42 | recreated=['none']
+Preparation traces settled | rca_count=54
+Order request | scenario=healthy | http_status=200 | duration_ms=73.005 | response={'id': 1785639927634, 'product': 'e2e-healthy-4b7c2b55771f', 'quantity': 2, 'status': 'APPROVED'}
+Order trace resolved | run_id=4b7c2b55771f | trace_id=e407535a85a45f6ca9b26087bb42a463
+RCAResult matched | trace_id=e407535a85a45f6ca9b26087bb42a463 | document_id=1b924d47-5deb-4a84-9e87-a24d5afc2b95
+Result: PASSED | scenario=healthy | top_service=payment-service | reliable=False | confidence=0.011269939292603153 | incident=None | runtime=v2 | model_version=xgboost-rca-v2 | pipeline_version=causalods-rca-v2
+Healthy warm-up completed | position=after_correlation_engine_restart | iteration=1 | passed=True | reliable=None | confidence=0.011269939292603153
+
+======================================================================
+Scenario: healthy | iteration=2 | run_id=cc703ab3fed3
+======================================================================
+Fault configuration unchanged | service=payment-service | mode=none
+Fault configuration unchanged | service=order-service | mode=none
+Faults configured | target=None | requested_mode=none | order_mode=none | payment_mode=none | target_rate=0.0 | target_delay_ms=0 | seed=42 | recreated=['none']
+Preparation traces settled | rca_count=55
+Order request | scenario=healthy | http_status=200 | duration_ms=11.855 | response={'id': 1785639955059, 'product': 'e2e-healthy-cc703ab3fed3', 'quantity': 2, 'status': 'APPROVED'}
+Order trace resolved | run_id=cc703ab3fed3 | trace_id=645d91986f38c2b03e4bf519431fa969
+RCAResult matched | trace_id=645d91986f38c2b03e4bf519431fa969 | document_id=d8fad40c-036d-4c62-ba50-79d5a1f32a74
+Result: PASSED | scenario=healthy | top_service=payment-service | reliable=False | confidence=0.01563671598692177 | incident=None | runtime=v2 | model_version=xgboost-rca-v2 | pipeline_version=causalods-rca-v2
+Healthy warm-up completed | position=after_correlation_engine_restart | iteration=2 | passed=True | reliable=None | confidence=0.01563671598692177
+Healthy warm-up settled | position=after_correlation_engine_restart
+
+======================================================================
+Scenario: healthy | iteration=0 | run_id=961c17c23d1c
+======================================================================
+Fault configuration unchanged | service=payment-service | mode=none
+Fault configuration unchanged | service=order-service | mode=none
+Faults configured | target=None | requested_mode=none | order_mode=none | payment_mode=none | target_rate=0.0 | target_delay_ms=0 | seed=42 | recreated=['none']
+Preparation traces settled | rca_count=56
+Order request | scenario=healthy | http_status=200 | duration_ms=16.274 | response={'id': 1785639996183, 'product': 'e2e-healthy-961c17c23d1c', 'quantity': 2, 'status': 'APPROVED'}
+Order trace resolved | run_id=961c17c23d1c | trace_id=e538dab95a34b0c797ffee815349b7b8
+RCAResult matched | trace_id=e538dab95a34b0c797ffee815349b7b8 | document_id=649dc6d0-4a04-4101-8f43-8f1d3ffb1bf1
+Result: PASSED | scenario=healthy | top_service=payment-service | reliable=False | confidence=0.01563671598692177 | incident=None | runtime=v2 | model_version=xgboost-rca-v2 | pipeline_version=causalods-rca-v2
+Fault configuration unchanged | service=payment-service | mode=none
+Fault configuration unchanged | service=order-service | mode=none
+Faults configured | target=None | requested_mode=none | order_mode=none | payment_mode=none | target_rate=0.0 | target_delay_ms=0 | seed=42 | recreated=['none']
+payment-service ready | attempts=13 | check=http | status=200 | application_status=UP
+Fault configuration unchanged | service=order-service | mode=none
+Faults configured | target=payment-service | requested_mode=latency | order_mode=none | payment_mode=latency | target_rate=1.0 | target_delay_ms=1500 | seed=42 | recreated=['payment-service']
+Order trace resolved | run_id=90e380cd0821 | trace_id=cc3d977b952692fe6f84a1110d06cede
+payment-service ready | attempts=13 | check=http | status=200 | application_status=UP
+Fault configuration unchanged | service=order-service | mode=none
+Faults configured | target=None | requested_mode=none | order_mode=none | payment_mode=none | target_rate=0.0 | target_delay_ms=0 | seed=42 | recreated=['payment-service']
+Healthy warm-up started | position=after_correlation_engine_restart | attempts=2
+
+======================================================================
+Scenario: healthy | iteration=1 | run_id=b8b2c7a5bb7b
+======================================================================
+Fault configuration unchanged | service=payment-service | mode=none
+Fault configuration unchanged | service=order-service | mode=none
+Faults configured | target=None | requested_mode=none | order_mode=none | payment_mode=none | target_rate=0.0 | target_delay_ms=0 | seed=42 | recreated=['none']
+Preparation traces settled | rca_count=58
+Order request | scenario=healthy | http_status=200 | duration_ms=85.839 | response={'id': 1785640166196, 'product': 'e2e-healthy-b8b2c7a5bb7b', 'quantity': 2, 'status': 'APPROVED'}
+Order trace resolved | run_id=b8b2c7a5bb7b | trace_id=b4331faac2895406fe60a0f1d416db2a
+RCAResult matched | trace_id=b4331faac2895406fe60a0f1d416db2a | document_id=d0253e93-e221-49a2-9ab8-b27f66660361
+Result: PASSED | scenario=healthy | top_service=payment-service | reliable=False | confidence=0.035020420326448844 | incident=None | runtime=v2 | model_version=xgboost-rca-v2 | pipeline_version=causalods-rca-v2
+Healthy warm-up completed | position=after_correlation_engine_restart | iteration=1 | passed=True | reliable=None | confidence=0.035020420326448844
+
+======================================================================
+Scenario: healthy | iteration=2 | run_id=9fe0ff4a1727
+======================================================================
+Fault configuration unchanged | service=payment-service | mode=none
+Fault configuration unchanged | service=order-service | mode=none
+Faults configured | target=None | requested_mode=none | order_mode=none | payment_mode=none | target_rate=0.0 | target_delay_ms=0 | seed=42 | recreated=['none']
+Preparation traces settled | rca_count=59
+Order request | scenario=healthy | http_status=200 | duration_ms=12.712 | response={'id': 1785640189181, 'product': 'e2e-healthy-9fe0ff4a1727', 'quantity': 2, 'status': 'APPROVED'}
+Order trace resolved | run_id=9fe0ff4a1727 | trace_id=c45e948eed9fd8a57f4589ab77a6c65b
+RCAResult matched | trace_id=c45e948eed9fd8a57f4589ab77a6c65b | document_id=5b6bc927-69bf-4588-a5a1-ac7aca6f6972
+Result: PASSED | scenario=healthy | top_service=payment-service | reliable=False | confidence=0.01563671598692177 | incident=None | runtime=v2 | model_version=xgboost-rca-v2 | pipeline_version=causalods-rca-v2
+Healthy warm-up completed | position=after_correlation_engine_restart | iteration=2 | passed=True | reliable=None | confidence=0.01563671598692177
+Healthy warm-up settled | position=after_correlation_engine_restart
+
+======================================================================
+Scenario: healthy | iteration=0 | run_id=e0a43ea23f2f
+======================================================================
+Fault configuration unchanged | service=payment-service | mode=none
+Fault configuration unchanged | service=order-service | mode=none
+Faults configured | target=None | requested_mode=none | order_mode=none | payment_mode=none | target_rate=0.0 | target_delay_ms=0 | seed=42 | recreated=['none']
+Preparation traces settled | rca_count=60
+Order request | scenario=healthy | http_status=200 | duration_ms=11.854 | response={'id': 1785640228096, 'product': 'e2e-healthy-e0a43ea23f2f', 'quantity': 2, 'status': 'APPROVED'}
+Order trace resolved | run_id=e0a43ea23f2f | trace_id=de20858d71edea6af73aa3ad15198bdd
+RCAResult matched | trace_id=de20858d71edea6af73aa3ad15198bdd | document_id=289ee044-ca41-4385-9786-49117018cfd0
+Result: PASSED | scenario=healthy | top_service=payment-service | reliable=False | confidence=0.01563671598692177 | incident=None | runtime=v2 | model_version=xgboost-rca-v2 | pipeline_version=causalods-rca-v2
+Fault configuration unchanged | service=payment-service | mode=none
+Fault configuration unchanged | service=order-service | mode=none
+Faults configured | target=None | requested_mode=none | order_mode=none | payment_mode=none | target_rate=0.0 | target_delay_ms=0 | seed=42 | recreated=['none']
+payment-service ready | attempts=13 | check=http | status=200 | application_status=UP
+Fault configuration unchanged | service=order-service | mode=none
+Faults configured | target=payment-service | requested_mode=latency | order_mode=none | payment_mode=latency | target_rate=1.0 | target_delay_ms=1500 | seed=42 | recreated=['payment-service']
+Order trace resolved | run_id=ceb12cbb47e5 | trace_id=28bab804b6c6523c52eb1e95e0e77688
+payment-service ready | attempts=13 | check=http | status=200 | application_status=UP
+Fault configuration unchanged | service=order-service | mode=none
+Faults configured | target=None | requested_mode=none | order_mode=none | payment_mode=none | target_rate=0.0 | target_delay_ms=0 | seed=42 | recreated=['payment-service']
+Healthy warm-up started | position=after_correlation_engine_restart | attempts=2
+
+======================================================================
+Scenario: healthy | iteration=1 | run_id=1609fb76e6c7
+======================================================================
+Fault configuration unchanged | service=payment-service | mode=none
+Fault configuration unchanged | service=order-service | mode=none
+Faults configured | target=None | requested_mode=none | order_mode=none | payment_mode=none | target_rate=0.0 | target_delay_ms=0 | seed=42 | recreated=['none']
+Preparation traces settled | rca_count=62
+Order request | scenario=healthy | http_status=200 | duration_ms=116.034 | response={'id': 1785640329173, 'product': 'e2e-healthy-1609fb76e6c7', 'quantity': 2, 'status': 'APPROVED'}
+Order trace resolved | run_id=1609fb76e6c7 | trace_id=f0e6f51c3e8a8ea356d3726bd5cf9f90
+RCAResult matched | trace_id=f0e6f51c3e8a8ea356d3726bd5cf9f90 | document_id=5da1b651-95ad-4b8a-98ac-ef4e9046f5b7
+Result: PASSED | scenario=healthy | top_service=payment-service | reliable=False | confidence=0.03245488380470053 | incident=None | runtime=v2 | model_version=xgboost-rca-v2 | pipeline_version=causalods-rca-v2
+Healthy warm-up completed | position=after_correlation_engine_restart | iteration=1 | passed=True | reliable=None | confidence=0.03245488380470053
+
+======================================================================
+Scenario: healthy | iteration=2 | run_id=33e8ca22df4d
+======================================================================
+Fault configuration unchanged | service=payment-service | mode=none
+Fault configuration unchanged | service=order-service | mode=none
+Faults configured | target=None | requested_mode=none | order_mode=none | payment_mode=none | target_rate=0.0 | target_delay_ms=0 | seed=42 | recreated=['none']
+Preparation traces settled | rca_count=63
+Order request | scenario=healthy | http_status=200 | duration_ms=11.141 | response={'id': 1785640354160, 'product': 'e2e-healthy-33e8ca22df4d', 'quantity': 2, 'status': 'APPROVED'}
+Order trace resolved | run_id=33e8ca22df4d | trace_id=92818a7d0e6f1b467fdc828d41921dd9
+RCAResult matched | trace_id=92818a7d0e6f1b467fdc828d41921dd9 | document_id=4f4fd63a-1158-461b-b0a3-6b4751640509
+Result: PASSED | scenario=healthy | top_service=payment-service | reliable=False | confidence=0.01563671598692177 | incident=None | runtime=v2 | model_version=xgboost-rca-v2 | pipeline_version=causalods-rca-v2
+Healthy warm-up completed | position=after_correlation_engine_restart | iteration=2 | passed=True | reliable=None | confidence=0.01563671598692177
+Healthy warm-up settled | position=after_correlation_engine_restart
+
+======================================================================
+Scenario: healthy | iteration=0 | run_id=e521b2f73950
+======================================================================
+Fault configuration unchanged | service=payment-service | mode=none
+Fault configuration unchanged | service=order-service | mode=none
+Faults configured | target=None | requested_mode=none | order_mode=none | payment_mode=none | target_rate=0.0 | target_delay_ms=0 | seed=42 | recreated=['none']
+Preparation traces settled | rca_count=64
+Order request | scenario=healthy | http_status=200 | duration_ms=11.908 | response={'id': 1785640409504, 'product': 'e2e-healthy-e521b2f73950', 'quantity': 2, 'status': 'APPROVED'}
+Order trace resolved | run_id=e521b2f73950 | trace_id=e64b84e440511cb558885cde3f5c0ee3
+RCAResult matched | trace_id=e64b84e440511cb558885cde3f5c0ee3 | document_id=2ea494c9-08ca-4f63-9766-f2b0ad4650cd
+Result: PASSED | scenario=healthy | top_service=payment-service | reliable=False | confidence=0.01563671598692177 | incident=None | runtime=v2 | model_version=xgboost-rca-v2 | pipeline_version=causalods-rca-v2
+Fault configuration unchanged | service=payment-service | mode=none
+Fault configuration unchanged | service=order-service | mode=none
+Faults configured | target=None | requested_mode=none | order_mode=none | payment_mode=none | target_rate=0.0 | target_delay_ms=0 | seed=42 | recreated=['none']
+payment-service ready | attempts=14 | check=http | status=200 | application_status=UP
+Fault configuration unchanged | service=order-service | mode=none
+Faults configured | target=payment-service | requested_mode=latency | order_mode=none | payment_mode=latency | target_rate=1.0 | target_delay_ms=1500 | seed=42 | recreated=['payment-service']
+Order trace resolved | run_id=a3719bc4fc94 | trace_id=4781c95d6ea8dd8e113cf3896fbbc7e3
+payment-service ready | attempts=13 | check=http | status=200 | application_status=UP
+Fault configuration unchanged | service=order-service | mode=none
+Faults configured | target=None | requested_mode=none | order_mode=none | payment_mode=none | target_rate=0.0 | target_delay_ms=0 | seed=42 | recreated=['payment-service']
+Healthy warm-up started | position=after_correlation_engine_restart | attempts=2
+
+======================================================================
+Scenario: healthy | iteration=1 | run_id=dc8fb4855dcc
+======================================================================
+Fault configuration unchanged | service=payment-service | mode=none
+Fault configuration unchanged | service=order-service | mode=none
+Faults configured | target=None | requested_mode=none | order_mode=none | payment_mode=none | target_rate=0.0 | target_delay_ms=0 | seed=42 | recreated=['none']
+Preparation traces settled | rca_count=66
+Order request | scenario=healthy | http_status=200 | duration_ms=126.647 | response={'id': 1785640528634, 'product': 'e2e-healthy-dc8fb4855dcc', 'quantity': 2, 'status': 'APPROVED'}
+Order trace resolved | run_id=dc8fb4855dcc | trace_id=cefe497bab373c729e85c288b38cbec7
+RCAResult matched | trace_id=cefe497bab373c729e85c288b38cbec7 | document_id=8c4e9d4e-b6fa-4a27-bf4d-f8adb2d98592
+Result: PASSED | scenario=healthy | top_service=payment-service | reliable=False | confidence=0.020205150554783172 | incident=None | runtime=v2 | model_version=xgboost-rca-v2 | pipeline_version=causalods-rca-v2
+Healthy warm-up completed | position=after_correlation_engine_restart | iteration=1 | passed=True | reliable=None | confidence=0.020205150554783172
+
+======================================================================
+Scenario: healthy | iteration=2 | run_id=cf2ba1b2ec4c
+======================================================================
+Fault configuration unchanged | service=payment-service | mode=none
+Fault configuration unchanged | service=order-service | mode=none
+Faults configured | target=None | requested_mode=none | order_mode=none | payment_mode=none | target_rate=0.0 | target_delay_ms=0 | seed=42 | recreated=['none']
+Preparation traces settled | rca_count=67
+Order request | scenario=healthy | http_status=200 | duration_ms=10.300 | response={'id': 1785640554619, 'product': 'e2e-healthy-cf2ba1b2ec4c', 'quantity': 2, 'status': 'APPROVED'}
+Order trace resolved | run_id=cf2ba1b2ec4c | trace_id=324d0fbcea4647aa6d4b25642a792419
+RCAResult matched | trace_id=324d0fbcea4647aa6d4b25642a792419 | document_id=ca3ded6e-f4c0-462b-8e56-3f5e0c5d47e0
+Result: PASSED | scenario=healthy | top_service=payment-service | reliable=False | confidence=0.01563671598692177 | incident=None | runtime=v2 | model_version=xgboost-rca-v2 | pipeline_version=causalods-rca-v2
+Healthy warm-up completed | position=after_correlation_engine_restart | iteration=2 | passed=True | reliable=None | confidence=0.01563671598692177
+Healthy warm-up settled | position=after_correlation_engine_restart
+
+======================================================================
+Scenario: healthy | iteration=0 | run_id=654d2a4fca8e
+======================================================================
+Fault configuration unchanged | service=payment-service | mode=none
+Fault configuration unchanged | service=order-service | mode=none
+Faults configured | target=None | requested_mode=none | order_mode=none | payment_mode=none | target_rate=0.0 | target_delay_ms=0 | seed=42 | recreated=['none']
+Preparation traces settled | rca_count=68
+Order request | scenario=healthy | http_status=200 | duration_ms=13.625 | response={'id': 1785640594991, 'product': 'e2e-healthy-654d2a4fca8e', 'quantity': 2, 'status': 'APPROVED'}
+Order trace resolved | run_id=654d2a4fca8e | trace_id=d681c8a83c78a77daedde74a3138ebf0
+RCAResult matched | trace_id=d681c8a83c78a77daedde74a3138ebf0 | document_id=373dae7e-9076-43bf-b793-fbcf23a796dc
+Result: PASSED | scenario=healthy | top_service=payment-service | reliable=False | confidence=0.01563671598692177 | incident=None | runtime=v2 | model_version=xgboost-rca-v2 | pipeline_version=causalods-rca-v2
+Fault configuration unchanged | service=payment-service | mode=none
+Fault configuration unchanged | service=order-service | mode=none
+Faults configured | target=None | requested_mode=none | order_mode=none | payment_mode=none | target_rate=0.0 | target_delay_ms=0 | seed=42 | recreated=['none']
+payment-service ready | attempts=13 | check=http | status=200 | application_status=UP
+Fault configuration unchanged | service=order-service | mode=none
+Faults configured | target=payment-service | requested_mode=latency | order_mode=none | payment_mode=latency | target_rate=1.0 | target_delay_ms=1500 | seed=42 | recreated=['payment-service']
+Order trace resolved | run_id=f032624a5608 | trace_id=b85fb58697ce9449ed60d167edf76d7d
+payment-service ready | attempts=13 | check=http | status=200 | application_status=UP
+Fault configuration unchanged | service=order-service | mode=none
+Faults configured | target=None | requested_mode=none | order_mode=none | payment_mode=none | target_rate=0.0 | target_delay_ms=0 | seed=42 | recreated=['payment-service']
+Healthy warm-up started | position=after_correlation_engine_restart | attempts=2
+
+======================================================================
+Scenario: healthy | iteration=1 | run_id=f786ffb2aaff
+======================================================================
+Fault configuration unchanged | service=payment-service | mode=none
+Fault configuration unchanged | service=order-service | mode=none
+Faults configured | target=None | requested_mode=none | order_mode=none | payment_mode=none | target_rate=0.0 | target_delay_ms=0 | seed=42 | recreated=['none']
+Preparation traces settled | rca_count=70
+Order request | scenario=healthy | http_status=200 | duration_ms=87.059 | response={'id': 1785640700081, 'product': 'e2e-healthy-f786ffb2aaff', 'quantity': 2, 'status': 'APPROVED'}
+Order trace resolved | run_id=f786ffb2aaff | trace_id=ace67178bebd82cae7f5124b393ea7ab
+RCAResult matched | trace_id=ace67178bebd82cae7f5124b393ea7ab | document_id=5f36c075-fd83-485e-9df5-f92e1c567941
+Result: PASSED | scenario=healthy | top_service=payment-service | reliable=False | confidence=0.03650185106674766 | incident=None | runtime=v2 | model_version=xgboost-rca-v2 | pipeline_version=causalods-rca-v2
+Healthy warm-up completed | position=after_correlation_engine_restart | iteration=1 | passed=True | reliable=None | confidence=0.03650185106674766
+
+======================================================================
+Scenario: healthy | iteration=2 | run_id=e628fed9ce89
+======================================================================
+Fault configuration unchanged | service=payment-service | mode=none
+Fault configuration unchanged | service=order-service | mode=none
+Faults configured | target=None | requested_mode=none | order_mode=none | payment_mode=none | target_rate=0.0 | target_delay_ms=0 | seed=42 | recreated=['none']
+Preparation traces settled | rca_count=71
+Order request | scenario=healthy | http_status=200 | duration_ms=12.051 | response={'id': 1785640727069, 'product': 'e2e-healthy-e628fed9ce89', 'quantity': 2, 'status': 'APPROVED'}
+Order trace resolved | run_id=e628fed9ce89 | trace_id=76cc656f1385904abcdb2aee033869df
+RCAResult matched | trace_id=76cc656f1385904abcdb2aee033869df | document_id=6a02ed71-5ff9-4f4b-9bdc-5c124504aeea
+Result: PASSED | scenario=healthy | top_service=payment-service | reliable=False | confidence=0.01563671598692177 | incident=None | runtime=v2 | model_version=xgboost-rca-v2 | pipeline_version=causalods-rca-v2
+Healthy warm-up completed | position=after_correlation_engine_restart | iteration=2 | passed=True | reliable=None | confidence=0.01563671598692177
+Healthy warm-up settled | position=after_correlation_engine_restart
+
+======================================================================
+Scenario: healthy | iteration=0 | run_id=c1a3066be8ce
+======================================================================
+Fault configuration unchanged | service=payment-service | mode=none
+Fault configuration unchanged | service=order-service | mode=none
+Faults configured | target=None | requested_mode=none | order_mode=none | payment_mode=none | target_rate=0.0 | target_delay_ms=0 | seed=42 | recreated=['none']
+Preparation traces settled | rca_count=72
+Order request | scenario=healthy | http_status=200 | duration_ms=18.802 | response={'id': 1785640793286, 'product': 'e2e-healthy-c1a3066be8ce', 'quantity': 2, 'status': 'APPROVED'}
+Order trace resolved | run_id=c1a3066be8ce | trace_id=01c1bba6f8c226d774ca3c055b958142
+RCAResult matched | trace_id=01c1bba6f8c226d774ca3c055b958142 | document_id=5946c9a1-c989-4373-8cd2-82125e918702
+Result: PASSED | scenario=healthy | top_service=payment-service | reliable=False | confidence=0.01563671598692177 | incident=None | runtime=v2 | model_version=xgboost-rca-v2 | pipeline_version=causalods-rca-v2
+Campanha: /home/janynne/projects/CausalODS/results/robustness/live/robustness-live-restart-v2-repeat10-ubuntu-warm-20260802T024249Z
+Execuções: 10 | invariantes válidos: 10

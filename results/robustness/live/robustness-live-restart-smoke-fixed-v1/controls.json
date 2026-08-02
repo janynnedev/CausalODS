@@ -1,0 +1,39 @@
+[
+  {
+    "run_id": "a2098560f1b8",
+    "scenario": "healthy",
+    "iteration": 0,
+    "started_at": "2026-08-01T23:13:02.333680+00:00",
+    "finished_at": "2026-08-01T23:13:29.998588+00:00",
+    "duration_ms": 27664.908,
+    "runtime_model_version": "v2",
+    "model_version": "xgboost-rca-v2",
+    "pipeline_version": "causalods-rca-v2",
+    "fault_target": null,
+    "fault_mode": "none",
+    "fault_rate": 0.0,
+    "fault_delay_ms": 0,
+    "fault_seed": 42,
+    "http_status": 200,
+    "request_duration_ms": 450.4021129996545,
+    "rca_count_before": 0,
+    "rca_count_after": 1,
+    "incident_count_before": 0,
+    "incident_count_after": 1,
+    "rca_result_id": "a850d8f6-590c-492e-83ad-6e5e7d4fd2d8",
+    "trace_id": "829e0a7893c32194473890a4de356cac",
+    "top_service": "order-service",
+    "confidence": 0.5772352064113305,
+    "is_reliable": true,
+    "incident_id": "6bbb0024-90cf-4ad9-aaae-388f547b12ed",
+    "incident_root_cause": "order-service",
+    "restart_count_before": 0,
+    "restart_count_after": 0,
+    "passed": false,
+    "failures": [
+      "Decisão de confiabilidade incorreta: esperado=False; encontrado=True.",
+      "Criação de incidente incorreta: esperado=False; encontrado=True."
+    ],
+    "position": "before_correlation_engine_restart"
+  }
+]

@@ -1,0 +1,98 @@
+[
+  {
+    "campaign_id": "robustness-live-restart-smoke-ubuntu-warm-v1",
+    "scenario": "correlation_engine_restart",
+    "iteration": 1,
+    "run_id": "242d9c925cb5",
+    "started_at": "2026-08-01T23:35:46.378452+00:00",
+    "finished_at": "2026-08-01T23:37:30.017615+00:00",
+    "duration_ms": 103639.163,
+    "trace_id": "e4b54fdff6085dc05657e31ca7d03808",
+    "product": "e2e-robustness-correlation_engine_restart-242d9c925cb5",
+    "http_status": 200,
+    "request_duration_ms": 1576.475294001284,
+    "lag_before": 0,
+    "lag_during": 2,
+    "lag_after": 0,
+    "restart_count_before": 0,
+    "restart_count_after": 0,
+    "started_at_before": "2026-08-01T22:56:57.944273723Z",
+    "started_at_after": "2026-08-01T23:36:33.321564741Z",
+    "recovery_time_ms": 12637.67371799986,
+    "processing_latency_ms": 89324.31112799895,
+    "explicit_failure_observed": false,
+    "restoration_ok": true,
+    "technical_valid": true,
+    "observation": {
+      "scenario": "correlation_engine_restart",
+      "trace_id": "e4b54fdff6085dc05657e31ca7d03808",
+      "rca_result_count": 1,
+      "incident_count": 0,
+      "top_service": "payment-service",
+      "is_reliable": true,
+      "data_loss_count": 0,
+      "restart_count_before": 0,
+      "restart_count_after": 0,
+      "recovery_time_ms": 12637.67371799986,
+      "processing_latency_ms": 89324.31112799895,
+      "provenance_valid": true,
+      "metadata": {
+        "explicit_failure_observed": false,
+        "lag_before": 0,
+        "lag_during": 2,
+        "lag_after": 0,
+        "restart_observed": true,
+        "started_at_before": "2026-08-01T22:56:57.944273723Z",
+        "started_at_after": "2026-08-01T23:36:33.321564741Z"
+      }
+    },
+    "validation": {
+      "scenario": "correlation_engine_restart",
+      "valid": true,
+      "issues": [],
+      "metrics": {
+        "rca_result_count": 1,
+        "incident_count": 0,
+        "top_service": "payment-service",
+        "is_reliable": true,
+        "data_loss_count": 0,
+        "recovery_time_ms": 12637.67371799986,
+        "processing_latency_ms": 89324.31112799895,
+        "provenance_valid": true,
+        "restart_observed": true,
+        "lag_after": 0
+      }
+    },
+    "rca_summary": {
+      "count": 1,
+      "document_ids": [
+        "e136f43e-637c-4408-b5f0-2b74ab680c1b"
+      ],
+      "top_service": "payment-service",
+      "is_reliable": true,
+      "confidence": 0.8226941466050229,
+      "model_version": "xgboost-rca-v2",
+      "pipeline_version": "causalods-rca-v2"
+    },
+    "incident_summary": {
+      "count": 0,
+      "document_ids": [],
+      "root_cause": null
+    },
+    "provenance": {
+      "expected_model_version": "xgboost-rca-v2",
+      "expected_pipeline_version": "causalods-rca-v2",
+      "actual_model_version": "xgboost-rca-v2",
+      "actual_pipeline_version": "causalods-rca-v2"
+    },
+    "driver_metadata": {
+      "mechanism": "pause_then_sigkill_then_explicit_start",
+      "container": "correlation-engine",
+      "started_at_before": "2026-08-01T22:56:57.944273723Z",
+      "started_at_after": "2026-08-01T23:36:33.321564741Z",
+      "restart_observed": true
+    },
+    "error": null,
+    "notes": []
+  }
+]
