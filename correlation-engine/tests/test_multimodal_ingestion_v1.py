@@ -23,7 +23,7 @@ from multimodal_v1.contracts import SignalType
 from multimodal_v1.ingestion.business_normalizer import BusinessEventNormalizer
 from multimodal_v1.ingestion.context import NormalizationContext
 from multimodal_v1.ingestion.dead_letter import (
-    DeadLetterRecord, InMemoryDeadLetterPublisher,
+    DeadLetterRecord, InMemoryDeadLetterPublisher, sanitize_error_message,
 )
 from multimodal_v1.ingestion.deduplication import EventDeduplicator
 from multimodal_v1.ingestion.kafka_consumer import (
@@ -31,6 +31,8 @@ from multimodal_v1.ingestion.kafka_consumer import (
 )
 from multimodal_v1.ingestion.registry import NormalizerRegistry, default_registry
 from multimodal_v1.ingestion.service import MultimodalIngestionService, stream_key
+from multimodal_v1.ingestion.errors import IngestionInvariantError
+from multimodal_v1.ingestion.trace_normalizer import TraceEventNormalizer
 
 
 NOW = datetime(2026, 8, 4, 12, 0, tzinfo=timezone.utc)
@@ -76,7 +78,8 @@ def trace_payload():
     return request.SerializeToString()
 
 
-def log_payload(*, traced, service_name="order-service", records=1):
+def log_payload(*, traced, service_name="order-service", records=1,
+                service_instance_id="instance-1"):
     values = []
     for index in range(records):
         record = LogRecord(
@@ -90,7 +93,10 @@ def log_payload(*, traced, service_name="order-service", records=1):
             record.span_id = bytes.fromhex("b" * 16)
         values.append(record)
     request = ExportLogsServiceRequest(resource_logs=[ResourceLogs(
-        resource=Resource(attributes=[kv("service.name", service_name)]),
+        resource=Resource(attributes=[
+            kv("service.name", service_name),
+            kv("service.instance.id", service_instance_id),
+        ]),
         scope_logs=[ScopeLogs(scope=InstrumentationScope(name="app"), log_records=values)],
     )])
     return request.SerializeToString()
@@ -98,16 +104,20 @@ def log_payload(*, traced, service_name="order-service", records=1):
 
 def metric_payload(*, kind="gauge", exemplar=False, service_name="order-service"):
     if kind in ("gauge", "sum"):
-        point = NumberDataPoint(time_unix_nano=NANOS, as_double=42.5,
+        point = NumberDataPoint(
+                                start_time_unix_nano=NANOS - 1_000_000_000,
+                                time_unix_nano=NANOS, as_double=42.5,
                                 attributes=[kv("http.route", "/orders")])
     elif kind == "histogram":
         point = HistogramDataPoint(
+            start_time_unix_nano=NANOS - 1_000_000_000,
             time_unix_nano=NANOS, count=3, sum=60, min=10, max=30,
             explicit_bounds=[10, 20], bucket_counts=[1, 1, 1],
             attributes=[kv("http.route", "/orders")],
         )
     elif kind == "exponential_histogram":
         point = ExponentialHistogramDataPoint(
+            start_time_unix_nano=NANOS - 1_000_000_000,
             time_unix_nano=NANOS, count=3, sum=60, min=10, max=30,
             scale=2, zero_count=1, zero_threshold=0.01,
             positive=ExponentialHistogramDataPoint.Buckets(offset=1, bucket_counts=[1, 2]),
@@ -116,6 +126,7 @@ def metric_payload(*, kind="gauge", exemplar=False, service_name="order-service"
         )
     else:
         point = SummaryDataPoint(
+            start_time_unix_nano=NANOS - 1_000_000_000,
             time_unix_nano=NANOS, count=2, sum=30,
             quantile_values=[
                 SummaryDataPoint.ValueAtQuantile(quantile=0.5, value=10),
@@ -290,6 +301,8 @@ def test_preserves_metric_aggregation_details(kind):
     )
     details = event.attributes["aggregation_details"]
     assert event.metric_aggregation == kind
+    assert details["start_time_unix_nano"] == NANOS - 1_000_000_000
+    assert details["time_unix_nano"] == NANOS
     if kind == "sum":
         assert details["aggregation_temporality"] == 2
         assert details["is_monotonic"] is True
@@ -566,3 +579,90 @@ def test_producer_is_flushed_and_closed_even_if_consumer_close_fails():
     with pytest.raises(RuntimeError, match="close failed"):
         runner.close()
     assert producer.flushed and producer.closed
+
+
+def test_stream_keys_include_required_log_and_metric_dimensions():
+    ingestion, _ = service()
+    log, = prepare_events(
+        ingestion, "log", log_payload(
+            traced=False, service_name="orders", service_instance_id="orders-7"
+        ), context("kafka:logs"), confirm=False,
+    )
+    metric, = prepare_events(
+        ingestion, "metric", metric_payload(service_name="payments"),
+        context("kafka:metrics"), confirm=False,
+    )
+    log_key = stream_key(log)
+    metric_key = stream_key(metric)
+    assert log_key[:4] == ("log", "kafka:logs", "orders", "orders-7")
+    assert '"name":"app"' in log_key[4]
+    assert metric_key[:5] == (
+        "metric", "kafka:metrics", "payments", "instance-1",
+        "http.server.duration",
+    )
+    assert '"name":"http"' in metric_key[5]
+    assert '"service.name":"payments"' in metric_key[6]
+    assert '"http.route":"/orders"' in metric_key[7]
+
+
+@pytest.mark.parametrize("message,secrets", [
+    ("Authorization: Bearer secret-token", ("secret-token",)),
+    ("authorization=Bearer secret-token", ("secret-token",)),
+    ("Cookie: session=secret", ("session=secret",)),
+    ("password: my secret phrase", ("my", "secret", "phrase")),
+    ("token = abc123", ("abc123",)),
+    (
+        "https://example.test/cb?token=tkn-123&password=p4ss&email=user@example.test",
+        ("tkn-123", "p4ss", "user@example.test"),
+    ),
+])
+def test_dead_letter_sanitizer_removes_all_secret_fragments(message, secrets):
+    sanitized = sanitize_error_message(message)
+    for secret in secrets:
+        assert secret not in sanitized
+    assert "REDACTED" in sanitized
+
+
+class _InternalValueErrorNormalizer:
+    def decode_and_normalize(self, payload, context):
+        raise ValueError("internal arithmetic invariant")
+
+
+def test_value_error_outside_contract_validation_is_internal_not_dlq():
+    registry = NormalizerRegistry()
+    registry.register("log", _InternalValueErrorNormalizer())
+    dlq = InMemoryDeadLetterPublisher()
+    ingestion = MultimodalIngestionService(registry, dlq)
+    with pytest.raises(ValueError, match="internal arithmetic invariant"):
+        ingestion.prepare("log", b"payload", context())
+    assert dlq.records == []
+    assert ingestion.metrics.snapshot()["internal_error"]["log"] == 1
+
+
+def test_known_unified_event_contract_violation_is_semantic_input_dlq():
+    record = LogRecord(
+        time_unix_nano=NANOS, body=AnyValue(string_value="bad event id"),
+        attributes=[KeyValue(key="event.id", value=AnyValue(int_value=42))],
+    )
+    payload = ExportLogsServiceRequest(resource_logs=[ResourceLogs(
+        resource=Resource(attributes=[kv("service.name", "orders")]),
+        scope_logs=[ScopeLogs(log_records=[record])],
+    )]).SerializeToString()
+    ingestion, dlq = service()
+    batch = ingestion.prepare("log", payload, context())
+    assert batch.rejected_to_dead_letter is True
+    assert dlq.records[0].error_type == "SemanticInputError"
+    assert ingestion.metrics.snapshot()["internal_error"] == {}
+
+
+def test_span_count_divergence_is_invariant_error_not_dlq():
+    normalizer = TraceEventNormalizer()
+    normalizer._span_normalizer = SimpleNamespace(normalize=lambda _request: [])
+    registry = NormalizerRegistry()
+    registry.register("trace", normalizer)
+    dlq = InMemoryDeadLetterPublisher()
+    ingestion = MultimodalIngestionService(registry, dlq)
+    with pytest.raises(IngestionInvariantError, match="Quantidade de spans"):
+        ingestion.prepare("trace", trace_payload(), context())
+    assert dlq.records == []
+    assert ingestion.metrics.snapshot()["internal_error"]["trace"] == 1

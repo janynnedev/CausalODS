@@ -4,7 +4,7 @@ from opentelemetry.proto.collector.logs.v1.logs_service_pb2 import (
     ExportLogsServiceRequest,
 )
 
-from multimodal_v1.contracts import SignalType, UnifiedEvent
+from multimodal_v1.contracts import SignalType
 from multimodal_v1.identity import normalize_distributed_id
 from multimodal_v1.ingestion.base import EventNormalizer
 from multimodal_v1.ingestion.context import NormalizationContext
@@ -12,6 +12,7 @@ from multimodal_v1.ingestion.otlp import (
     any_value, identity, key_values, scope_dict, stable_event_id,
     timestamp_from_nanos, timing_quality,
 )
+from multimodal_v1.ingestion.validation import unified_event_from_input
 
 
 class LogEventNormalizer(EventNormalizer):
@@ -55,7 +56,7 @@ class LogEventNormalizer(EventNormalizer):
                         future_tolerance_ms=context.future_tolerance_ms,
                     )
                     flags = [*identity_flags, *timing_flags]
-                    events.append(UnifiedEvent(
+                    events.append(unified_event_from_input(
                         event_id=event_id,
                         event_name=attributes.get("event.name") or "log.record",
                         event_type="log_record", signal_type=SignalType.LOG,

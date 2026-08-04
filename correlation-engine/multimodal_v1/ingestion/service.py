@@ -35,11 +35,15 @@ def stream_key(event: UnifiedEvent) -> StreamKey:
     if event.signal_type is SignalType.LOG:
         return (
             "log", origin, event.service_name or "",
+            event.service_instance_id or "",
             _canonical(serialized["instrumentation_scope"]),
         )
     if event.signal_type is SignalType.METRIC:
         return (
-            "metric", origin, event.service_name or "", event.metric_name or "",
+            "metric", origin, event.service_name or "",
+            event.service_instance_id or "", event.metric_name or "",
+            _canonical(serialized["instrumentation_scope"]),
+            _canonical(serialized["resource_attributes"]),
             _canonical(
                 serialized["attributes"].get(
                     "series_attributes", serialized["attributes"]

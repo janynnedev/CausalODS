@@ -11,9 +11,30 @@ from typing import Protocol
 from multimodal_v1.ingestion.context import NormalizationContext
 
 
-_SENSITIVE = re.compile(
-    r"(?i)(authorization|cookie|token|secret|password|email)\s*[=:]\s*[^\s,;]+"
+_HEADER_SECRET = re.compile(
+    r"(?im)\b(authorization|cookie|password|token)\s*:\s*[^\r\n;|]+"
 )
+_AUTH_ASSIGNMENT = re.compile(
+    r"(?i)\b(authorization|cookie)\s*=\s*[^&;\r\n,|]+"
+)
+_QUERY_SECRET = re.compile(
+    r"(?i)([?&](?:token|password|email)=)[^&#\s]*"
+)
+_VALUE_ASSIGNMENT = re.compile(
+    r"(?i)\b(token|password|email)\s*=\s*[^\s,;&|]+"
+)
+_BEARER = re.compile(r"(?i)\bBearer\s+[^\s,;|]+")
+_EMAIL = re.compile(r"(?i)\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b")
+
+
+def sanitize_error_message(message: str) -> str:
+    sanitized = _HEADER_SECRET.sub(r"\1: [REDACTED]", message)
+    sanitized = _AUTH_ASSIGNMENT.sub(r"\1=[REDACTED]", sanitized)
+    sanitized = _QUERY_SECRET.sub(r"\1[REDACTED]", sanitized)
+    sanitized = _VALUE_ASSIGNMENT.sub(r"\1=[REDACTED]", sanitized)
+    sanitized = _BEARER.sub("Bearer [REDACTED]", sanitized)
+    sanitized = _EMAIL.sub("[REDACTED_EMAIL]", sanitized)
+    return sanitized[:1024]
 
 
 @dataclass(frozen=True)
@@ -46,7 +67,7 @@ class DeadLetterRecord:
             payload_sha256=hashlib.sha256(payload).hexdigest(),
             original_size_bytes=len(payload),
             error_type=type(error).__name__,
-            error_message=_SENSITIVE.sub(r"\1=[REDACTED]", str(error))[:1024],
+            error_message=sanitize_error_message(str(error)),
             rejected_at=datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
             payload_base64=(
                 base64.b64encode(included).decode("ascii")

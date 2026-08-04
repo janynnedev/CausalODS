@@ -5,12 +5,15 @@ from pathlib import Path
 
 from jsonschema import Draft202012Validator, FormatChecker
 
-from multimodal_v1.contracts import SignalType, UnifiedEvent
+from multimodal_v1.contracts import SignalType
 from multimodal_v1.identity import normalize_distributed_id
 from multimodal_v1.ingestion.base import EventNormalizer
 from multimodal_v1.ingestion.context import NormalizationContext
 from multimodal_v1.ingestion.errors import IngestionError, UnknownBusinessSchemaError
 from multimodal_v1.ingestion.otlp import timing_quality
+from multimodal_v1.ingestion.validation import (
+    unified_event_dict_from_input, unified_event_from_input,
+)
 
 
 class BusinessEventNormalizer(EventNormalizer):
@@ -51,7 +54,7 @@ class BusinessEventNormalizer(EventNormalizer):
             attributes["reported_source_reference"] = decoded["source_reference"]
         if decoded.get("source_dataset") is not None:
             attributes["reported_source_dataset"] = decoded["source_dataset"]
-        provisional = UnifiedEvent(
+        provisional = unified_event_from_input(
             event_id=decoded["event_id"], event_name=decoded["event_name"],
             event_type=decoded["event_name"], signal_type=SignalType.BUSINESS_EVENT,
             event_timestamp=timestamp, observed_timestamp=context.ingested_timestamp,
@@ -78,4 +81,4 @@ class BusinessEventNormalizer(EventNormalizer):
         flags = list(payload["data_quality_flags"])
         flags.extend(timing_flags)
         payload["data_quality_flags"] = tuple(dict.fromkeys(flags))
-        return (UnifiedEvent.from_dict(payload),)
+        return (unified_event_dict_from_input(payload),)

@@ -12,3 +12,7 @@ class UnknownBusinessSchemaError(IngestionError):
 
 class SemanticInputError(IngestionError):
     pass
+
+
+class IngestionInvariantError(RuntimeError):
+    """Falha interna: nunca deve ser classificada como entrada rejeitada."""

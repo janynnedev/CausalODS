@@ -121,14 +121,18 @@ Valores declarados pelo produtor são preservados apenas como
 Watermarks usam streams canônicas independentes:
 
 - trace: origem + `trace_id`;
-- log: origem + serviço + instrumentation scope;
-- métrica: origem + serviço + nome + atributos da série;
+- log: origem + serviço + instância + instrumentation scope;
+- métrica: origem + serviço + instância + nome + instrumentation scope +
+  resource attributes + atributos da série;
 - business event: origem + correlation ID ou entidade.
 
 Eventos anteriores ao watermark confirmado recebem `out_of_order`. Atraso
 acima de `late_threshold_ms` recebe `late_arrival`; timestamps além de
 `future_tolerance_ms` recebem `clock_skew_future_event`. Apenas eventos
 entregues e com offset confirmado avançam watermarks.
+
+Pontos métricos também preservam `start_time_unix_nano` e
+`time_unix_nano` em `attributes.aggregation_details` quando disponíveis.
 
 Os contadores internos, separados por sinal, são:
 
@@ -148,6 +152,10 @@ Os contadores internos, separados por sinal, são:
 ```bash
 pip install -r correlation-engine/requirements-multimodal-v3.txt
 ```
+
+O ambiente de testes/CI usa `requirements-test.txt`, que referencia o grupo
+multimodal v3. O `requirements.txt` base permanece inalterado e não adiciona
+`jsonschema` ao runtime trace-only v2.
 
 ## Execução opt-in
 

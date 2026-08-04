@@ -6,7 +6,7 @@ from opentelemetry.proto.collector.metrics.v1.metrics_service_pb2 import (
     ExportMetricsServiceRequest,
 )
 
-from multimodal_v1.contracts import SignalType, UnifiedEvent
+from multimodal_v1.contracts import SignalType
 from multimodal_v1.identity import normalize_distributed_id
 from multimodal_v1.ingestion.base import EventNormalizer
 from multimodal_v1.ingestion.context import NormalizationContext
@@ -14,13 +14,14 @@ from multimodal_v1.ingestion.otlp import (
     identity, key_values, scope_dict, stable_event_id, timestamp_from_nanos,
     timing_quality,
 )
+from multimodal_v1.ingestion.validation import unified_event_from_input
 
 
 def _optional(point, field):
-    try:
+    descriptor = point.DESCRIPTOR.fields_by_name[field]
+    if descriptor.has_presence:
         return getattr(point, field) if point.HasField(field) else None
-    except ValueError:
-        return None
+    return getattr(point, field)
 
 
 def _number_value(value_holder):
@@ -123,6 +124,14 @@ class MetricEventNormalizer(EventNormalizer):
                             context.ingested_timestamp,
                         )
                         details = self._details(aggregation, data, point)
+                        details["start_time_unix_nano"] = (
+                            int(point.start_time_unix_nano)
+                            if point.start_time_unix_nano else None
+                        )
+                        details["time_unix_nano"] = (
+                            int(point.time_unix_nano)
+                            if point.time_unix_nano else None
+                        )
                         value = self._scalar(aggregation, details)
                         exemplars = self._exemplars(point, context.ingested_timestamp)
                         attributes = {
@@ -153,7 +162,7 @@ class MetricEventNormalizer(EventNormalizer):
                         flags = [*identity_flags, *timing_flags]
                         if exemplars:
                             flags.append("metric_exemplar_descriptor")
-                        events.append(UnifiedEvent(
+                        events.append(unified_event_from_input(
                             event_id=event_id, event_name=metric.name or "unknown.metric",
                             event_type="metric_point", signal_type=SignalType.METRIC,
                             event_timestamp=timestamp,

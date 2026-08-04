@@ -4,11 +4,12 @@ from opentelemetry.proto.collector.trace.v1.trace_service_pb2 import (
     ExportTraceServiceRequest,
 )
 
-from multimodal_v1.contracts import UnifiedEvent
 from multimodal_v1.ingestion.base import EventNormalizer
 from multimodal_v1.ingestion.context import NormalizationContext
+from multimodal_v1.ingestion.errors import IngestionInvariantError
 from multimodal_v1.ingestion.otlp import key_values, scope_dict, timing_quality
 from multimodal_v1.span_adapter import SpanToUnifiedEventAdapter
+from multimodal_v1.ingestion.validation import unified_event_dict_from_input
 from normalizer.span_normalizer import SpanNormalizer
 
 
@@ -34,7 +35,9 @@ class TraceEventNormalizer(EventNormalizer):
                 for span in scope_spans.spans:
                     raw.append((span, resource, scope))
         if len(raw) != len(spans_v2):
-            raise ValueError("Quantidade de spans OTLP diverge da normalização v2.")
+            raise IngestionInvariantError(
+                "Quantidade de spans OTLP diverge da normalização v2."
+            )
 
         events = []
         for span_v2, (span, resource, scope) in zip(spans_v2, raw):
@@ -71,5 +74,5 @@ class TraceEventNormalizer(EventNormalizer):
             payload["late_arrival_ms"] = late
             flags = [*payload["data_quality_flags"], *timing_flags]
             payload["data_quality_flags"] = tuple(dict.fromkeys(flags))
-            events.append(UnifiedEvent.from_dict(payload))
+            events.append(unified_event_dict_from_input(payload))
         return events
