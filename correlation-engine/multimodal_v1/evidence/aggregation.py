@@ -4,21 +4,13 @@ from collections import defaultdict
 from typing import Any, Iterable
 
 from multimodal_v1.contracts import SignalType, UnifiedEvent
+from multimodal_v1.anomaly import is_anomalous
 from multimodal_v1.evidence.contracts import AnalysisWindow, MetricSummary, ServiceEvidence
 from multimodal_v1.evidence.policy import ServiceIdentityResolver
 
 
 def _is_error(event: UnifiedEvent) -> bool:
-    severity = (event.severity or "").upper()
-    outcome = (event.business_outcome or "").lower()
-    status = event.status_code
-    return bool(
-        event.error_type
-        or severity in {"ERROR", "FATAL", "CRITICAL"}
-        or (isinstance(status, int) and status >= 400)
-        or (isinstance(status, str) and status.upper() in {"ERROR", "FAILED", "FAILURE"})
-        or outcome in {"failed", "failure", "rejected", "error"}
-    )
+    return is_anomalous(event)
 
 
 class EvidenceAggregator:
