@@ -18,11 +18,19 @@ public class CorrelationIdInterceptor
             ClientHttpRequestExecution execution)
             throws IOException {
 
-        String correlationId = MDC.get("correlationId");
+        String canonical = DistributedIdentity.valid(
+                MDC.get(DistributedIdentity.MDC_KEY)
+        ).orElse(null);
+        String existing = request.getHeaders().getFirst(
+                DistributedIdentity.HTTP_HEADER
+        );
 
-        if (correlationId != null) {
-            request.getHeaders()
-                    .add("X-Correlation-ID", correlationId);
+        if (canonical != null) {
+            if (DistributedIdentity.valid(existing).filter(canonical::equals).isEmpty()) {
+                request.getHeaders().set(DistributedIdentity.HTTP_HEADER, canonical);
+            }
+        } else if (DistributedIdentity.valid(existing).isEmpty()) {
+            request.getHeaders().remove(DistributedIdentity.HTTP_HEADER);
         }
 
         return execution.execute(request, body);

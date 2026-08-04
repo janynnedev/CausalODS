@@ -228,6 +228,45 @@ def test_span_v2_adapter_preserves_trace_contract():
     assert adapted.late_arrival_ms == pytest.approx(50)
 
 
+def test_span_adapter_extracts_allowlisted_identity_from_additional_otlp_attributes():
+    span = Span(
+        trace_id="a" * 32, span_id="b" * 16, parent_span_id=None,
+        service_name="order-service", operation_name="POST /orders",
+        start_time=1_754_224_000_000_000_000,
+        end_time=1_754_224_000_100_000_000, duration_ns=100_000_000,
+        status_code="OK",
+    )
+    adapted = SpanToUnifiedEventAdapter().adapt(span, attributes={
+        "business.correlation.id": "workflow-42",
+        "business.entity.type": "order",
+        "business.entity.id": "order-42",
+    })
+    assert adapted.correlation_id == "workflow-42"
+    assert adapted.business_entity_type == "order"
+    assert adapted.business_entity_id == "order-42"
+
+
+def test_span_adapter_collision_policy_additional_wins_but_technical_fields_are_reserved():
+    span = Span(
+        trace_id="a" * 32, span_id="b" * 16, parent_span_id=None,
+        service_name="order-service", operation_name="POST /orders",
+        start_time=1_754_224_000_000_000_000,
+        end_time=1_754_224_000_100_000_000, duration_ns=100_000_000,
+        status_code="OK",
+    )
+    # Simula uma origem v3 que enriquece o objeto sem mudar o dataclass v2.
+    span.attributes = {"source": "stored", "business.correlation.id": "old"}
+    span.data_quality_flags = ("upstream_flag",)
+    adapted = SpanToUnifiedEventAdapter().adapt(span, attributes={
+        "source": "additional", "business.correlation.id": "new",
+        "duration_ns": -1,
+    })
+    assert adapted.attributes["source"] == "additional"
+    assert adapted.attributes["duration_ns"] == span.duration_ns
+    assert adapted.correlation_id == "new"
+    assert "upstream_flag" in adapted.data_quality_flags
+
+
 def test_span_adapter_rejects_non_span():
     with pytest.raises(ValueError, match="models.span.Span"):
         SpanToUnifiedEventAdapter().adapt({})
