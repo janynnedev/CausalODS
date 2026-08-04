@@ -1,0 +1,46 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://causalods.local/schemas/business-event-v1.schema.json",
+  "title": "CausalODS Business Event v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "event_id", "event_name", "event_timestamp", "correlation_id",
+    "business_entity_id", "service_name", "business_operation",
+    "business_outcome", "schema_version"
+  ],
+  "properties": {
+    "event_id": {
+      "type": "string", "minLength": 1, "maxLength": 256,
+      "pattern": "^[^\\s\\u0000-\\u001F\\u007F]+$"
+    },
+    "event_name": {
+      "enum": [
+        "order.created", "payment.requested", "payment.approved",
+        "payment.failed", "order.approved", "order.rejected"
+      ]
+    },
+    "event_timestamp": {
+      "type": "string", "format": "date-time",
+      "pattern": "(?:Z|[+-][0-9]{2}:[0-9]{2})$"
+    },
+    "correlation_id": {
+      "type": "string", "minLength": 1, "maxLength": 128,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$"
+    },
+    "business_entity_type": {
+      "type": ["string", "null"], "minLength": 1, "maxLength": 128
+    },
+    "business_entity_id": {
+      "type": "string", "minLength": 1, "maxLength": 256,
+      "pattern": "^[^\\s\\u0000-\\u001F\\u007F]+$"
+    },
+    "service_name": {"type": "string", "minLength": 1, "maxLength": 256},
+    "business_operation": {"type": "string", "minLength": 1, "maxLength": 128},
+    "business_outcome": {"type": "string", "minLength": 1, "maxLength": 128},
+    "attributes": {"type": "object", "maxProperties": 256},
+    "source_reference": {"type": ["string", "null"], "maxLength": 512},
+    "source_dataset": {"type": ["string", "null"], "maxLength": 256},
+    "schema_version": {"type": "string", "const": "business-event-v1"}
+  }
+}
