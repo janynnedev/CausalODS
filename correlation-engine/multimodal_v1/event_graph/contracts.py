@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import json
+import hashlib
 import math
+import re
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from enum import Enum
@@ -9,6 +11,7 @@ from types import MappingProxyType
 from typing import Any, Mapping
 
 from multimodal_v1.contracts import UnifiedEvent
+from multimodal_v1.canonical import canonical_json_value, deep_freeze_json
 from multimodal_v1.evidence.contracts import (
     EventAssociation, EventReference, ExternalIdentityEvidence,
     IncidentIdentityEvidence, ProvenanceRecord,
@@ -161,6 +164,7 @@ class EventEvidenceGraph:
     edges: tuple[EventGraphEdge, ...]
     service_nodes: tuple[ServiceGraphNode, ...] = ()
     rule_versions: Mapping[str, str] = field(default_factory=dict)
+    policy_provenance: Mapping[str, Any] = field(default_factory=dict)
 
     def __post_init__(self) -> None:
         if not isinstance(self.context, IncidentGraphContext):
@@ -204,7 +208,8 @@ class EventEvidenceGraph:
             allowed = {declared} if isinstance(declared, str) else set(declared or ())
             if edge.rule_version not in allowed:
                 raise ValueError("rule_versions não cobre a versão de uma aresta.")
-        object.__setattr__(self, "rule_versions", MappingProxyType(dict(self.rule_versions)))
+        object.__setattr__(self, "rule_versions", deep_freeze_json(self.rule_versions))
+        object.__setattr__(self, "policy_provenance", deep_freeze_json(self.policy_provenance))
 
     def event(self, reference: EventReference) -> UnifiedEvent:
         if not isinstance(reference, EventReference):
@@ -258,7 +263,8 @@ class EventEvidenceGraph:
             "nodes": [
                 {"reference": encode(node.reference), "service_name": node.event.service_name,
                  "signal_type": node.event.signal_type.value,
-                 "event_timestamp": node.event.event_timestamp.isoformat().replace("+00:00", "Z")}
+                 "event_timestamp": node.event.event_timestamp.isoformat().replace("+00:00", "Z"),
+                 "event_fingerprint": node.event.contract_fingerprint}
                 for node in self.nodes
             ],
             "service_nodes": [
@@ -271,10 +277,16 @@ class EventEvidenceGraph:
                 key: value if isinstance(value, str) else list(value)
                 for key, value in sorted(self.rule_versions.items())
             },
+            "policy_provenance": canonical_json_value(self.policy_provenance),
         }
 
     def to_json(self) -> str:
         return json.dumps(self.to_dict(), sort_keys=True, separators=(",", ":"), ensure_ascii=False)
+
+    @property
+    def graph_fingerprint(self) -> str:
+        """SHA-256 contratual do contexto, nós, arestas, taxonomia e rule versions."""
+        return hashlib.sha256(self.to_json().encode("utf-8")).hexdigest()
 
 
 @dataclass(frozen=True)
@@ -310,6 +322,11 @@ class PruningExclusion:
     service_name: str
     rule: str
 
+    def __post_init__(self) -> None:
+        if any(not isinstance(value, str) or not value.strip()
+               for value in (self.service_name, self.rule)):
+            raise ValueError("PruningExclusion requer serviço e regra não vazios.")
+
 
 @dataclass(frozen=True)
 class PruningResult:
@@ -318,4 +335,88 @@ class PruningResult:
     after_count: int
     exclusions: tuple[PruningExclusion, ...]
     enabled: bool
+    incident_id: str
+    workflow_key: str
+    graph_fingerprint: str
+    policy_version: str
+    symptom_references: tuple[EventReference, ...]
     protected_ground_truth: tuple[str, ...] = ()
+    mode: str = "production"
+
+    def __post_init__(self) -> None:
+        if not isinstance(self.enabled, bool):
+            raise TypeError("enabled deve ser booleano.")
+        if any(not isinstance(item, str) or not item.strip() for item in self.candidates):
+            raise ValueError("candidates deve conter strings não vazias.")
+        if tuple(sorted(set(self.candidates))) != self.candidates:
+            raise ValueError("candidates deve ser único e ordenado.")
+        for name in ("before_count", "after_count"):
+            value = getattr(self, name)
+            if isinstance(value, bool) or not isinstance(value, int) or value < 0:
+                raise ValueError(f"{name} deve ser inteiro não negativo.")
+        if self.after_count != len(self.candidates):
+            raise ValueError("after_count deve corresponder a len(candidates).")
+        if self.mode == "production" and self.before_count < self.after_count:
+            raise ValueError("before_count não pode ser menor que after_count em production.")
+        if any(not isinstance(item, PruningExclusion) for item in self.exclusions):
+            raise TypeError("exclusions deve conter PruningExclusion.")
+        excluded_services = [item.service_name for item in self.exclusions]
+        if len(excluded_services) != len(set(excluded_services)):
+            raise ValueError("Serviços de exclusions devem ser únicos.")
+        for name in ("incident_id", "workflow_key", "graph_fingerprint", "policy_version"):
+            if not isinstance(getattr(self, name), str) or not getattr(self, name).strip():
+                raise ValueError(f"PruningResult.{name} deve ser texto não vazio.")
+        if any(not isinstance(item, EventReference) for item in self.symptom_references):
+            raise TypeError("symptom_references deve conter EventReference.")
+        if not self.symptom_references:
+            raise ValueError("symptom_references não pode ser vazio.")
+        if len(self.symptom_references) != len(set(self.symptom_references)):
+            raise ValueError("symptom_references deve ser único.")
+        if not re.fullmatch(r"[0-9a-f]{64}", self.graph_fingerprint):
+            raise ValueError("graph_fingerprint deve ser SHA-256 hexadecimal.")
+        object.__setattr__(self, "symptom_references",
+                           tuple(sorted(self.symptom_references, key=reference_key)))
+        if self.mode not in {"production", "disabled_ablation", "evaluation_audit"}:
+            raise ValueError("mode de pruning inválido.")
+        if self.mode == "production" and not self.enabled:
+            raise ValueError("Pruning production deve estar enabled.")
+        if self.mode == "disabled_ablation" and self.enabled:
+            raise ValueError("Pruning disabled_ablation não pode estar enabled.")
+        if self.protected_ground_truth and self.mode != "evaluation_audit":
+            raise ValueError("Ground truth protegido exige evaluation_audit.")
+        if not set(self.protected_ground_truth) <= set(self.candidates):
+            raise ValueError("protected_ground_truth deve ser subconjunto de candidates.")
+        if any(not isinstance(item, str) or not item.strip() for item in self.protected_ground_truth):
+            raise ValueError("protected_ground_truth deve conter strings não vazias.")
+        if tuple(sorted(set(self.protected_ground_truth))) != self.protected_ground_truth:
+            raise ValueError("protected_ground_truth deve ser único e ordenado.")
+        excluded_candidates = {item.service_name for item in self.exclusions} & set(self.candidates)
+        if excluded_candidates - set(self.protected_ground_truth):
+            raise ValueError("Serviço excluído não pode permanecer em candidates.")
+        if self.mode == "production" and self.before_count != self.after_count + len(excluded_services):
+            raise ValueError("Counts production devem satisfazer before=after+exclusions únicas.")
+        if self.mode == "disabled_ablation" and (
+            self.before_count != self.after_count or self.exclusions
+        ):
+            raise ValueError("disabled_ablation requer counts iguais e exclusions vazias.")
+
+    def to_dict(self) -> dict[str, Any]:
+        encode = lambda ref: {"event_id": ref.event_id, "source_reference": ref.source_reference}
+        return {
+            "candidates": list(self.candidates), "before_count": self.before_count,
+            "after_count": self.after_count,
+            "exclusions": [{"service_name": item.service_name, "rule": item.rule}
+                           for item in self.exclusions],
+            "enabled": self.enabled, "incident_id": self.incident_id,
+            "workflow_key": self.workflow_key, "graph_fingerprint": self.graph_fingerprint,
+            "policy_version": self.policy_version,
+            "symptom_references": [encode(ref) for ref in self.symptom_references],
+            "protected_ground_truth": list(self.protected_ground_truth), "mode": self.mode,
+        }
+
+    def to_json(self) -> str:
+        return json.dumps(self.to_dict(), sort_keys=True, separators=(",", ":"), ensure_ascii=False)
+
+    @property
+    def pruning_fingerprint(self) -> str:
+        return hashlib.sha256(self.to_json().encode("utf-8")).hexdigest()

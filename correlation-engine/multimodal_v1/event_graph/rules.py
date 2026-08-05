@@ -1,11 +1,13 @@
 from __future__ import annotations
 
 from collections import defaultdict
+import hashlib
+import json
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from typing import Callable, Iterable, Mapping
 
-from multimodal_v1.anomaly import is_anomalous
+from multimodal_v1.anomaly import AnomalyPolicyV1
 from multimodal_v1.contracts import SignalType, UnifiedEvent
 from multimodal_v1.evidence.contracts import EventReference, IncidentIdentityEvidence
 from multimodal_v1.event_graph.contracts import (
@@ -24,6 +26,15 @@ class BusinessTransitionPolicy:
     def allows(self, source: str, target: str) -> bool:
         return target in self.transitions.get(source, ())
 
+    def to_dict(self):
+        return {"version": self.version,
+                "transitions": {key: list(self.transitions[key]) for key in sorted(self.transitions)}}
+
+    @property
+    def fingerprint(self):
+        return hashlib.sha256(json.dumps(self.to_dict(), sort_keys=True,
+                                          separators=(",", ":")).encode()).hexdigest()
+
 
 @dataclass(frozen=True)
 class TopologyDependencyPolicy:
@@ -37,6 +48,17 @@ class TopologyDependencyPolicy:
             value = getattr(self, name)
             if isinstance(value, bool) or not isinstance(value, (int, float)) or not 0 <= value <= 1:
                 raise ValueError(f"{name} deve estar entre 0 e 1.")
+
+    def to_dict(self):
+        return {"topology_version": self.topology_version,
+                "allow_healthy_prior": self.allow_healthy_prior,
+                "configured_topology_weight": self.configured_topology_weight,
+                "healthy_prior_confidence": self.healthy_prior_confidence}
+
+    @property
+    def fingerprint(self):
+        return hashlib.sha256(json.dumps(self.to_dict(), sort_keys=True,
+                                          separators=(",", ":")).encode()).hexdigest()
 
 
 @dataclass(frozen=True)
@@ -57,6 +79,7 @@ class RuleContext:
     identity_evidence: tuple[IncidentIdentityEvidence, ...]
     business_policy: BusinessTransitionPolicy
     topology_policy: TopologyDependencyPolicy
+    anomaly_policy: AnomalyPolicyV1
 
 
 EdgeRule = Callable[[RuleContext], Iterable[EventGraphEdge]]
@@ -194,7 +217,8 @@ def business_transition_rule(context):
 
 
 def co_anomaly_rule(context):
-    anomalies = tuple(event for event in context.events if is_anomalous(event))
+    anomalies = tuple(event for event in context.events
+                      if context.anomaly_policy.is_anomalous(event))
     for source, target in _chains((anomalies,)):
         if target.event_timestamp - source.event_timestamp <= context.temporal_window:
             yield _edge(source, target, RelationType.CO_ANOMALY, context, 0.60,
@@ -244,7 +268,7 @@ def _structural_support(source, target):
 
 def _topology_supports(source, target, context):
     supports = []
-    if is_anomalous(target):
+    if context.anomaly_policy.is_anomalous(target):
         supports.append(TopologySupport(
             "target_anomalous", 1.0, (_ref(target),),
             "destino classificado como anômalo por multimodal-anomaly-v1",
@@ -307,6 +331,16 @@ class EdgeRuleRegistry:
 
     def rules(self):
         return tuple((kind, *self._rules[kind]) for kind in sorted(self._rules, key=lambda item: item.value))
+
+    def to_dict(self):
+        return {kind.value: {"version": version,
+                             "rule": f"{rule.__module__}.{rule.__qualname__}"}
+                for kind, version, rule in self.rules()}
+
+    @property
+    def fingerprint(self):
+        return hashlib.sha256(json.dumps(self.to_dict(), sort_keys=True,
+                                          separators=(",", ":")).encode()).hexdigest()
 
     @classmethod
     def defaults(cls):

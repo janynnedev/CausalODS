@@ -2,8 +2,10 @@ from __future__ import annotations
 
 from collections import deque
 from dataclasses import dataclass
+import hashlib
+import json
 
-from multimodal_v1.anomaly import is_anomalous
+from multimodal_v1.anomaly import AnomalyPolicyV1, DEFAULT_ANOMALY_POLICY
 from multimodal_v1.event_graph.contracts import (
     EdgeClassification, EdgeDirection, EventEvidenceGraph, RelationType,
     ServiceGraphFeatures, reference_key,
@@ -21,6 +23,18 @@ class GraphFeaturePolicy:
         EdgeClassification.CAUSAL_CANDIDATE,
     )
     all_evidence_adjacency: None = None
+
+    def to_dict(self):
+        encode = lambda values: None if values is None else [item.value for item in values]
+        return {"version": self.version,
+                "structural_adjacency": encode(self.structural_adjacency),
+                "plausible_causal_adjacency": encode(self.plausible_causal_adjacency),
+                "all_evidence_adjacency": encode(self.all_evidence_adjacency)}
+
+    @property
+    def fingerprint(self):
+        return hashlib.sha256(json.dumps(self.to_dict(), sort_keys=True,
+                                          separators=(",", ":")).encode()).hexdigest()
 
 
 def _distance(adjacency, sources, targets):
@@ -56,8 +70,10 @@ def _reachable(adjacency, sources):
 class GraphFeatureExtractor:
     """Features RCA v3 usam alcance plausível, nunca temporal/coanomalia isolados."""
 
-    def __init__(self, policy: GraphFeaturePolicy | None = None):
+    def __init__(self, policy: GraphFeaturePolicy | None = None,
+                 anomaly_policy: AnomalyPolicyV1 | None = None):
         self.policy = policy or GraphFeaturePolicy()
+        self.anomaly_policy = anomaly_policy or DEFAULT_ANOMALY_POLICY
 
     def extract(self, graph: EventEvidenceGraph) -> dict[str, ServiceGraphFeatures]:
         events = {node.reference: node.event for node in graph.nodes}
@@ -86,7 +102,8 @@ class GraphFeatureExtractor:
             if edge.classification is EdgeClassification.STRUCTURAL and edge.direction is EdgeDirection.DIRECTED:
                 structural_in[edge.target] += 1
         roots = {reference for reference, count in structural_in.items() if count == 0}
-        anomalies = {reference for reference, event in events.items() if is_anomalous(event)}
+        anomalies = {reference for reference, event in events.items()
+                     if self.anomaly_policy.is_anomalous(event)}
         first_failure = ()
         if anomalies:
             first_failure = (min(anomalies, key=lambda ref: (events[ref].event_timestamp, *reference_key(ref))),)

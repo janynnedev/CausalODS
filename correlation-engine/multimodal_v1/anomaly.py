@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+import hashlib
+import json
 
 from multimodal_v1.contracts import UnifiedEvent
 
@@ -8,6 +10,14 @@ from multimodal_v1.contracts import UnifiedEvent
 @dataclass(frozen=True)
 class AnomalyPolicyV1:
     version: str = "multimodal-anomaly-v1"
+
+    def to_dict(self) -> dict[str, str]:
+        return {"version": self.version}
+
+    @property
+    def fingerprint(self) -> str:
+        return hashlib.sha256(json.dumps(self.to_dict(), sort_keys=True,
+                                          separators=(",", ":")).encode()).hexdigest()
 
     def is_anomalous(self, event: UnifiedEvent) -> bool:
         if not isinstance(event, UnifiedEvent):

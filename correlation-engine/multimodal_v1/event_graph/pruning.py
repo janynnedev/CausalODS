@@ -38,11 +38,20 @@ class CandidatePruner:
             raise ValueError("symptom_references não pode ser vazio.")
         if any(not isinstance(reference, EventReference) for reference in symptoms):
             raise TypeError("symptom_references deve conter EventReference.")
-        if not self.enabled:
-            return PruningResult(candidates, len(candidates), len(candidates), (), False)
+        provenance = (
+            graph.context.incident_id, graph.context.workflow_key,
+            graph.graph_fingerprint, self.policy.version,
+            tuple(sorted(symptoms, key=lambda item: (item.event_id, item.source_reference or ""))),
+        )
         known = {node.reference for node in graph.nodes}
         if not symptoms <= known:
             raise KeyError("Sintoma não pertence ao grafo.")
+        if not self.enabled:
+            return PruningResult(
+                candidates, len(candidates), len(candidates), (), False,
+                *provenance,
+                mode="disabled_ablation",
+            )
         by_service = {}
         for node in graph.nodes:
             if node.event.service_name:
@@ -62,7 +71,10 @@ class CandidatePruner:
             else:
                 rule = "no_event_node" if not references else "no_plausible_non_temporal_path_to_symptom"
                 exclusions.append(PruningExclusion(service, f"{self.policy.version}:{rule}"))
-        return PruningResult(tuple(kept), len(candidates), len(kept), tuple(exclusions), True)
+        return PruningResult(
+            tuple(kept), len(candidates), len(kept), tuple(exclusions), True,
+            *provenance,
+        )
 
     def audit_pruning_with_ground_truth(
         self, graph: EventEvidenceGraph, candidate_services: Iterable[str],
@@ -73,12 +85,26 @@ class CandidatePruner:
             raise ValueError("ground truth exige evaluation_mode=True.")
         production = self.prune(graph, candidate_services, symptom_references)
         if ground_truth_service in production.candidates:
-            return production
+            return PruningResult(
+                production.candidates, production.before_count, production.after_count,
+                production.exclusions, production.enabled, production.incident_id,
+                production.workflow_key, production.graph_fingerprint,
+                production.policy_version, production.symptom_references, (),
+                "evaluation_audit",
+            )
         candidates = tuple(sorted((*production.candidates, ground_truth_service)))
         exclusion = PruningExclusion(
             ground_truth_service, f"{self.policy.version}:ground_truth_protected_evaluation_only"
         )
+        audit_exclusions = tuple(
+            item for item in production.exclusions
+            if item.service_name != ground_truth_service
+        ) + (exclusion,)
         return PruningResult(
             candidates, production.before_count, len(candidates),
-            (*production.exclusions, exclusion), production.enabled, (ground_truth_service,),
+            audit_exclusions, production.enabled,
+            production.incident_id, production.workflow_key,
+            production.graph_fingerprint, production.policy_version,
+            production.symptom_references, (ground_truth_service,),
+            "evaluation_audit",
         )

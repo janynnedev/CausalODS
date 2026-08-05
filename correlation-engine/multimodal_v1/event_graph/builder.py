@@ -6,6 +6,7 @@ from dataclasses import replace
 from datetime import datetime, timedelta, timezone
 
 from multimodal_v1.contracts import UnifiedEvent
+from multimodal_v1.anomaly import AnomalyPolicyV1, DEFAULT_ANOMALY_POLICY
 from multimodal_v1.evidence.contracts import EventReference, IncidentEvidenceBundle
 from multimodal_v1.event_graph.contracts import (
     EventEvidenceGraph, EventGraphEdge, EventGraphNode, IncidentGraphContext,
@@ -21,7 +22,8 @@ class EventGraphBuilder:
                  temporal_window: timedelta = timedelta(minutes=5),
                  include_service_nodes: bool = True,
                  business_policy: BusinessTransitionPolicy | None = None,
-                 topology_policy: TopologyDependencyPolicy | None = None):
+                 topology_policy: TopologyDependencyPolicy | None = None,
+                 anomaly_policy: AnomalyPolicyV1 | None = None):
         if temporal_window < timedelta(0):
             raise ValueError("temporal_window não pode ser negativa.")
         self.registry = registry or EdgeRuleRegistry.defaults()
@@ -29,6 +31,7 @@ class EventGraphBuilder:
         self.include_service_nodes = include_service_nodes
         self.business_policy = business_policy or BusinessTransitionPolicy()
         self.topology_policy = topology_policy or TopologyDependencyPolicy()
+        self.anomaly_policy = anomaly_policy or DEFAULT_ANOMALY_POLICY
 
     def build(self, bundle: IncidentEvidenceBundle, *,
               topology: Mapping[str, Iterable[str]] | None = None,
@@ -53,6 +56,7 @@ class EventGraphBuilder:
         context = RuleContext(
             ordered, references, derived.astimezone(timezone.utc), self.temporal_window,
             normalized_topology, bundle.identity_evidence, self.business_policy, self.topology_policy,
+            self.anomaly_policy,
         )
         edges: dict[tuple, EventGraphEdge] = {}
         versions = {}
@@ -75,7 +79,16 @@ class EventGraphBuilder:
         )
         return EventEvidenceGraph(
             graph_context, nodes, tuple(edges[key] for key in sorted(edges, key=self._edge_key)),
-            service_nodes, versions,
+            service_nodes, versions, {
+                "business_transition_policy": self.business_policy.to_dict(),
+                "business_transition_policy_fingerprint": self.business_policy.fingerprint,
+                "topology_dependency_policy": self.topology_policy.to_dict(),
+                "topology_dependency_policy_fingerprint": self.topology_policy.fingerprint,
+                "anomaly_policy": self.anomaly_policy.to_dict(),
+                "anomaly_policy_fingerprint": self.anomaly_policy.fingerprint,
+                "edge_rule_registry": self.registry.to_dict(),
+                "edge_rule_registry_fingerprint": self.registry.fingerprint,
+            },
         )
 
     @staticmethod

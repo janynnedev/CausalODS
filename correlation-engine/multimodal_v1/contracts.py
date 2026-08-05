@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import hashlib
 import math
 import re
 from collections.abc import Mapping, Sequence
@@ -299,6 +300,11 @@ class UnifiedEvent:
             self.to_dict(), sort_keys=True, separators=(",", ":"),
             ensure_ascii=False, allow_nan=False,
         )
+
+    @property
+    def contract_fingerprint(self) -> str:
+        """SHA-256 do contrato canônico completo, normalizado e validado."""
+        return hashlib.sha256(self.to_json().encode("utf-8")).hexdigest()
 
     @classmethod
     def from_dict(cls, payload: Mapping[str, Any]) -> "UnifiedEvent":
