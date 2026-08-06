@@ -302,11 +302,19 @@ class AIOps2020Adapter(DatasetAdapter):
                     attributes={"aiops2020.metric_category": category, **extras},
                     source_reference=f"{relative}#row={index};metric={metric_name}",
                     source_dataset=self.SOURCE))
-        unmapped = tuple(sorted(set(columns) - alias_fields - interpreted - preserved))
+        interpreted_fields = set(interpreted)
+        identity_fields = (set(columns) & alias_fields) - interpreted_fields
+        preserved_fields = set(preserved) - interpreted_fields - identity_fields
+        rejected_fields = (set(rejected_fields) - interpreted_fields
+                           - identity_fields - preserved_fields)
+        unmapped_fields = (set(columns) - identity_fields - interpreted_fields
+                           - preserved_fields - rejected_fields)
+        unmapped = tuple(sorted(unmapped_fields))
         times = [event.event_timestamp for event in events]
         classification = SchemaClassification(
-            tuple(sorted(set(columns) & alias_fields)), tuple(sorted(interpreted)),
-            tuple(sorted(preserved)), unmapped, tuple(sorted(rejected_fields)))
+            tuple(sorted(identity_fields)), tuple(sorted(interpreted_fields)),
+            tuple(sorted(preserved_fields)), tuple(sorted(unmapped_fields)),
+            tuple(sorted(rejected_fields)))
         return AIOpsFileNormalizationResult(
             path, category, tuple(columns), len(rows), fully, partial, rejected, excluded,
             accepted_cells, rejected_cells, tuple(events), dict(reasons), dict(quality),

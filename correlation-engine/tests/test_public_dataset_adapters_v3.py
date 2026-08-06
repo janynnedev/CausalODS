@@ -3,6 +3,7 @@ from __future__ import annotations
 import hashlib
 import json
 from dataclasses import replace
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 import pytest
@@ -652,7 +653,7 @@ def test_holdout_protocols_reject_unused_parameters():
     with pytest.raises(ValueError, match="não usam"):
         ProtocolSplit("leave-one-system-out", ("a",), ("b",), "s2", test_fraction=.2)
     with pytest.raises(ValueError): ReplayResult(1, 0, 1, ())
-    with pytest.raises(TypeError): ReplayResult(1, 0, 1, ["failure"])
+    assert ReplayResult(1, 0, 1, ["failure"]).errors == ("failure",)
 
 
 def test_aiops_long_partial_loss_is_enforced_before_cache_and_manifested(tmp_path):
@@ -813,9 +814,11 @@ def test_incident_manifest_rejects_duplicate_modality_collections(rcaeval_root, 
 
 
 def test_schema_file_report_reconciles_cell_level_rejections():
-    from multimodal_v1.public_datasets_v3 import SchemaFileReport
+    from multimodal_v1.public_datasets_v3 import SchemaClassification, SchemaFileReport
     base = dict(relative_path="wide.csv", kind="business_metrics",
                 columns=("time", "success_rate", "request_count"), row_count=1,
+                classification=SchemaClassification(identity_fields=("time",),
+                    interpreted_metric_fields=("success_rate", "request_count")),
                 checksum_sha256="0" * 64, accepted_row_count=1, event_count=1,
                 wide_row_policy="partial-wide-row-v1", rows_partially_accepted=1,
                 accepted_metric_cell_count=1)
@@ -994,13 +997,16 @@ def test_permissive_integrity_and_empty_accounting_policy(rcaeval_root):
                     rejected_row_count=0, considered_row_count=0,
                     normalized_source_files=(), normalization_accounting_by_file={},
                     rejection_reasons_by_file={}, quality_issue_reasons_by_file={},
+                    unmapped_fields={},
                     usable_for_benchmark=False, empty_incident_reason="sem eventos")
     assert empty.normalization_accounting_by_file == {}
 
 
 def test_schema_report_layout_policy_mutations_fail():
-    from multimodal_v1.public_datasets_v3 import SchemaFileReport
+    from multimodal_v1.public_datasets_v3 import SchemaClassification, SchemaFileReport
     base = dict(relative_path="wide.csv", kind="metrics", columns=("time", "a", "b"),
+                classification=SchemaClassification(identity_fields=("time",),
+                    interpreted_metric_fields=("a", "b")),
                 row_count=1, checksum_sha256="0" * 64, accepted_row_count=1,
                 event_count=1, rejection_reasons={"invalid_metric_cell:b": 1},
                 wide_row_policy="partial-wide-row-v1", layout_policy="partial-wide-row-v1",
@@ -1082,3 +1088,475 @@ def test_remaining_contract_mutation_matrix_scenarios(tmp_path, rcaeval_root, ai
     changed = replace(first, normalization_mode="permissive", usable_for_benchmark=False,
                       empty_incident_reason="accounting alterado", normalization_accounting_by_file=shifted)
     assert changed.fingerprint != first.fingerprint
+
+
+# Gate final de adulteração dos contratos públicos v3.
+def test_manifest_rejects_all_canonical_path_collisions(rcaeval_root):
+    adapter = RCAEvalAdapter(rcaeval_root)
+    manifest = adapter.load_incident(adapter.list_incidents()[0].incident_id)
+    path = next(iter(manifest.normalized_source_files))
+    alias = path.replace("/", "\\")
+    source_value = manifest.source_files_sha256[path]
+    accounting_value = manifest.normalization_accounting_by_file[path]
+    mutations = (
+        {"source_files_sha256": {path: source_value, alias: source_value}},
+        {"normalized_source_files": (path, alias)},
+        {"normalization_accounting_by_file": {path: accounting_value, alias: accounting_value}},
+        {"rejection_reasons_by_file": {path: {}, alias: {}}},
+        {"quality_issue_reasons_by_file": {path: {}, alias: {}}},
+        {"unmapped_fields": {path: (), alias: ()}},
+    )
+    for mutation in mutations:
+        with pytest.raises(ValueError, match="duplicados após canonicalização"):
+            replace(manifest, **mutation)
+
+
+@pytest.mark.parametrize("invalid", ("/absolute.csv", "case/../metrics.json", "case//metrics.json"))
+def test_contract_rejects_noncanonical_relative_paths(invalid):
+    from multimodal_v1.public_datasets_v3.contracts import canonical_relative_path
+    with pytest.raises(ValueError):
+        canonical_relative_path(invalid, "test_path")
+
+
+def test_valid_paths_are_canonical_sorted_and_stable():
+    from multimodal_v1.public_datasets_v3.contracts import canonical_unique_paths
+    assert canonical_unique_paths(["z/file.csv", "a\\file.csv"], "paths") == (
+        "a/file.csv", "z/file.csv")
+
+
+def test_incident_manifest_from_dict_authenticates_fingerprint(rcaeval_root):
+    from multimodal_v1.public_datasets_v3 import IncidentManifest
+    adapter = RCAEvalAdapter(rcaeval_root)
+    manifest = adapter.load_incident(adapter.list_incidents()[0].incident_id)
+    payload = manifest.to_dict()
+    without = dict(payload); without.pop("fingerprint")
+    assert IncidentManifest.from_dict(without).fingerprint == manifest.fingerprint
+    assert IncidentManifest.from_dict(payload).fingerprint == manifest.fingerprint
+    malformed = dict(payload); malformed["fingerprint"] = "ABC"
+    with pytest.raises(ValueError, match="fingerprint"):
+        IncidentManifest.from_dict(malformed)
+    divergent = dict(payload); divergent["fingerprint"] = "0" * 64
+    with pytest.raises(ValueError, match="divergente"):
+        IncidentManifest.from_dict(divergent)
+    tampered = json.loads(json.dumps(payload)); tampered["source_case"] += "-tampered"
+    with pytest.raises(ValueError, match="divergente"):
+        IncidentManifest.from_dict(tampered)
+    round_trip = IncidentManifest.from_dict(json.loads(json.dumps(payload)))
+    assert round_trip.to_dict() == payload
+
+
+@pytest.mark.parametrize("rejected, reasons, valid", (
+    (1, {"invalid_row": 1}, True),
+    (1, {"invalid_a": 1, "invalid_b": 1}, False),
+    (1, {"invalid_row": 999}, False),
+    (2, {"invalid_row": 1}, False),
+    (1, {}, False),
+    (0, {"invalid_row": 1}, False),
+    (1, {"invalid_metric_cell:cpu": 1}, False),
+))
+def test_schema_file_report_reconciles_exact_row_reason_units(rejected, reasons, valid):
+    from multimodal_v1.public_datasets_v3 import SchemaClassification, SchemaFileReport
+    values = dict(relative_path="logs.csv", kind="logs", columns=("timestamp",),
+                  classification=SchemaClassification(identity_fields=("timestamp",)),
+                  row_count=rejected, checksum_sha256="0" * 64,
+                  rejected_row_count=rejected, rejection_reasons=reasons)
+    if valid:
+        assert SchemaFileReport(**values).rejected_row_count == 1
+    else:
+        with pytest.raises(ValueError, match="row-level"):
+            SchemaFileReport(**values)
+
+
+def test_quality_issue_cannot_substitute_rejection_reason():
+    from multimodal_v1.public_datasets_v3 import SchemaFileReport
+    with pytest.raises(ValueError, match="row-level"):
+        SchemaFileReport("logs.csv", "logs", (), 1, "0" * 64,
+                         rejected_row_count=1, quality_issue_reasons={"bad_id": 1})
+
+
+def test_fully_rejected_wide_row_reconciles_row_and_cell_dimensions():
+    from multimodal_v1.public_datasets_v3 import SchemaClassification, SchemaFileReport
+    report = SchemaFileReport(
+        "metrics.csv", "metrics", ("time", "a", "b"), 1, "0" * 64,
+        classification=SchemaClassification(identity_fields=("time",),
+            interpreted_metric_fields=("a", "b")),
+        rejected_row_count=1,
+        rejection_reasons={"row_without_valid_metric": 1,
+                           "invalid_metric_cell:a": 1,
+                           "invalid_metric_cell:b": 1},
+        wide_row_policy="partial-wide-row-v1", rows_fully_rejected=1,
+        rejected_metric_cell_count=2)
+    assert report.rejected_row_count == 1 and report.rejected_metric_cell_count == 2
+
+
+@pytest.mark.parametrize("field", (
+    "incident_id", "source_dataset", "source_system", "source_case", "adapter_version",
+    "window_policy", "window_decision", "modality_policy_version",
+))
+def test_incident_manifest_rejects_empty_identity_fields(rcaeval_root, field):
+    adapter = RCAEvalAdapter(rcaeval_root)
+    manifest = adapter.load_incident(adapter.list_incidents()[0].incident_id)
+    with pytest.raises(ValueError, match=field):
+        replace(manifest, **{field: "  "})
+
+
+def test_incident_manifest_enforces_official_schema_version(rcaeval_root):
+    from multimodal_v1.public_datasets_v3 import INCIDENT_MANIFEST_SCHEMA_VERSION
+    adapter = RCAEvalAdapter(rcaeval_root)
+    manifest = adapter.load_incident(adapter.list_incidents()[0].incident_id)
+    assert manifest.schema_version == INCIDENT_MANIFEST_SCHEMA_VERSION
+    with pytest.raises(ValueError, match="schema_version"):
+        replace(manifest, schema_version="incident-manifest-v999")
+
+
+def test_schema_reports_are_defensively_immutable_and_canonical():
+    from multimodal_v1.public_datasets_v3 import (
+        SchemaClassification, SchemaFileReport, SchemaReport, ValidationReport)
+    classification_input = ["service", "timestamp"]
+    columns_input = ["timestamp", "service"]
+    classification = SchemaClassification(identity_fields=classification_input)
+    file_report = SchemaFileReport("case\\logs.csv", "logs", columns_input, 0, "0" * 64,
+                                   classification=classification)
+    files_input = [file_report]
+    errors_input = ["error"]
+    warnings_input = ["warning"]
+    report = SchemaReport("dataset", files_input, datetime.now(timezone.utc))
+    validation = ValidationReport(False, errors_input, warnings_input, report)
+    fingerprint = report.fingerprint
+    classification_input.append("mutated")
+    columns_input.append("mutated")
+    files_input.clear(); errors_input.append("mutated"); warnings_input.clear()
+    assert classification.identity_fields == ("service", "timestamp")
+    assert file_report.columns == ("timestamp", "service")
+    assert file_report.relative_path == "case/logs.csv"
+    assert report.files == (file_report,) and report.fingerprint == fingerprint
+    assert validation.errors == ("error",) and validation.warnings == ("warning",)
+    equivalent = SchemaReport("dataset", [file_report], report.generated_at)
+    assert equivalent.fingerprint == report.fingerprint
+
+
+def test_schema_report_rejects_duplicate_canonical_paths():
+    from multimodal_v1.public_datasets_v3 import SchemaFileReport, SchemaReport
+    left = SchemaFileReport("case/logs.csv", "logs", (), 0, "0" * 64)
+    right = SchemaFileReport("case\\logs.csv", "logs", (), 0, "0" * 64)
+    with pytest.raises(ValueError, match="duplicado"):
+        SchemaReport("dataset", [left, right], datetime.now(timezone.utc))
+
+
+@pytest.mark.parametrize("start,end,error", (
+    (None, datetime.now(timezone.utc), TypeError),
+    (datetime.now(timezone.utc), None, TypeError),
+    ("invalid", datetime.now(timezone.utc), TypeError),
+    (datetime.now(timezone.utc), "invalid", TypeError),
+    (datetime.now(), datetime.now(), ValueError),
+))
+def test_analysis_window_rejects_invalid_types_and_naive_values(start, end, error):
+    from multimodal_v1.public_datasets_v3 import AnalysisWindow
+    with pytest.raises(error):
+        AnalysisWindow(start, end)
+
+
+def test_analysis_window_rejects_inversion_and_normalizes_to_utc():
+    from multimodal_v1.public_datasets_v3 import AnalysisWindow
+    now = datetime.now(timezone.utc)
+    with pytest.raises(ValueError, match="preceder"):
+        AnalysisWindow(now, now - timedelta(seconds=1))
+    assert AnalysisWindow(now, now).start.tzinfo is timezone.utc
+    local = timezone(timedelta(hours=-3))
+    converted = AnalysisWindow(now.astimezone(local), (now + timedelta(seconds=1)).astimezone(local))
+    assert converted.start.tzinfo is timezone.utc and converted.start == now
+
+
+@pytest.mark.parametrize("field,value", (
+    ("analysis_window", None), ("analysis_window", "invalid"),
+    ("observed_interval", "invalid"), ("usable_for_benchmark", 1),
+    ("usable_for_benchmark", 0), ("fault_type", ""),
+    ("fault_service", "   "),
+))
+def test_incident_manifest_rejects_invalid_public_field_types(rcaeval_root, field, value):
+    adapter = RCAEvalAdapter(rcaeval_root)
+    manifest = adapter.load_incident(adapter.list_incidents()[0].incident_id)
+    with pytest.raises((TypeError, ValueError), match=field):
+        replace(manifest, **{field: value})
+
+
+def test_incident_manifest_accepts_valid_windows_and_optional_none(rcaeval_root):
+    from multimodal_v1.public_datasets_v3 import AnalysisWindow
+    adapter = RCAEvalAdapter(rcaeval_root)
+    manifest = adapter.load_incident(adapter.list_incidents()[0].incident_id)
+    assert isinstance(manifest.analysis_window, AnalysisWindow)
+    assert replace(manifest, observed_interval=None).observed_interval is None
+    with pytest.raises(TypeError, match="analysis_window"):
+        replace(manifest, analysis_window=object())
+
+
+@pytest.mark.parametrize("missing", ("analysis_window", "incident_id", "schema_version",
+                                      "source_files_sha256"))
+def test_incident_manifest_from_dict_requires_explicit_fields(rcaeval_root, missing):
+    from multimodal_v1.public_datasets_v3 import IncidentManifest
+    adapter = RCAEvalAdapter(rcaeval_root)
+    payload = adapter.load_incident(adapter.list_incidents()[0].incident_id).to_dict()
+    payload.pop(missing)
+    with pytest.raises(ValueError, match=missing):
+        IncidentManifest.from_dict(payload)
+
+
+def test_incident_manifest_complete_payload_round_trip_stays_authenticated(rcaeval_root):
+    from multimodal_v1.public_datasets_v3 import IncidentManifest
+    adapter = RCAEvalAdapter(rcaeval_root)
+    manifest = adapter.load_incident(adapter.list_incidents()[0].incident_id)
+    payload = manifest.to_dict(); without = dict(payload); without.pop("fingerprint")
+    assert IncidentManifest.from_dict(without).fingerprint == manifest.fingerprint
+    assert IncidentManifest.from_dict(payload).fingerprint == manifest.fingerprint
+
+
+@pytest.mark.parametrize("valid", (0, 1))
+def test_validation_report_rejects_integer_booleans(valid):
+    from multimodal_v1.public_datasets_v3 import ValidationReport
+    with pytest.raises(TypeError, match="valid"):
+        ValidationReport(valid, () if valid else ("error",))
+
+
+def test_validation_report_enforces_valid_errors_equivalence_and_nonempty_messages():
+    from multimodal_v1.public_datasets_v3 import ValidationReport
+    assert ValidationReport(True).valid
+    assert not ValidationReport(False, ["error"]).valid
+    assert ValidationReport(True, warnings=["warning"]).warnings == ("warning",)
+    with pytest.raises(ValueError, match="ausência"):
+        ValidationReport(True, ["error"])
+    with pytest.raises(ValueError, match="ausência"):
+        ValidationReport(False)
+    with pytest.raises(ValueError, match="texto não vazio"):
+        ValidationReport(False, [""])
+    with pytest.raises(ValueError, match="texto não vazio"):
+        ValidationReport(True, warnings=["   "])
+
+
+@pytest.mark.parametrize("kind,layout,kwargs", (
+    ("unknown", "non-metric-v1", {}),
+    ("traces", "long-metric-row-v1", {}),
+    ("logs", "partial-wide-row-v1", {"wide_row_policy": "partial-wide-row-v1"}),
+    ("faults", "non-metric-v1", {"accepted_row_count": 1, "event_count": 1}),
+    ("metrics", "non-metric-v1", {}),
+))
+def test_schema_file_report_rejects_incompatible_kind_layout(kind, layout, kwargs):
+    from multimodal_v1.public_datasets_v3 import SchemaFileReport
+    values = dict(relative_path="file.csv", kind=kind, columns=(), row_count=0,
+                  checksum_sha256="0" * 64, layout_policy=layout)
+    if kwargs.get("accepted_row_count"):
+        values["row_count"] = 1
+    with pytest.raises(ValueError):
+        SchemaFileReport(**(values | kwargs))
+
+
+@pytest.mark.parametrize("scope", ("dataset_schema_report", "incident_normalization_report"))
+def test_schema_report_accepts_only_official_scopes(scope):
+    from multimodal_v1.public_datasets_v3 import SchemaReport
+    assert SchemaReport("dataset", [], datetime.now(timezone.utc), scope).report_scope == scope
+
+
+def test_schema_report_rejects_unknown_scope_and_invalid_generated_at():
+    from multimodal_v1.public_datasets_v3 import SchemaReport
+    with pytest.raises(ValueError, match="report_scope"):
+        SchemaReport("dataset", [], datetime.now(timezone.utc), "unknown")
+    with pytest.raises(ValueError, match="generated_at"):
+        SchemaReport("dataset", [], "invalid")
+    with pytest.raises(ValueError, match="generated_at"):
+        SchemaReport("dataset", [], datetime.now())
+
+
+@pytest.mark.parametrize("protocol,held_out", (
+    ("within-dataset", "unexpected"),
+    ("cross-system", 123),
+    ("cross-source", True),
+    ("leave-one-system-out", "   "),
+))
+def test_protocol_split_rejects_invalid_held_out(protocol, held_out):
+    from multimodal_v1.public_datasets_v3 import ProtocolSplit
+    kwargs = {"seed": 7, "test_fraction": .5} if protocol == "within-dataset" else {}
+    with pytest.raises((TypeError, ValueError), match="held_out"):
+        ProtocolSplit(protocol, ("train",), ("test",), held_out, **kwargs)
+
+
+def test_protocol_split_normalizes_valid_holdout_and_planner_is_stable():
+    from multimodal_v1.public_datasets_v3 import IncidentDescriptor, ProtocolPlanner, ProtocolSplit
+    assert ProtocolSplit("cross-system", ("a",), ("b",), " system ").held_out == "system"
+    incidents = (IncidentDescriptor("a", "source", "left", "case-a", "/a"),
+                 IncidentDescriptor("b", "source", "right", "case-b", "/b"))
+    assert ProtocolPlanner.plan(incidents, "cross-system", held_out_system="right").test_incident_ids == ("b",)
+
+
+def test_protocol_plan_manifest_rejects_non_split_fold():
+    from multimodal_v1.public_datasets_v3 import ProtocolPlanManifest
+    with pytest.raises(TypeError, match="ProtocolSplit"):
+        ProtocolPlanManifest("cross-system", ("a", "b"), ("left", "right"),
+                             ("source",), (object(),),
+                             {"a": {"system": "left", "source": "source"},
+                              "b": {"system": "right", "source": "source"}})
+
+
+def test_replay_result_rejects_empty_error_and_defensively_copies():
+    from multimodal_v1.public_datasets_v3 import ReplayResult
+    errors = ["failure"]
+    result = ReplayResult(1, 0, 1, errors); errors.append("mutated")
+    assert result.errors == ("failure",)
+    with pytest.raises(ValueError, match="texto não vazio"):
+        ReplayResult(1, 0, 1, [""])
+
+
+
+def _complete_classification(columns, metric_fields=()):
+    from multimodal_v1.public_datasets_v3 import SchemaClassification
+    metric_fields = tuple(metric_fields)
+    return SchemaClassification(
+        identity_fields=tuple(item for item in columns if item not in metric_fields),
+        interpreted_metric_fields=metric_fields)
+
+
+@pytest.mark.parametrize("values,valid", (
+    (dict(total_rows=1, accepted_rows=1, rejected_rows=0, partially_accepted_rows=0,
+          produced_events=1, accepted_metric_cells=1, rejected_metric_cells=1,
+          rejected_row_units=0, rejected_cell_units=1), False),
+    (dict(total_rows=1, accepted_rows=1, rejected_rows=0, partially_accepted_rows=1,
+          produced_events=1, accepted_metric_cells=1, rejected_metric_cells=1,
+          rejected_row_units=0, rejected_cell_units=1), True),
+    (dict(total_rows=1, accepted_rows=0, rejected_rows=1, partially_accepted_rows=0,
+          produced_events=0, accepted_metric_cells=0, rejected_metric_cells=2,
+          rejected_row_units=1, rejected_cell_units=2), True),
+))
+def test_accounting_links_rejected_cells_to_partial_or_rejected_rows(values, valid):
+    from multimodal_v1.public_datasets_v3 import NormalizedFileAccounting
+    values |= dict(relative_path="metrics.csv", kind="metrics", signal_type="metric",
+                   excluded_rows=0)
+    if valid:
+        assert NormalizedFileAccounting(**values).rejected_metric_cells > 0
+    else:
+        with pytest.raises(ValueError, match="linha parcial ou rejeitada"):
+            NormalizedFileAccounting(**values)
+
+
+def test_accounting_still_rejects_cells_for_logs_and_traces():
+    from multimodal_v1.public_datasets_v3 import NormalizedFileAccounting
+    for kind, signal in (("logs", "log"), ("traces", "trace")):
+        with pytest.raises(ValueError):
+            NormalizedFileAccounting("file.csv", kind, signal, 1, 0, 1, 0, 0,
+                                     0, 0, 1, 1, 1)
+
+
+@pytest.mark.parametrize("kind,accepted,events", (
+    ("logs", 1, 999), ("logs", 1, 0), ("traces", 1, 0), ("traces", 1, 2),
+))
+def test_nonmetric_reports_require_one_event_per_accepted_row(kind, accepted, events):
+    from multimodal_v1.public_datasets_v3 import SchemaFileReport
+    with pytest.raises(ValueError, match="accepted_row_count"):
+        SchemaFileReport("file.csv", kind, ("time",), 1, "0" * 64,
+                         classification=_complete_classification(("time",)),
+                         accepted_row_count=accepted, event_count=events)
+
+
+@pytest.mark.parametrize("layout", ("long-metric-row-v1", "metric-json-point-v1"))
+def test_long_and_json_metric_reports_require_one_to_one_rows_events(layout):
+    from multimodal_v1.public_datasets_v3 import SchemaFileReport
+    with pytest.raises(ValueError, match="1:1"):
+        SchemaFileReport("metric.csv", "metrics", ("time", "value"), 1, "0" * 64,
+                         classification=_complete_classification(("time", "value"), ("value",)),
+                         accepted_row_count=1, event_count=2,
+                         accepted_metric_cell_count=2, layout_policy=layout)
+
+
+def test_wide_report_allows_multiple_events_per_row():
+    from multimodal_v1.public_datasets_v3 import SchemaFileReport
+    report = SchemaFileReport(
+        "wide.csv", "metrics", ("time", "a", "b", "c"), 1, "0" * 64,
+        classification=_complete_classification(("time", "a", "b", "c"), ("a", "b", "c")),
+        accepted_row_count=1, event_count=3, accepted_metric_cell_count=3,
+        wide_row_policy="partial-wide-row-v1", rows_fully_accepted=1)
+    assert report.event_count == 3
+
+
+@pytest.mark.parametrize("kwargs,conflict", (
+    (dict(identity_fields=("x",), unmapped_fields=("x",)), "x"),
+    (dict(interpreted_metric_fields=("x",), rejected_fields=("x",)), "x"),
+    (dict(preserved_metadata_fields=("x",), unmapped_fields=("x",)), "x"),
+))
+def test_schema_classification_categories_are_mutually_exclusive(kwargs, conflict):
+    from multimodal_v1.public_datasets_v3 import SchemaClassification
+    with pytest.raises(ValueError, match=conflict):
+        SchemaClassification(**kwargs)
+
+
+def test_schema_classification_accepts_five_disjoint_categories():
+    from multimodal_v1.public_datasets_v3 import SchemaClassification
+    value = SchemaClassification(("id",), ("metric",), ("metadata",), ("unknown",), ("bad",))
+    assert len(set().union(*map(set, value.to_dict().values()))) == 5
+
+
+def test_schema_file_report_reconciles_classification_with_columns():
+    from multimodal_v1.public_datasets_v3 import SchemaClassification, SchemaFileReport
+    base = dict(relative_path="logs.csv", kind="logs", columns=("time", "body"),
+                row_count=0, checksum_sha256="0" * 64)
+    with pytest.raises(ValueError, match="unmapped_fields diverge"):
+        SchemaFileReport(**base, unmapped_fields=("body",),
+                         classification=SchemaClassification(identity_fields=("time",),
+                                                             unmapped_fields=()))
+    with pytest.raises(ValueError, match="ausentes"):
+        SchemaFileReport(**base, classification=SchemaClassification(
+            identity_fields=("time", "missing"), unmapped_fields=("body",)),
+            unmapped_fields=("body",))
+    with pytest.raises(ValueError, match="não classificados"):
+        SchemaFileReport(**base, classification=SchemaClassification(identity_fields=("time",)))
+    valid = SchemaFileReport(**base, classification=SchemaClassification(
+        identity_fields=("time",), preserved_metadata_fields=("body",)))
+    assert valid.columns == ("time", "body")
+
+
+def test_protocol_split_canonicalizes_ids_before_uniqueness_and_disjointness():
+    from multimodal_v1.public_datasets_v3 import ProtocolSplit
+    with pytest.raises(ValueError, match="duplicados"):
+        ProtocolSplit("within-dataset", ("a", " a "), ("b",), seed=1, test_fraction=.5)
+    with pytest.raises(ValueError, match="disjuntos"):
+        ProtocolSplit("within-dataset", (" a ",), ("a",), seed=1, test_fraction=.5)
+    with pytest.raises(ValueError, match="texto não vazio"):
+        ProtocolSplit("within-dataset", ("   ",), ("b",), seed=1, test_fraction=.5)
+    split = ProtocolSplit("within-dataset", (" a ",), (" b ",), seed=1, test_fraction=.5)
+    assert split.train_incident_ids == ("a",) and split.test_incident_ids == ("b",)
+
+
+def test_incident_descriptor_types_and_text_normalization():
+    from multimodal_v1.public_datasets_v3 import IncidentDescriptor
+    with pytest.raises(ValueError, match="fault_type"):
+        IncidentDescriptor("i", "d", "s", "c", "p", fault_type=1)
+    with pytest.raises(ValueError, match="fault_service"):
+        IncidentDescriptor("i", "d", "s", "c", "p", fault_service=[])
+    with pytest.raises(ValueError, match="fault_type"):
+        IncidentDescriptor("i", "d", "s", "c", "p", fault_type="   ")
+    item = IncidentDescriptor(" i ", " d ", " s ", " c ", " p ", " f ", " svc ")
+    assert (item.incident_id, item.source_dataset, item.system, item.case, item.path,
+            item.fault_type, item.fault_service) == ("i", "d", "s", "c", "p", "f", "svc")
+
+
+@pytest.mark.parametrize("missing", ("fault_type", "fault_service"))
+def test_manifest_from_dict_requires_nullable_fault_fields(rcaeval_root, missing):
+    from multimodal_v1.public_datasets_v3 import IncidentManifest
+    adapter = RCAEvalAdapter(rcaeval_root); payload = adapter.load_incident(
+        adapter.list_incidents()[0].incident_id).to_dict(); payload.pop(missing)
+    with pytest.raises(ValueError, match=missing): IncidentManifest.from_dict(payload)
+
+
+@pytest.mark.parametrize("window,expected", (
+    ({"end": "2026-01-01T00:00:00Z"}, "start"),
+    ({"start": "2026-01-01T00:00:00Z"}, "end"),
+    ({"start": "invalid", "end": "2026-01-01T00:00:00Z"}, "inválido"),
+))
+def test_manifest_from_dict_reports_contextual_window_errors(rcaeval_root, window, expected):
+    from multimodal_v1.public_datasets_v3 import IncidentManifest
+    adapter = RCAEvalAdapter(rcaeval_root); payload = adapter.load_incident(
+        adapter.list_incidents()[0].incident_id).to_dict(); payload["analysis_window"] = window
+    with pytest.raises(ValueError, match=expected): IncidentManifest.from_dict(payload)
+
+
+def test_manifest_from_dict_rejects_unknown_fields(rcaeval_root):
+    from multimodal_v1.public_datasets_v3 import IncidentManifest
+    adapter = RCAEvalAdapter(rcaeval_root); payload = adapter.load_incident(
+        adapter.list_incidents()[0].incident_id).to_dict(); payload["unknown"] = True
+    with pytest.raises(ValueError, match="desconhecidos"): IncidentManifest.from_dict(payload)

@@ -282,3 +282,83 @@ convertidas em tuples canônicas. `within-dataset` tem exatamente um fold, seed
 inteira não booleana e fração em `(0,1)`, idênticas no manifesto e no fold.
 Cross-system, cross-source e LOSO não aceitam seed/fração; LOSO possui exatamente
 um fold por sistema. Parâmetros não usados não participam do fingerprint.
+
+
+### Integridade final dos artefatos contratuais
+
+A versão oficial do manifesto é `incident-manifest-v2`, exposta por
+`INCIDENT_MANIFEST_SCHEMA_VERSION`; versões desconhecidas e identificadores
+textuais vazios são inválidos.
+
+Todo path indexado por arquivo é convertido para a forma relativa POSIX antes da
+verificação de unicidade. Colisões após canonicalização — por exemplo,
+`case/metrics.json` e `case\metrics.json` — são rejeitadas. Nenhum mapping pode
+resolver colisões por sobrescrita silenciosa. Accounting cobre exatamente os
+arquivos normalizados; razões, quality issues e campos não mapeados só podem
+referenciar arquivos normalizados, que por sua vez devem constar nas fontes.
+
+Razões row-level e cell-level reconciliam suas unidades exatas e separadamente
+com o accounting; igualdade apenas booleana não é aceita, e quality issues não
+substituem razões de rejeição.
+
+`SchemaClassification`, `SchemaFileReport`, `SchemaReport` e
+`ValidationReport` fazem cópias defensivas de coleções e mappings recebidos. Os
+relatórios normalizam timestamps para UTC e rejeitam paths duplicados, de modo
+que mutações posteriores dos inputs não alteram conteúdo nem fingerprint.
+
+No round-trip sem `fingerprint`, `IncidentManifest.from_dict()` reconstrói o
+objeto e calcula sua identidade. No round-trip com `fingerprint`, o valor deve
+ser SHA-256 hexadecimal minúsculo e coincidir com o conteúdo reconstruído.
+**Fingerprint fornecido é verificado; divergência invalida o artefato.**
+
+
+### Tipos e coerência semântica dos contratos públicos
+
+`AnalysisWindow.start` e `end` são obrigatoriamente `datetime` timezone-aware,
+normalizados para UTC, com `end >= start`. No manifesto, `analysis_window` deve
+ser `AnalysisWindow`, e `observed_interval` deve ser `AnalysisWindow` ou `None`.
+Booleanos públicos (`usable_for_benchmark` e `ValidationReport.valid`) exigem o
+tipo `bool` exato; inteiros `0` e `1` não são aceitos.
+
+Em `ValidationReport`, `valid` equivale exatamente à ausência de erros. Erros e
+warnings são textos não vazios copiados defensivamente; warnings não invalidam
+o relatório.
+
+Os kinds oficiais são `faults`, `metrics`, `business_metrics`,
+`platform_metrics`, `logs` e `traces`. Faults, logs e traces exigem
+`non-metric-v1` e não admitem células métricas; faults também não produz eventos.
+Os três kinds métricos exigem `long-metric-row-v1`, `partial-wide-row-v1` ou
+`metric-json-point-v1`. Os únicos scopes de relatório são
+`dataset_schema_report` e `incident_normalization_report`.
+
+Em protocolos within-dataset, `held_out` deve ser `None`; protocolos de holdout
+exigem texto não vazio e não aceitam seed nem test fraction. Planos aceitam
+somente folds `ProtocolSplit` e coleções textuais únicas.
+
+A desserialização exige presença explícita de todos os campos obrigatórios do
+manifesto, incluindo `analysis_window`, identidade, hashes, políticas e versão;
+campos ausentes geram erro contratual contextualizado antes da reconstrução.
+**Um contrato inválido é rejeitado durante a construção ou desserialização; ele
+não pode sobreviver até a etapa de fingerprint ou serialização.**
+
+
+### Reconciliação bidirecional final
+
+Células métricas rejeitadas exigem que sua linha esteja classificada como
+parcialmente aceita ou totalmente rejeitada. Linhas parciais continuam exigindo
+simultaneamente células aceitas e rejeitadas. Logs e traces produzem exatamente
+um evento por linha aceita; layouts métricos long e JSON também são 1:1, enquanto
+wide produz um evento por célula aceita e pode produzir vários eventos por linha.
+
+As cinco categorias de `SchemaClassification` são mutuamente exclusivas e sua
+união cobre exatamente `SchemaFileReport.columns`; o `unmapped_fields` externo
+deve coincidir com a categoria homônima. IDs de `ProtocolSplit` são submetidos a
+`strip` antes de ordenação, unicidade e disjunção. `IncidentDescriptor` normaliza
+textos obrigatórios e aceita fault type/service somente como `None` ou texto não
+vazio.
+
+`IncidentManifest.from_dict()` exige também a presença explícita dos campos
+nullable `fault_type` e `fault_service`, rejeita campos desconhecidos e converte
+ausência de start/end ou timestamps inválidos em erros contextualizados, sem
+vazamento de `KeyError`. **Linhas, células, eventos, classificação e splits são
+reconciliados em ambas as direções; não apenas por implicações unilaterais.**
