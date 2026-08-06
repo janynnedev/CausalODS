@@ -1,0 +1,387 @@
+Fault configuration unchanged | service=payment-service | mode=none
+Fault configuration unchanged | service=order-service | mode=none
+Faults configured | target=None | requested_mode=none | order_mode=none | payment_mode=none | target_rate=0.0 | target_delay_ms=0 | seed=42 | recreated=['none']
+
+======================================================================
+Scenario: healthy | iteration=0 | run_id=bad4fa2e2eb9
+======================================================================
+Fault configuration unchanged | service=payment-service | mode=none
+Fault configuration unchanged | service=order-service | mode=none
+Faults configured | target=None | requested_mode=none | order_mode=none | payment_mode=none | target_rate=0.0 | target_delay_ms=0 | seed=42 | recreated=['none']
+Preparation traces settled | rca_count=1038
+Order request | scenario=healthy | http_status=200 | duration_ms=19.220 | response={'id': 1785528157239, 'product': 'e2e-healthy-bad4fa2e2eb9', 'quantity': 2, 'status': 'APPROVED'}
+Order trace resolved | run_id=bad4fa2e2eb9 | trace_id=bda1d4126cdee2b70608bec95b2eb200
+RCAResult matched | trace_id=bda1d4126cdee2b70608bec95b2eb200 | document_id=49200bc5-6c5e-40e6-afb6-065825ed2cf5
+Result: PASSED | scenario=healthy | top_service=payment-service | reliable=False | confidence=0.01563671598692177 | incident=None | runtime=v2 | model_version=xgboost-rca-v2 | pipeline_version=causalods-rca-v2
+Fault configuration unchanged | service=payment-service | mode=none
+Fault configuration unchanged | service=order-service | mode=none
+Faults configured | target=None | requested_mode=none | order_mode=none | payment_mode=none | target_rate=0.0 | target_delay_ms=0 | seed=42 | recreated=['none']
+payment-service ready | attempts=8 | check=http | status=200 | application_status=UP
+Fault configuration unchanged | service=order-service | mode=none
+Faults configured | target=payment-service | requested_mode=latency | order_mode=none | payment_mode=latency | target_rate=1.0 | target_delay_ms=1500 | seed=42 | recreated=['payment-service']
+Order trace resolved | run_id=9714681967b1 | trace_id=f938b4fa59d7b08c41b4db8b0d046880
+payment-service ready | attempts=7 | check=http | status=200 | application_status=UP
+Fault configuration unchanged | service=order-service | mode=none
+Faults configured | target=None | requested_mode=none | order_mode=none | payment_mode=none | target_rate=0.0 | target_delay_ms=0 | seed=42 | recreated=['payment-service']
+Fault configuration unchanged | service=payment-service | mode=none
+Fault configuration unchanged | service=order-service | mode=none
+Faults configured | target=None | requested_mode=none | order_mode=none | payment_mode=none | target_rate=0.0 | target_delay_ms=0 | seed=42 | recreated=['none']
+payment-service ready | attempts=7 | check=http | status=200 | application_status=UP
+Fault configuration unchanged | service=order-service | mode=none
+Faults configured | target=payment-service | requested_mode=latency | order_mode=none | payment_mode=latency | target_rate=1.0 | target_delay_ms=1500 | seed=42 | recreated=['payment-service']
+Order trace resolved | run_id=3360dfec95ba | trace_id=8536a23d98215e17d59d39b2fe113fe3
+payment-service ready | attempts=7 | check=http | status=200 | application_status=UP
+Fault configuration unchanged | service=order-service | mode=none
+Faults configured | target=None | requested_mode=none | order_mode=none | payment_mode=none | target_rate=0.0 | target_delay_ms=0 | seed=42 | recreated=['payment-service']
+Fault configuration unchanged | service=payment-service | mode=none
+Fault configuration unchanged | service=order-service | mode=none
+Faults configured | target=None | requested_mode=none | order_mode=none | payment_mode=none | target_rate=0.0 | target_delay_ms=0 | seed=42 | recreated=['none']
+payment-service ready | attempts=8 | check=http | status=200 | application_status=UP
+Fault configuration unchanged | service=order-service | mode=none
+Faults configured | target=payment-service | requested_mode=latency | order_mode=none | payment_mode=latency | target_rate=1.0 | target_delay_ms=1500 | seed=42 | recreated=['payment-service']
+Order trace resolved | run_id=3ce044a5ab41 | trace_id=58ba1641b63ff4b70d0cc296dda4a3df
+payment-service ready | attempts=8 | check=http | status=200 | application_status=UP
+Fault configuration unchanged | service=order-service | mode=none
+Faults configured | target=None | requested_mode=none | order_mode=none | payment_mode=none | target_rate=0.0 | target_delay_ms=0 | seed=42 | recreated=['payment-service']
+Fault configuration unchanged | service=payment-service | mode=none
+Fault configuration unchanged | service=order-service | mode=none
+Faults configured | target=None | requested_mode=none | order_mode=none | payment_mode=none | target_rate=0.0 | target_delay_ms=0 | seed=42 | recreated=['none']
+payment-service ready | attempts=8 | check=http | status=200 | application_status=UP
+Fault configuration unchanged | service=order-service | mode=none
+Faults configured | target=payment-service | requested_mode=latency | order_mode=none | payment_mode=latency | target_rate=1.0 | target_delay_ms=1500 | seed=42 | recreated=['payment-service']
+Order trace resolved | run_id=5fca2d1ff73f | trace_id=0f057ff302aca4f81eabad5b8ca6e9d4
+payment-service ready | attempts=8 | check=http | status=200 | application_status=UP
+Fault configuration unchanged | service=order-service | mode=none
+Faults configured | target=None | requested_mode=none | order_mode=none | payment_mode=none | target_rate=0.0 | target_delay_ms=0 | seed=42 | recreated=['payment-service']
+Fault configuration unchanged | service=payment-service | mode=none
+Fault configuration unchanged | service=order-service | mode=none
+Faults configured | target=None | requested_mode=none | order_mode=none | payment_mode=none | target_rate=0.0 | target_delay_ms=0 | seed=42 | recreated=['none']
+payment-service ready | attempts=8 | check=http | status=200 | application_status=UP
+Fault configuration unchanged | service=order-service | mode=none
+Faults configured | target=payment-service | requested_mode=latency | order_mode=none | payment_mode=latency | target_rate=1.0 | target_delay_ms=1500 | seed=42 | recreated=['payment-service']
+Order trace resolved | run_id=a35bd7c513c7 | trace_id=3718523c176bde5aaa00c65f4614f815
+payment-service ready | attempts=8 | check=http | status=200 | application_status=UP
+Fault configuration unchanged | service=order-service | mode=none
+Faults configured | target=None | requested_mode=none | order_mode=none | payment_mode=none | target_rate=0.0 | target_delay_ms=0 | seed=42 | recreated=['payment-service']
+Fault configuration unchanged | service=payment-service | mode=none
+Fault configuration unchanged | service=order-service | mode=none
+Faults configured | target=None | requested_mode=none | order_mode=none | payment_mode=none | target_rate=0.0 | target_delay_ms=0 | seed=42 | recreated=['none']
+payment-service ready | attempts=8 | check=http | status=200 | application_status=UP
+Fault configuration unchanged | service=order-service | mode=none
+Faults configured | target=payment-service | requested_mode=latency | order_mode=none | payment_mode=latency | target_rate=1.0 | target_delay_ms=1500 | seed=42 | recreated=['payment-service']
+Order trace resolved | run_id=62a916389781 | trace_id=00e67c1c54b2d328a1224816e1f9610e
+payment-service ready | attempts=9 | check=http | status=200 | application_status=UP
+Fault configuration unchanged | service=order-service | mode=none
+Faults configured | target=None | requested_mode=none | order_mode=none | payment_mode=none | target_rate=0.0 | target_delay_ms=0 | seed=42 | recreated=['payment-service']
+Fault configuration unchanged | service=payment-service | mode=none
+Fault configuration unchanged | service=order-service | mode=none
+Faults configured | target=None | requested_mode=none | order_mode=none | payment_mode=none | target_rate=0.0 | target_delay_ms=0 | seed=42 | recreated=['none']
+payment-service ready | attempts=9 | check=http | status=200 | application_status=UP
+Fault configuration unchanged | service=order-service | mode=none
+Faults configured | target=payment-service | requested_mode=latency | order_mode=none | payment_mode=latency | target_rate=1.0 | target_delay_ms=1500 | seed=42 | recreated=['payment-service']
+Order trace resolved | run_id=480c40ae35aa | trace_id=3ae31c81a773cc18ff468b62887563ba
+payment-service ready | attempts=8 | check=http | status=200 | application_status=UP
+Fault configuration unchanged | service=order-service | mode=none
+Faults configured | target=None | requested_mode=none | order_mode=none | payment_mode=none | target_rate=0.0 | target_delay_ms=0 | seed=42 | recreated=['payment-service']
+Fault configuration unchanged | service=payment-service | mode=none
+Fault configuration unchanged | service=order-service | mode=none
+Faults configured | target=None | requested_mode=none | order_mode=none | payment_mode=none | target_rate=0.0 | target_delay_ms=0 | seed=42 | recreated=['none']
+payment-service ready | attempts=8 | check=http | status=200 | application_status=UP
+Fault configuration unchanged | service=order-service | mode=none
+Faults configured | target=payment-service | requested_mode=latency | order_mode=none | payment_mode=latency | target_rate=1.0 | target_delay_ms=1500 | seed=42 | recreated=['payment-service']
+Order trace resolved | run_id=3b0e7f2a8c9a | trace_id=857c930c9a2b32b40e32b5706699a053
+payment-service ready | attempts=7 | check=http | status=200 | application_status=UP
+Fault configuration unchanged | service=order-service | mode=none
+Faults configured | target=None | requested_mode=none | order_mode=none | payment_mode=none | target_rate=0.0 | target_delay_ms=0 | seed=42 | recreated=['payment-service']
+Fault configuration unchanged | service=payment-service | mode=none
+Fault configuration unchanged | service=order-service | mode=none
+Faults configured | target=None | requested_mode=none | order_mode=none | payment_mode=none | target_rate=0.0 | target_delay_ms=0 | seed=42 | recreated=['none']
+payment-service ready | attempts=8 | check=http | status=200 | application_status=UP
+Fault configuration unchanged | service=order-service | mode=none
+Faults configured | target=payment-service | requested_mode=latency | order_mode=none | payment_mode=latency | target_rate=1.0 | target_delay_ms=1500 | seed=42 | recreated=['payment-service']
+Order trace resolved | run_id=4d7ad0e96dd3 | trace_id=bcdada4e063749c99d543acfa08216c1
+payment-service ready | attempts=8 | check=http | status=200 | application_status=UP
+Fault configuration unchanged | service=order-service | mode=none
+Faults configured | target=None | requested_mode=none | order_mode=none | payment_mode=none | target_rate=0.0 | target_delay_ms=0 | seed=42 | recreated=['payment-service']
+Fault configuration unchanged | service=payment-service | mode=none
+Fault configuration unchanged | service=order-service | mode=none
+Faults configured | target=None | requested_mode=none | order_mode=none | payment_mode=none | target_rate=0.0 | target_delay_ms=0 | seed=42 | recreated=['none']
+payment-service ready | attempts=8 | check=http | status=200 | application_status=UP
+Fault configuration unchanged | service=order-service | mode=none
+Faults configured | target=payment-service | requested_mode=latency | order_mode=none | payment_mode=latency | target_rate=1.0 | target_delay_ms=1500 | seed=42 | recreated=['payment-service']
+Order trace resolved | run_id=c002faaa55aa | trace_id=695fcf4954d5041c7b1a425512aecca1
+payment-service ready | attempts=8 | check=http | status=200 | application_status=UP
+Fault configuration unchanged | service=order-service | mode=none
+Faults configured | target=None | requested_mode=none | order_mode=none | payment_mode=none | target_rate=0.0 | target_delay_ms=0 | seed=42 | recreated=['payment-service']
+
+======================================================================
+Scenario: healthy | iteration=0 | run_id=0063885c164a
+======================================================================
+Fault configuration unchanged | service=payment-service | mode=none
+Fault configuration unchanged | service=order-service | mode=none
+Faults configured | target=None | requested_mode=none | order_mode=none | payment_mode=none | target_rate=0.0 | target_delay_ms=0 | seed=42 | recreated=['none']
+Preparation traces settled | rca_count=1049
+Order request | scenario=healthy | http_status=200 | duration_ms=58.521 | response={'id': 1785528953620, 'product': 'e2e-healthy-0063885c164a', 'quantity': 2, 'status': 'APPROVED'}
+Order trace resolved | run_id=0063885c164a | trace_id=c9434bba29b4c4677e73b9cf5017e3d6
+RCAResult matched | trace_id=c9434bba29b4c4677e73b9cf5017e3d6 | document_id=cfadb970-9306-430e-b791-57df0836dc67
+Result: PASSED | scenario=healthy | top_service=payment-service | reliable=False | confidence=0.011269939292603153 | incident=None | runtime=v2 | model_version=xgboost-rca-v2 | pipeline_version=causalods-rca-v2
+
+======================================================================
+Scenario: healthy | iteration=0 | run_id=6e475e25d928
+======================================================================
+Fault configuration unchanged | service=payment-service | mode=none
+Fault configuration unchanged | service=order-service | mode=none
+Faults configured | target=None | requested_mode=none | order_mode=none | payment_mode=none | target_rate=0.0 | target_delay_ms=0 | seed=42 | recreated=['none']
+Preparation traces settled | rca_count=1050
+Order request | scenario=healthy | http_status=200 | duration_ms=12.875 | response={'id': 1785528980767, 'product': 'e2e-healthy-6e475e25d928', 'quantity': 2, 'status': 'APPROVED'}
+Order trace resolved | run_id=6e475e25d928 | trace_id=c2f18a78514f0d0ce488f92093e9f7a7
+RCAResult matched | trace_id=c2f18a78514f0d0ce488f92093e9f7a7 | document_id=afe4070c-950c-4be4-b732-efd7ac922230
+Result: PASSED | scenario=healthy | top_service=payment-service | reliable=False | confidence=0.01563671598692177 | incident=None | runtime=v2 | model_version=xgboost-rca-v2 | pipeline_version=causalods-rca-v2
+Fault configuration unchanged | service=payment-service | mode=none
+Fault configuration unchanged | service=order-service | mode=none
+Faults configured | target=None | requested_mode=none | order_mode=none | payment_mode=none | target_rate=0.0 | target_delay_ms=0 | seed=42 | recreated=['none']
+payment-service ready | attempts=7 | check=http | status=200 | application_status=UP
+Fault configuration unchanged | service=order-service | mode=none
+Faults configured | target=payment-service | requested_mode=latency | order_mode=none | payment_mode=latency | target_rate=1.0 | target_delay_ms=1500 | seed=42 | recreated=['payment-service']
+Order trace resolved | run_id=589d4c14ffa3 | trace_id=7333fdd64675645820d1c104d941d432
+payment-service ready | attempts=8 | check=http | status=200 | application_status=UP
+Fault configuration unchanged | service=order-service | mode=none
+Faults configured | target=None | requested_mode=none | order_mode=none | payment_mode=none | target_rate=0.0 | target_delay_ms=0 | seed=42 | recreated=['payment-service']
+Fault configuration unchanged | service=payment-service | mode=none
+Fault configuration unchanged | service=order-service | mode=none
+Faults configured | target=None | requested_mode=none | order_mode=none | payment_mode=none | target_rate=0.0 | target_delay_ms=0 | seed=42 | recreated=['none']
+payment-service ready | attempts=8 | check=http | status=200 | application_status=UP
+Fault configuration unchanged | service=order-service | mode=none
+Faults configured | target=payment-service | requested_mode=latency | order_mode=none | payment_mode=latency | target_rate=1.0 | target_delay_ms=1500 | seed=42 | recreated=['payment-service']
+Order trace resolved | run_id=d07d262ec4f6 | trace_id=117a0e2d0e4e7ddee6b99459e47f9e8e
+payment-service ready | attempts=8 | check=http | status=200 | application_status=UP
+Fault configuration unchanged | service=order-service | mode=none
+Faults configured | target=None | requested_mode=none | order_mode=none | payment_mode=none | target_rate=0.0 | target_delay_ms=0 | seed=42 | recreated=['payment-service']
+Fault configuration unchanged | service=payment-service | mode=none
+Fault configuration unchanged | service=order-service | mode=none
+Faults configured | target=None | requested_mode=none | order_mode=none | payment_mode=none | target_rate=0.0 | target_delay_ms=0 | seed=42 | recreated=['none']
+payment-service ready | attempts=8 | check=http | status=200 | application_status=UP
+Fault configuration unchanged | service=order-service | mode=none
+Faults configured | target=payment-service | requested_mode=latency | order_mode=none | payment_mode=latency | target_rate=1.0 | target_delay_ms=1500 | seed=42 | recreated=['payment-service']
+Order trace resolved | run_id=50bcfb76cc78 | trace_id=92bbffed9490e757f16562c33dbfbb6a
+payment-service ready | attempts=7 | check=http | status=200 | application_status=UP
+Fault configuration unchanged | service=order-service | mode=none
+Faults configured | target=None | requested_mode=none | order_mode=none | payment_mode=none | target_rate=0.0 | target_delay_ms=0 | seed=42 | recreated=['payment-service']
+Fault configuration unchanged | service=payment-service | mode=none
+Fault configuration unchanged | service=order-service | mode=none
+Faults configured | target=None | requested_mode=none | order_mode=none | payment_mode=none | target_rate=0.0 | target_delay_ms=0 | seed=42 | recreated=['none']
+payment-service ready | attempts=8 | check=http | status=200 | application_status=UP
+Fault configuration unchanged | service=order-service | mode=none
+Faults configured | target=payment-service | requested_mode=latency | order_mode=none | payment_mode=latency | target_rate=1.0 | target_delay_ms=1500 | seed=42 | recreated=['payment-service']
+Order trace resolved | run_id=7e95be50a96f | trace_id=127dde7d0fa88769b42075253a4251d8
+payment-service ready | attempts=8 | check=http | status=200 | application_status=UP
+Fault configuration unchanged | service=order-service | mode=none
+Faults configured | target=None | requested_mode=none | order_mode=none | payment_mode=none | target_rate=0.0 | target_delay_ms=0 | seed=42 | recreated=['payment-service']
+Fault configuration unchanged | service=payment-service | mode=none
+Fault configuration unchanged | service=order-service | mode=none
+Faults configured | target=None | requested_mode=none | order_mode=none | payment_mode=none | target_rate=0.0 | target_delay_ms=0 | seed=42 | recreated=['none']
+payment-service ready | attempts=8 | check=http | status=200 | application_status=UP
+Fault configuration unchanged | service=order-service | mode=none
+Faults configured | target=payment-service | requested_mode=latency | order_mode=none | payment_mode=latency | target_rate=1.0 | target_delay_ms=1500 | seed=42 | recreated=['payment-service']
+Order trace resolved | run_id=0c73b0089f2d | trace_id=cf066009273bcd55c7a774661ad3c8d9
+payment-service ready | attempts=7 | check=http | status=200 | application_status=UP
+Fault configuration unchanged | service=order-service | mode=none
+Faults configured | target=None | requested_mode=none | order_mode=none | payment_mode=none | target_rate=0.0 | target_delay_ms=0 | seed=42 | recreated=['payment-service']
+Fault configuration unchanged | service=payment-service | mode=none
+Fault configuration unchanged | service=order-service | mode=none
+Faults configured | target=None | requested_mode=none | order_mode=none | payment_mode=none | target_rate=0.0 | target_delay_ms=0 | seed=42 | recreated=['none']
+payment-service ready | attempts=7 | check=http | status=200 | application_status=UP
+Fault configuration unchanged | service=order-service | mode=none
+Faults configured | target=payment-service | requested_mode=latency | order_mode=none | payment_mode=latency | target_rate=1.0 | target_delay_ms=1500 | seed=42 | recreated=['payment-service']
+Order trace resolved | run_id=56093daf89ec | trace_id=84f9bb7711a2823b0fcfe30fd26eec88
+payment-service ready | attempts=8 | check=http | status=200 | application_status=UP
+Fault configuration unchanged | service=order-service | mode=none
+Faults configured | target=None | requested_mode=none | order_mode=none | payment_mode=none | target_rate=0.0 | target_delay_ms=0 | seed=42 | recreated=['payment-service']
+Fault configuration unchanged | service=payment-service | mode=none
+Fault configuration unchanged | service=order-service | mode=none
+Faults configured | target=None | requested_mode=none | order_mode=none | payment_mode=none | target_rate=0.0 | target_delay_ms=0 | seed=42 | recreated=['none']
+payment-service ready | attempts=7 | check=http | status=200 | application_status=UP
+Fault configuration unchanged | service=order-service | mode=none
+Faults configured | target=payment-service | requested_mode=latency | order_mode=none | payment_mode=latency | target_rate=1.0 | target_delay_ms=1500 | seed=42 | recreated=['payment-service']
+Order trace resolved | run_id=c918a0fe1cc0 | trace_id=fd3a604f60b1fb387bab950388ed33f1
+payment-service ready | attempts=8 | check=http | status=200 | application_status=UP
+Fault configuration unchanged | service=order-service | mode=none
+Faults configured | target=None | requested_mode=none | order_mode=none | payment_mode=none | target_rate=0.0 | target_delay_ms=0 | seed=42 | recreated=['payment-service']
+Fault configuration unchanged | service=payment-service | mode=none
+Fault configuration unchanged | service=order-service | mode=none
+Faults configured | target=None | requested_mode=none | order_mode=none | payment_mode=none | target_rate=0.0 | target_delay_ms=0 | seed=42 | recreated=['none']
+payment-service ready | attempts=8 | check=http | status=200 | application_status=UP
+Fault configuration unchanged | service=order-service | mode=none
+Faults configured | target=payment-service | requested_mode=latency | order_mode=none | payment_mode=latency | target_rate=1.0 | target_delay_ms=1500 | seed=42 | recreated=['payment-service']
+Order trace resolved | run_id=3c67f2cc2ed7 | trace_id=c0cd165e5b80cc945959871b0da0a0e7
+payment-service ready | attempts=8 | check=http | status=200 | application_status=UP
+Fault configuration unchanged | service=order-service | mode=none
+Faults configured | target=None | requested_mode=none | order_mode=none | payment_mode=none | target_rate=0.0 | target_delay_ms=0 | seed=42 | recreated=['payment-service']
+Fault configuration unchanged | service=payment-service | mode=none
+Fault configuration unchanged | service=order-service | mode=none
+Faults configured | target=None | requested_mode=none | order_mode=none | payment_mode=none | target_rate=0.0 | target_delay_ms=0 | seed=42 | recreated=['none']
+payment-service ready | attempts=7 | check=http | status=200 | application_status=UP
+Fault configuration unchanged | service=order-service | mode=none
+Faults configured | target=payment-service | requested_mode=latency | order_mode=none | payment_mode=latency | target_rate=1.0 | target_delay_ms=1500 | seed=42 | recreated=['payment-service']
+Order trace resolved | run_id=71bd02fd7252 | trace_id=64279716fff831476978e20140c9f48f
+payment-service ready | attempts=7 | check=http | status=200 | application_status=UP
+Fault configuration unchanged | service=order-service | mode=none
+Faults configured | target=None | requested_mode=none | order_mode=none | payment_mode=none | target_rate=0.0 | target_delay_ms=0 | seed=42 | recreated=['payment-service']
+Fault configuration unchanged | service=payment-service | mode=none
+Fault configuration unchanged | service=order-service | mode=none
+Faults configured | target=None | requested_mode=none | order_mode=none | payment_mode=none | target_rate=0.0 | target_delay_ms=0 | seed=42 | recreated=['none']
+payment-service ready | attempts=8 | check=http | status=200 | application_status=UP
+Fault configuration unchanged | service=order-service | mode=none
+Faults configured | target=payment-service | requested_mode=latency | order_mode=none | payment_mode=latency | target_rate=1.0 | target_delay_ms=1500 | seed=42 | recreated=['payment-service']
+Order trace resolved | run_id=cd170c039992 | trace_id=eb8bba534e45f747b2d7ff80c9573fa4
+payment-service ready | attempts=7 | check=http | status=200 | application_status=UP
+Fault configuration unchanged | service=order-service | mode=none
+Faults configured | target=None | requested_mode=none | order_mode=none | payment_mode=none | target_rate=0.0 | target_delay_ms=0 | seed=42 | recreated=['payment-service']
+
+======================================================================
+Scenario: healthy | iteration=0 | run_id=b7fbb38b0cc8
+======================================================================
+Fault configuration unchanged | service=payment-service | mode=none
+Fault configuration unchanged | service=order-service | mode=none
+Faults configured | target=None | requested_mode=none | order_mode=none | payment_mode=none | target_rate=0.0 | target_delay_ms=0 | seed=42 | recreated=['none']
+Preparation traces settled | rca_count=1061
+Order request | scenario=healthy | http_status=200 | duration_ms=59.384 | response={'id': 1785529706607, 'product': 'e2e-healthy-b7fbb38b0cc8', 'quantity': 2, 'status': 'APPROVED'}
+Order trace resolved | run_id=b7fbb38b0cc8 | trace_id=c30be846c3423b248db7a189abdbe550
+RCAResult matched | trace_id=c30be846c3423b248db7a189abdbe550 | document_id=15d9d065-8a40-4d95-8aa3-28c487cc73e1
+Result: PASSED | scenario=healthy | top_service=payment-service | reliable=False | confidence=0.011292047910100949 | incident=None | runtime=v2 | model_version=xgboost-rca-v2 | pipeline_version=causalods-rca-v2
+
+======================================================================
+Scenario: healthy | iteration=0 | run_id=7801646b2db6
+======================================================================
+Fault configuration unchanged | service=payment-service | mode=none
+Fault configuration unchanged | service=order-service | mode=none
+Faults configured | target=None | requested_mode=none | order_mode=none | payment_mode=none | target_rate=0.0 | target_delay_ms=0 | seed=42 | recreated=['none']
+Preparation traces settled | rca_count=1062
+Order request | scenario=healthy | http_status=200 | duration_ms=11.376 | response={'id': 1785529731699, 'product': 'e2e-healthy-7801646b2db6', 'quantity': 2, 'status': 'APPROVED'}
+Order trace resolved | run_id=7801646b2db6 | trace_id=d0a12a0aaa3e19c42843ad4261ea2a57
+RCAResult matched | trace_id=d0a12a0aaa3e19c42843ad4261ea2a57 | document_id=b8c4b581-7f4a-4366-a0b8-9fedfb2ae680
+Result: PASSED | scenario=healthy | top_service=payment-service | reliable=False | confidence=0.01563671598692177 | incident=None | runtime=v2 | model_version=xgboost-rca-v2 | pipeline_version=causalods-rca-v2
+Fault configuration unchanged | service=payment-service | mode=none
+Fault configuration unchanged | service=order-service | mode=none
+Faults configured | target=None | requested_mode=none | order_mode=none | payment_mode=none | target_rate=0.0 | target_delay_ms=0 | seed=42 | recreated=['none']
+payment-service ready | attempts=8 | check=http | status=200 | application_status=UP
+Fault configuration unchanged | service=order-service | mode=none
+Faults configured | target=payment-service | requested_mode=latency | order_mode=none | payment_mode=latency | target_rate=1.0 | target_delay_ms=1500 | seed=42 | recreated=['payment-service']
+Order trace resolved | run_id=1d1a93e2f2c2 | trace_id=70e13c9ca41952a4e3b95fc1e8db3d08
+payment-service ready | attempts=8 | check=http | status=200 | application_status=UP
+Fault configuration unchanged | service=order-service | mode=none
+Faults configured | target=None | requested_mode=none | order_mode=none | payment_mode=none | target_rate=0.0 | target_delay_ms=0 | seed=42 | recreated=['payment-service']
+AVISO: invariantes falharam em correlation_engine_restart/1
+Fault configuration unchanged | service=payment-service | mode=none
+Fault configuration unchanged | service=order-service | mode=none
+Faults configured | target=None | requested_mode=none | order_mode=none | payment_mode=none | target_rate=0.0 | target_delay_ms=0 | seed=42 | recreated=['none']
+payment-service ready | attempts=7 | check=http | status=200 | application_status=UP
+Fault configuration unchanged | service=order-service | mode=none
+Faults configured | target=payment-service | requested_mode=latency | order_mode=none | payment_mode=latency | target_rate=1.0 | target_delay_ms=1500 | seed=42 | recreated=['payment-service']
+Order trace resolved | run_id=38fc91b93435 | trace_id=5e87f8c81c590e7520eccc4947c25261
+payment-service ready | attempts=8 | check=http | status=200 | application_status=UP
+Fault configuration unchanged | service=order-service | mode=none
+Faults configured | target=None | requested_mode=none | order_mode=none | payment_mode=none | target_rate=0.0 | target_delay_ms=0 | seed=42 | recreated=['payment-service']
+AVISO: invariantes falharam em correlation_engine_restart/2
+Fault configuration unchanged | service=payment-service | mode=none
+Fault configuration unchanged | service=order-service | mode=none
+Faults configured | target=None | requested_mode=none | order_mode=none | payment_mode=none | target_rate=0.0 | target_delay_ms=0 | seed=42 | recreated=['none']
+payment-service ready | attempts=8 | check=http | status=200 | application_status=UP
+Fault configuration unchanged | service=order-service | mode=none
+Faults configured | target=payment-service | requested_mode=latency | order_mode=none | payment_mode=latency | target_rate=1.0 | target_delay_ms=1500 | seed=42 | recreated=['payment-service']
+Order trace resolved | run_id=240e0b0c0e04 | trace_id=ebd25ddfdfd887fd7d544b88db5e2320
+payment-service ready | attempts=8 | check=http | status=200 | application_status=UP
+Fault configuration unchanged | service=order-service | mode=none
+Faults configured | target=None | requested_mode=none | order_mode=none | payment_mode=none | target_rate=0.0 | target_delay_ms=0 | seed=42 | recreated=['payment-service']
+AVISO: invariantes falharam em correlation_engine_restart/3
+Fault configuration unchanged | service=payment-service | mode=none
+Fault configuration unchanged | service=order-service | mode=none
+Faults configured | target=None | requested_mode=none | order_mode=none | payment_mode=none | target_rate=0.0 | target_delay_ms=0 | seed=42 | recreated=['none']
+payment-service ready | attempts=8 | check=http | status=200 | application_status=UP
+Fault configuration unchanged | service=order-service | mode=none
+Faults configured | target=payment-service | requested_mode=latency | order_mode=none | payment_mode=latency | target_rate=1.0 | target_delay_ms=1500 | seed=42 | recreated=['payment-service']
+Order trace resolved | run_id=2f44dd22abb6 | trace_id=95806c98808b178d0ce4e4f7adff334f
+payment-service ready | attempts=8 | check=http | status=200 | application_status=UP
+Fault configuration unchanged | service=order-service | mode=none
+Faults configured | target=None | requested_mode=none | order_mode=none | payment_mode=none | target_rate=0.0 | target_delay_ms=0 | seed=42 | recreated=['payment-service']
+AVISO: invariantes falharam em correlation_engine_restart/4
+Fault configuration unchanged | service=payment-service | mode=none
+Fault configuration unchanged | service=order-service | mode=none
+Faults configured | target=None | requested_mode=none | order_mode=none | payment_mode=none | target_rate=0.0 | target_delay_ms=0 | seed=42 | recreated=['none']
+payment-service ready | attempts=7 | check=http | status=200 | application_status=UP
+Fault configuration unchanged | service=order-service | mode=none
+Faults configured | target=payment-service | requested_mode=latency | order_mode=none | payment_mode=latency | target_rate=1.0 | target_delay_ms=1500 | seed=42 | recreated=['payment-service']
+Order trace resolved | run_id=1e7aeed32ba0 | trace_id=223901f43155d1c0a9476448b3eb318f
+payment-service ready | attempts=8 | check=http | status=200 | application_status=UP
+Fault configuration unchanged | service=order-service | mode=none
+Faults configured | target=None | requested_mode=none | order_mode=none | payment_mode=none | target_rate=0.0 | target_delay_ms=0 | seed=42 | recreated=['payment-service']
+AVISO: invariantes falharam em correlation_engine_restart/5
+Fault configuration unchanged | service=payment-service | mode=none
+Fault configuration unchanged | service=order-service | mode=none
+Faults configured | target=None | requested_mode=none | order_mode=none | payment_mode=none | target_rate=0.0 | target_delay_ms=0 | seed=42 | recreated=['none']
+payment-service ready | attempts=8 | check=http | status=200 | application_status=UP
+Fault configuration unchanged | service=order-service | mode=none
+Faults configured | target=payment-service | requested_mode=latency | order_mode=none | payment_mode=latency | target_rate=1.0 | target_delay_ms=1500 | seed=42 | recreated=['payment-service']
+Order trace resolved | run_id=b4673e54c322 | trace_id=891fb70ec7b0bfc1738df5022ba504f6
+payment-service ready | attempts=8 | check=http | status=200 | application_status=UP
+Fault configuration unchanged | service=order-service | mode=none
+Faults configured | target=None | requested_mode=none | order_mode=none | payment_mode=none | target_rate=0.0 | target_delay_ms=0 | seed=42 | recreated=['payment-service']
+AVISO: invariantes falharam em correlation_engine_restart/6
+Fault configuration unchanged | service=payment-service | mode=none
+Fault configuration unchanged | service=order-service | mode=none
+Faults configured | target=None | requested_mode=none | order_mode=none | payment_mode=none | target_rate=0.0 | target_delay_ms=0 | seed=42 | recreated=['none']
+payment-service ready | attempts=8 | check=http | status=200 | application_status=UP
+Fault configuration unchanged | service=order-service | mode=none
+Faults configured | target=payment-service | requested_mode=latency | order_mode=none | payment_mode=latency | target_rate=1.0 | target_delay_ms=1500 | seed=42 | recreated=['payment-service']
+Order trace resolved | run_id=2d27121f2563 | trace_id=246fda283a0e0fe9d0d7138f8a5c3c30
+payment-service ready | attempts=8 | check=http | status=200 | application_status=UP
+Fault configuration unchanged | service=order-service | mode=none
+Faults configured | target=None | requested_mode=none | order_mode=none | payment_mode=none | target_rate=0.0 | target_delay_ms=0 | seed=42 | recreated=['payment-service']
+AVISO: invariantes falharam em correlation_engine_restart/7
+Fault configuration unchanged | service=payment-service | mode=none
+Fault configuration unchanged | service=order-service | mode=none
+Faults configured | target=None | requested_mode=none | order_mode=none | payment_mode=none | target_rate=0.0 | target_delay_ms=0 | seed=42 | recreated=['none']
+payment-service ready | attempts=8 | check=http | status=200 | application_status=UP
+Fault configuration unchanged | service=order-service | mode=none
+Faults configured | target=payment-service | requested_mode=latency | order_mode=none | payment_mode=latency | target_rate=1.0 | target_delay_ms=1500 | seed=42 | recreated=['payment-service']
+Order trace resolved | run_id=55751fbbef0a | trace_id=35207db81ea62c0ebcf11dd9a4e8d2bf
+payment-service ready | attempts=8 | check=http | status=200 | application_status=UP
+Fault configuration unchanged | service=order-service | mode=none
+Faults configured | target=None | requested_mode=none | order_mode=none | payment_mode=none | target_rate=0.0 | target_delay_ms=0 | seed=42 | recreated=['payment-service']
+AVISO: invariantes falharam em correlation_engine_restart/8
+Fault configuration unchanged | service=payment-service | mode=none
+Fault configuration unchanged | service=order-service | mode=none
+Faults configured | target=None | requested_mode=none | order_mode=none | payment_mode=none | target_rate=0.0 | target_delay_ms=0 | seed=42 | recreated=['none']
+payment-service ready | attempts=8 | check=http | status=200 | application_status=UP
+Fault configuration unchanged | service=order-service | mode=none
+Faults configured | target=payment-service | requested_mode=latency | order_mode=none | payment_mode=latency | target_rate=1.0 | target_delay_ms=1500 | seed=42 | recreated=['payment-service']
+Order trace resolved | run_id=fc03583cc4e4 | trace_id=f0f4ab64e737b3f83537ffddb3b576f1
+payment-service ready | attempts=8 | check=http | status=200 | application_status=UP
+Fault configuration unchanged | service=order-service | mode=none
+Faults configured | target=None | requested_mode=none | order_mode=none | payment_mode=none | target_rate=0.0 | target_delay_ms=0 | seed=42 | recreated=['payment-service']
+AVISO: invariantes falharam em correlation_engine_restart/9
+Fault configuration unchanged | service=payment-service | mode=none
+Fault configuration unchanged | service=order-service | mode=none
+Faults configured | target=None | requested_mode=none | order_mode=none | payment_mode=none | target_rate=0.0 | target_delay_ms=0 | seed=42 | recreated=['none']
+payment-service ready | attempts=8 | check=http | status=200 | application_status=UP
+Fault configuration unchanged | service=order-service | mode=none
+Faults configured | target=payment-service | requested_mode=latency | order_mode=none | payment_mode=latency | target_rate=1.0 | target_delay_ms=1500 | seed=42 | recreated=['payment-service']
+Order trace resolved | run_id=06c8b94f58ca | trace_id=f51aae409c8fbabee28a8e9c54138810
+payment-service ready | attempts=8 | check=http | status=200 | application_status=UP
+Fault configuration unchanged | service=order-service | mode=none
+Faults configured | target=None | requested_mode=none | order_mode=none | payment_mode=none | target_rate=0.0 | target_delay_ms=0 | seed=42 | recreated=['payment-service']
+AVISO: invariantes falharam em correlation_engine_restart/10
+
+======================================================================
+Scenario: healthy | iteration=0 | run_id=1b148d9d4f69
+======================================================================
+Fault configuration unchanged | service=payment-service | mode=none
+Fault configuration unchanged | service=order-service | mode=none
+Faults configured | target=None | requested_mode=none | order_mode=none | payment_mode=none | target_rate=0.0 | target_delay_ms=0 | seed=42 | recreated=['none']
+Preparation traces settled | rca_count=1073
+Order request | scenario=healthy | http_status=200 | duration_ms=49.867 | response={'id': 1785531342726, 'product': 'e2e-healthy-1b148d9d4f69', 'quantity': 2, 'status': 'APPROVED'}
+Order trace resolved | run_id=1b148d9d4f69 | trace_id=2c5ad8a705c8703c66f8f37fcbfc6d15
+RCAResult matched | trace_id=2c5ad8a705c8703c66f8f37fcbfc6d15 | document_id=a1c7f012-fa74-4afd-952e-42642d994117
+Result: PASSED | scenario=healthy | top_service=payment-service | reliable=False | confidence=0.017720777414870385 | incident=None | runtime=v2 | model_version=xgboost-rca-v2 | pipeline_version=causalods-rca-v2
+Campanha: /home/palhetajso/projects/CausalODS/results/robustness/live/robustness-live-v2-repeat10
+Execuções: 30 | invariantes válidos: 20

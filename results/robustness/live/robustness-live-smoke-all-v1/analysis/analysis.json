@@ -1,0 +1,56 @@
+{
+  "schema_version": "1.0",
+  "runs": 3,
+  "scenarios": [
+    {
+      "scenario": "correlation_engine_restart",
+      "runs": 1,
+      "technical_valid": 0,
+      "invariant_valid": 0,
+      "invariant_pass_rate": 0.0,
+      "rca_duplicate_runs": 0,
+      "incident_duplicate_runs": 0,
+      "data_loss_runs": 0,
+      "provenance_invalid_runs": 0,
+      "mean_recovery_time_ms": null,
+      "median_recovery_time_ms": null,
+      "mean_processing_latency_ms": 183795.87865702342,
+      "median_processing_latency_ms": 183795.87865702342
+    },
+    {
+      "scenario": "kafka_backlog",
+      "runs": 1,
+      "technical_valid": 1,
+      "invariant_valid": 1,
+      "invariant_pass_rate": 1.0,
+      "rca_duplicate_runs": 0,
+      "incident_duplicate_runs": 0,
+      "data_loss_runs": 0,
+      "provenance_invalid_runs": 0,
+      "mean_recovery_time_ms": 8120.855504996143,
+      "median_recovery_time_ms": 8120.855504996143,
+      "mean_processing_latency_ms": 55572.93028495042,
+      "median_processing_latency_ms": 55572.93028495042
+    },
+    {
+      "scenario": "opensearch_unavailable",
+      "runs": 1,
+      "technical_valid": 1,
+      "invariant_valid": 1,
+      "invariant_pass_rate": 1.0,
+      "rca_duplicate_runs": 0,
+      "incident_duplicate_runs": 0,
+      "data_loss_runs": 0,
+      "provenance_invalid_runs": 0,
+      "mean_recovery_time_ms": 3089.918190962635,
+      "median_recovery_time_ms": 3089.918190962635,
+      "mean_processing_latency_ms": 55499.76188602159,
+      "median_processing_latency_ms": 55499.76188602159
+    }
+  ],
+  "overall": {
+    "technical_valid": 2,
+    "invariant_valid": 2,
+    "all_restored": true
+  }
+}
