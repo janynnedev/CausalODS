@@ -3,6 +3,7 @@ from __future__ import annotations
 from copy import deepcopy
 from dataclasses import replace
 import json
+from types import SimpleNamespace
 
 import pytest
 
@@ -12,12 +13,13 @@ from experiments.multimodal_v3 import (
     ExperimentReportBuilderV3, H3ExperimentExecutor, H4ExperimentExecutor,
     RunStatusV3, derive_validation_split,
 )
-from experiments.multimodal_v3.core import ExperimentConfigV3
+from experiments.multimodal_v3.core import ExperimentConfigV3, build_campaign_manifest
+from experiments.multimodal_v3.executors import ExistingBenchmarkDelegateV3
 from experiments.multimodal_v3.fixtures import (
     StubLLMClientV3, build_smoke_orchestrator, smoke_config, smoke_model_evaluator,
     smoke_observation, smoke_rca,
 )
-from explanations_v2 import ExplanationService
+from explanations_v2 import ExplanationMode, ExplanationService
 from experiments.multimodal_v3.cli import main as orchestrator_cli
 
 
@@ -169,6 +171,25 @@ def test_resume_detects_corrupted_output(tmp_path, repo_root):
     assert "checksum_mismatch" in validation["issues"]
 
 
+def test_resume_verifies_complete_campaign_before_modifying_any_artifact(tmp_path, repo_root):
+    orchestrator = build_smoke_orchestrator(tmp_path, repo_root, "campaign-corrupt")
+    results = orchestrator.run()
+    validation = CampaignValidatorV3().validate(
+        orchestrator.planner.plan(), results, store=orchestrator.store,
+        repository_root=repo_root)
+    ExperimentReportBuilderV3().build(orchestrator.store, results, validation)
+    checksum_path = orchestrator.store.path / "SHA256SUMS"
+    original_checksums = checksum_path.read_bytes()
+    target = orchestrator.store.path / "paper/summary-metrics.json"
+    target.write_text(target.read_text(encoding="utf-8") + " ", encoding="utf-8")
+
+    with pytest.raises(ValueError, match="checksum|SHA256SUMS"):
+        build_smoke_orchestrator(
+            tmp_path, repo_root, "campaign-corrupt").run(resume=True)
+
+    assert checksum_path.read_bytes() == original_checksums
+
+
 def test_h3_uses_same_rca_root_and_hash_for_three_distinct_safe_modes(tmp_path, repo_root):
     orchestrator = build_smoke_orchestrator(tmp_path, repo_root, "h3-test")
     results = [item for item in orchestrator.run() if item["identity"]["hypothesis"] == "H3"]
@@ -196,6 +217,66 @@ def test_h3_fallback_is_recorded_and_live_provider_is_blocked():
                                    {run.incident_id: smoke_rca()})
     with pytest.raises(Exception, match="live desabilitado"):
         blocked.execute(run)
+
+
+def test_h3_raw_removes_all_ground_truth_fields_and_fallback_obeys_citation_boundary():
+    raw = ({"event_id": "raw-1", "signal_type": "trace",
+            "actual_services": ["payment-service"],
+            "nested": {"actual_services": ["order-service"],
+                       "ground_truth": "payment-service",
+                       "fault_service": "payment-service",
+                       "fault_location": "POST /payments",
+                       "is_root_cause": True}},)
+    service = ExplanationService()
+    raw_result = service.explain(
+        smoke_rca(), mode=ExplanationMode.RAW_TELEMETRY, raw_telemetry=raw)
+    forbidden = {"actual_services", "ground_truth", "fault_service",
+                 "fault_location", "is_root_cause"}
+    assert all(field not in raw_result.prompt.prompt for field in forbidden)
+    assert raw_result.explanation.cited_evidence_ids == ()
+    assert raw_result.explanation.evidence_statements == ()
+    generic = service.explain(smoke_rca(), mode=ExplanationMode.GENERIC)
+    assert generic.prompt.sanitized_context["allowed_evidence_ids"] == ()
+    assert generic.explanation.cited_evidence_ids == ()
+    grounded = service.explain(smoke_rca(), mode=ExplanationMode.EVIDENCE_GROUNDED)
+    allowed = set(grounded.prompt.sanitized_context["allowed_evidence_ids"])
+    assert grounded.explanation.evidence_statements
+    assert set(grounded.explanation.cited_evidence_ids) <= allowed
+
+
+def test_configured_tuning_budget_reaches_benchmark_and_matches_manifest(
+        monkeypatch, tmp_path, repo_root):
+    config = replace(smoke_config("budget-test"), hypotheses=("H2",), tuning_budget=4)
+    run = ExperimentPlannerV3(config).plan()[0]
+    dataset = SimpleNamespace(
+        feature_schema={"feature_view_sha256": run.feature_view_hash},
+        dataset_hash="d" * 64)
+    captured = []
+
+    def fake_train(method, dataset_arg, output, **kwargs):
+        captured.append(kwargs)
+        return {"metrics": {"macro_f1": 1.0},
+                "incident_predictions": [{
+                    "incident_id": run.incident_id, "ranking": [],
+                    "actual_services": ["payment-service"], "reciprocal_rank": 1.0}],
+                "manifest": {"splits": {
+                    "train": list(run.train_incident_ids),
+                    "validation": list(run.validation_incident_ids),
+                    "test": list(run.test_incident_ids)}},
+                "artifact_dir": str(tmp_path)}
+
+    monkeypatch.setattr(
+        "experiments.multimodal_v3.executors.train_and_evaluate", fake_train)
+    delegate = ExistingBenchmarkDelegateV3(
+        {(run.source_dataset, run.source_system, run.feature_view): dataset},
+        tmp_path, tuning_budget=config.tuning_budget)
+    report = delegate(run)
+    delegate(run)
+    manifest = build_campaign_manifest(config, (run,), repo_root)
+    assert captured == [{"seed": run.seed, "tuning_budget": 4,
+                         "bootstrap_iterations": 100, "runtime_policy": None}]
+    assert report["effective_tuning_budget"] == 4
+    assert manifest["models"]["tuning_budget"] == captured[0]["tuning_budget"]
 
 
 def test_h4_is_paired_uses_same_base_noop_and_never_retrains(tmp_path, repo_root):
@@ -246,11 +327,14 @@ def test_validator_detects_missing_duplicate_illegal_modality_version_nan_and_le
     mutated[0]["provenance"]["train_ids"] = ["same"]
     mutated[0]["provenance"]["test_ids"] = ["same"]
     mutated[0]["evaluation"]["bad"] = float("nan")
+    h3_item = next(item for item in mutated if item["identity"]["hypothesis"] == "H3")
+    h3_item["provenance"]["prompt_text"] += ' "actual_services": ["secret"]'
     issues = CampaignValidatorV3().validate(runs, mutated)["issues"]
     assert any(value.startswith("illegal_modality") for value in issues)
     assert any(value.startswith("version_mismatch") for value in issues)
     assert any(value.startswith("split_leakage") for value in issues)
     assert any(value.startswith("nonfinite") for value in issues)
+    assert any(value.startswith("ground_truth_in_prompt") for value in issues)
 
 
 def test_statistics_require_exact_pairing_are_deterministic_and_apply_holm():
@@ -265,6 +349,33 @@ def test_statistics_require_exact_pairing_are_deterministic_and_apply_holm():
     assert len(adjusted) == 3 and all(0 <= value <= 1 for value in adjusted)
     with pytest.raises(ValueError, match="alinhamento"):
         ExperimentStatisticsV3.compare_paired(left, {"a": right["a"]}, metric="score")
+
+
+def test_paired_report_bootstraps_incident_reciprocal_rank_not_repeated_macro_f1():
+    def item(method, incident, reciprocal_rank, correct):
+        predicted = "payment-service" if correct else "order-service"
+        return {"identity": {"hypothesis": "H1", "experiment_family": "H1-A",
+                             "protocol": "within-dataset", "repetition": 0},
+                "input": {"dataset": "local", "system": "causalods",
+                          "incident_id": incident, "seed": 7},
+                "configuration": {"method": method},
+                "result": {"predicted_ranking": [{"service_name": predicted}]},
+                "evaluation": {"reciprocal_rank": reciprocal_rank,
+                               "macro_f1": 0.99,
+                               "ground_truth_services": ["payment-service"]},
+                "status": {"state": "SUCCESS"}}
+
+    values = []
+    for incident, left, right in zip(
+            ("i1", "i2", "i3"), (1.0, 0.5, 0.0), (1.0, 1.0, 0.5)):
+        values.extend((item("temporal-baseline", incident, left, left == 1.0),
+                       item("xgboost-rca-v3", incident, right, right == 1.0)))
+    row = ExperimentReportBuilderV3._paired_rows(values, "H1")[0]
+    assert row["metric"] == "mrr"
+    assert row["bootstrap_unit"] == "incident_reciprocal_rank"
+    assert row["mcnemar_endpoint"] == "top1_accuracy"
+    assert row["value_a"] == pytest.approx(0.5)
+    assert row["value_b"] == pytest.approx(5 / 6)
 
 
 def test_plan_json_csv_and_sha256s_are_stable(tmp_path, repo_root):

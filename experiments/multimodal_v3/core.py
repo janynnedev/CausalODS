@@ -19,6 +19,7 @@ from enum import Enum
 from pathlib import Path
 from typing import Any, Iterable, Mapping, Protocol
 
+from explanations_v2.prompt_builder import GROUND_TRUTH_FIELD_NAMES
 from multimodal_v1.degradation_v3 import HARNESS_VERSION, operator_policy
 from multimodal_v1.features_v3 import FeatureGroup, FeatureRegistryV3
 from multimodal_v1.event_graph import EdgeRuleRegistry
@@ -788,7 +789,7 @@ class CampaignStoreV3:
             raise ValueError("SHA256SUMS não cobre exatamente a campanha.")
         if any(file_sha256(self.path / relative) != digest
                for relative, digest in expected.items()):
-            raise ValueError("SHA256SUMS contém checksum divergente.")
+            raise ValueError("Checksum divergente em SHA256SUMS.")
 
     def write_sha256s(self) -> None:
         files = [path for path in self.path.rglob("*") if path.is_file() and path.name != "SHA256SUMS"]
@@ -899,6 +900,9 @@ class ExperimentOrchestratorV3:
         return runs
 
     def run(self, *, resume: bool = False) -> tuple[dict[str, Any], ...]:
+        checksum_path = self.store.path / "SHA256SUMS"
+        if resume and checksum_path.exists():
+            self.store.verify_sha256s()
         runs = self.prepare()
         completed = self.store.load_completed() if resume else {}
         if not resume and completed:
@@ -971,8 +975,7 @@ class CampaignValidatorV3:
             except ValueError:
                 issues.append(f"nonfinite:{item['identity']['run_id']}")
             prompt = item.get("provenance", {}).get("prompt_text", "")
-            if any(forbidden in prompt.lower() for forbidden in (
-                    "ground_truth", "fault_service", "fault_location", "is_root_cause")):
+            if any(forbidden in prompt.lower() for forbidden in GROUND_TRUTH_FIELD_NAMES):
                 issues.append(f"ground_truth_in_prompt:{item['identity']['run_id']}")
             if _contains_ground_truth({key: item.get(key, {}) for key in (
                     "input", "configuration", "result", "provenance")}):
@@ -1073,10 +1076,9 @@ def _reject_nonfinite(value: Any) -> None:
 
 
 def _contains_ground_truth(value: Any) -> bool:
-    forbidden = {"ground_truth", "fault_service", "fault_location", "is_root_cause",
-                 "actual_services"}
     if isinstance(value, Mapping):
-        return any(str(key).lower() in forbidden or _contains_ground_truth(item)
+        return any(str(key).lower() in GROUND_TRUTH_FIELD_NAMES
+                   or _contains_ground_truth(item)
                    for key, item in value.items())
     if isinstance(value, (tuple, list)):
         return any(_contains_ground_truth(item) for item in value)
@@ -1174,7 +1176,8 @@ class ExperimentReportBuilderV3:
                        [self._row(item) for item in h4])
         paired = {"H1": self._paired_rows(values, "H1"),
                   "H2": self._paired_rows(values, "H2")}
-        stat_fields = ("family", "comparison", "metric", "pairs", "value_a", "value_b",
+        stat_fields = ("family", "comparison", "metric", "bootstrap_unit",
+                       "bootstrap_endpoint", "mcnemar_endpoint", "pairs", "value_a", "value_b",
                        "delta_absolute", "delta_relative", "ci95_lower", "ci95_upper",
                        "mcnemar_p_value", "holm_adjusted_p_value")
         self._csv(store.path / "h1/h1-paired-statistics.csv", paired["H1"], stat_fields)
@@ -1295,7 +1298,7 @@ class ExperimentReportBuilderV3:
                     and item["status"]["state"] == "SUCCESS"]
         by_method: dict[str, dict[str, dict[str, Any]]] = {}
         for item in selected:
-            metric = item.get("evaluation", {}).get("macro_f1")
+            metric = item.get("evaluation", {}).get("reciprocal_rank")
             if isinstance(metric, bool) or not isinstance(metric, (int, float)):
                 continue
             ranking = item.get("result", {}).get("predicted_ranking", ())
@@ -1308,7 +1311,7 @@ class ExperimentReportBuilderV3:
                 "seed": item["input"]["seed"],
                 "repetition": item["identity"].get("repetition")})
             by_method.setdefault(item["configuration"]["method"], {})[pair_id] = {
-                "macro_f1": float(metric), "top1_correct": predicted in actual}
+                "reciprocal_rank": float(metric), "top1_correct": predicted in actual}
         target = by_method.get("xgboost-rca-v3", {})
         rows = []
         raw_p = []
@@ -1317,13 +1320,17 @@ class ExperimentReportBuilderV3:
             if set(left) != set(target) or not left:
                 continue
             comparison = ExperimentStatisticsV3.compare_paired(
-                left, target, metric="macro_f1", samples=100)
-            value_a = statistics.fmean(item["macro_f1"] for item in left.values())
-            value_b = statistics.fmean(item["macro_f1"] for item in target.values())
+                left, target, metric="reciprocal_rank", samples=100)
+            value_a = statistics.fmean(item["reciprocal_rank"] for item in left.values())
+            value_b = statistics.fmean(item["reciprocal_rank"] for item in target.values())
             delta = value_b - value_a
             p_value = comparison["mcnemar"]["p_value_two_sided"]
             rows.append({"family": family, "comparison": f"{method}__vs__xgboost-rca-v3",
-                         "metric": "macro_f1", "pairs": comparison["pairs"],
+                         "metric": "mrr",
+                         "bootstrap_unit": "incident_reciprocal_rank",
+                         "bootstrap_endpoint": "mrr",
+                         "mcnemar_endpoint": "top1_accuracy",
+                         "pairs": comparison["pairs"],
                          "value_a": value_a, "value_b": value_b,
                          "delta_absolute": delta,
                          "delta_relative": delta / value_a if value_a else None,

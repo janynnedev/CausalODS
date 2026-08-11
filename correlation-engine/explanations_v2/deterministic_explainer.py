@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import Iterable
 
 from explanations_v2.contracts import EvidenceObjectV1, EvidenceStatementV1, StructuredExplanation
 
@@ -21,35 +22,50 @@ def compute_uncertainty(evidence: EvidenceObjectV1) -> str:
 class DeterministicTemplateExplainer:
     model_name: str = 'deterministic-template'
 
-    def explain(self, evidence: EvidenceObjectV1, *, prompt_hash: str, mode: str, fallback_reason: str | None = None) -> StructuredExplanation:
+    def explain(self, evidence: EvidenceObjectV1, *, prompt_hash: str, mode: str,
+                fallback_reason: str | None = None,
+                allowed_evidence_ids: Iterable[str] | None = None) -> StructuredExplanation:
         root = evidence.ranked_root_causes[0] if evidence.ranked_root_causes else None
+        allowed = None if allowed_evidence_ids is None else set(allowed_evidence_ids)
+
+        def permitted(values: Iterable[str]) -> tuple[str, ...]:
+            identifiers = tuple(values)
+            return identifiers if allowed is None else tuple(
+                item for item in identifiers if item in allowed)
+
         statements = []
-        if root and evidence.root_cause_evidence_ids:
+        root_ids = permitted(evidence.root_cause_evidence_ids)
+        if root and root_ids:
             statements.append(EvidenceStatementV1(
                 text='A causa raiz permaneceu inalterada porque o RCAResult já a escolheu como primeiro colocado.',
-                evidence_ids=evidence.root_cause_evidence_ids,
+                evidence_ids=root_ids,
             ))
-        if evidence.top_shap_features:
+        shap_ids = permitted(item.evidence_id for item in evidence.top_shap_features)
+        if shap_ids:
             statements.append(EvidenceStatementV1(
                 text='As evidências SHAP da causa raiz sustentam a classificação.',
-                evidence_ids=tuple(item.evidence_id for item in evidence.top_shap_features),
+                evidence_ids=shap_ids,
             ))
-        temporal_ids = tuple(item.evidence_id for item in evidence.evidence_catalog if item.evidence_type == 'temporal')
+        temporal_ids = permitted(
+            item.evidence_id for item in evidence.evidence_catalog
+            if item.evidence_type == 'temporal')
         if temporal_ids:
             statements.append(EvidenceStatementV1(
                 text='A ordem temporal observada é compatível com a propagação do incidente.',
                 evidence_ids=temporal_ids,
             ))
-        graph_ids = tuple(item.evidence_id for item in evidence.evidence_catalog if item.evidence_type == 'graph')
+        graph_ids = permitted(
+            item.evidence_id for item in evidence.evidence_catalog
+            if item.evidence_type == 'graph')
         if graph_ids:
             statements.append(EvidenceStatementV1(
                 text='A dependência estrutural observada sustenta a propagação do incidente.',
                 evidence_ids=graph_ids,
             ))
-        if not statements and evidence.root_cause_evidence_ids:
+        if not statements and root_ids:
             statements.append(EvidenceStatementV1(
                 text='A explicação usa apenas as evidências citáveis da causa raiz.',
-                evidence_ids=evidence.root_cause_evidence_ids,
+                evidence_ids=root_ids,
             ))
         cited = tuple(dict.fromkeys(item for stmt in statements for item in stmt.evidence_ids))
         return StructuredExplanation(
@@ -57,7 +73,7 @@ class DeterministicTemplateExplainer:
             root_cause=root,
             summary=f'Causa raiz indicada: {root}' if root else 'Nenhuma causa raiz disponível.',
             evidence_statements=tuple(statements),
-            propagation_path=evidence.event_paths,
+            propagation_path=(evidence.event_paths if allowed is None or allowed else ()),
             uncertainty=compute_uncertainty(evidence),
             missing_evidence=evidence.missing_evidence,
             limitations=evidence.limitations,

@@ -17,5 +17,7 @@ automaticamente uma hipótese confirmada.
 
 As comparações H1/H2 também produzem `statistics/paired-comparisons.json` com
 valores A/B, delta absoluto/relativo, bootstrap IC95%, McNemar e ajuste Holm. O
+bootstrap usa reciprocal rank por incidente (média = MRR); McNemar usa Top-1 e
+macro-F1 agregado permanece somente descritivo. O
 mapa humano permanece separado do arquivo entregue aos avaliadores; ratings
 posteriores geram `h3-human-agreement.json` apenas com pares suficientes.

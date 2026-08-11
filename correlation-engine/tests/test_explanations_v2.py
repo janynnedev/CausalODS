@@ -304,6 +304,57 @@ def test_baseline_fallback_without_client():
     assert result.provenance.fallback_reason == 'no_llm_client'
 
 
+def test_raw_prompt_recursively_removes_complete_ground_truth_field_set():
+    raw = ({
+        'event_id': 'raw-1',
+        'signal_type': 'trace',
+        'actual_services': ['payment-service'],
+        'nested': {
+            'actual_services': ['order-service'],
+            'ground_truth': 'payment-service',
+            'fault_service': 'payment-service',
+            'fault_location': 'POST /payments',
+            'is_root_cause': True,
+        },
+    },)
+    result = build_service().explain(
+        FakeRCA(), mode=ExplanationMode.RAW_TELEMETRY, raw_telemetry=raw)
+    forbidden = {
+        'actual_services', 'ground_truth', 'fault_service', 'fault_location',
+        'is_root_cause',
+    }
+
+    def keys(value):
+        if isinstance(value, dict) or hasattr(value, 'items'):
+            return ({str(key).lower() for key in value}
+                    | set().union(*(keys(item) for item in value.values())))
+        if isinstance(value, (tuple, list)):
+            return set().union(*(keys(item) for item in value)) if value else set()
+        return set()
+
+    assert forbidden.isdisjoint(keys(result.prompt.sanitized_context))
+    assert all(field not in result.prompt.prompt for field in forbidden)
+
+
+@pytest.mark.parametrize('mode', (ExplanationMode.GENERIC, ExplanationMode.RAW_TELEMETRY))
+def test_non_grounded_fallback_has_no_structured_citations(mode):
+    result = build_service().explain(FakeRCA(), mode=mode)
+    assert result.explanation.used_fallback is True
+    assert result.prompt.sanitized_context['allowed_evidence_ids'] == ()
+    assert result.explanation.cited_evidence_ids == ()
+    assert result.explanation.evidence_statements == ()
+
+
+def test_grounded_fallback_citations_are_within_allowed_boundary():
+    result = build_service().explain(
+        FakeRCA(), mode=ExplanationMode.EVIDENCE_GROUNDED)
+    allowed = set(result.prompt.sanitized_context['allowed_evidence_ids'])
+    assert result.explanation.evidence_statements
+    assert set(result.explanation.cited_evidence_ids) <= allowed
+    assert all(set(statement.evidence_ids) <= allowed
+               for statement in result.explanation.evidence_statements)
+
+
 def test_llm_valid_preserves_root():
     result = build_service(FakeClient()).explain(FakeRCA())
     assert result.explanation.root_cause == 'payment-service'

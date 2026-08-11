@@ -1,9 +1,11 @@
 from __future__ import annotations
 
+import math
 from pathlib import Path
 from typing import Any, Callable, Mapping
 
 from explanations_v2 import ExplanationMode, ExplanationService
+from explanations_v2.prompt_builder import GROUND_TRUTH_FIELD_NAMES
 from multimodal_v1.benchmark_v3 import BenchmarkDataset, train_and_evaluate
 from multimodal_v1.degradation_v3 import (
     ObservationDataset, ObservationDegradationHarness, degradation_metrics,
@@ -14,14 +16,19 @@ from .core import (
 )
 
 
-_GROUND_TRUTH_FIELDS = frozenset({
-    "ground_truth", "fault_service", "fault_location", "is_root_cause", "actual_services",
-})
-
-
 def _pipeline_safe_ranking(ranking: Any) -> tuple[dict[str, Any], ...]:
     return tuple({key: value for key, value in dict(item).items()
-                  if key not in _GROUND_TRUTH_FIELDS} for item in ranking)
+                  if str(key).lower() not in GROUND_TRUTH_FIELD_NAMES} for item in ranking)
+
+
+def _reciprocal_rank(prediction: Mapping[str, Any]) -> float:
+    value = prediction.get("reciprocal_rank")
+    if (isinstance(value, bool) or not isinstance(value, (int, float))
+            or not math.isfinite(value) or not 0.0 <= float(value) <= 1.0):
+        raise StageFailureV3(
+            RunStatusV3.FAILED_INPUT_VALIDATION, "incident_prediction",
+            "reciprocal_rank por incidente deve ser finito e estar em [0,1].")
+    return float(value)
 
 
 def _validate_benchmark_split(run: ExperimentRunV3, manifest: Mapping[str, Any]) -> None:
@@ -44,9 +51,18 @@ class ExistingBenchmarkDelegateV3:
     """Adapta o benchmark v3 existente; não implementa modelos ou métricas."""
 
     def __init__(self, datasets: Mapping[tuple[Any, ...], BenchmarkDataset],
-                 output: str | Path, *, runtime_policy=None):
+                 output: str | Path, *, tuning_budget: int = 1,
+                 bootstrap_iterations: int = 100, runtime_policy=None):
+        if isinstance(tuning_budget, bool) or not isinstance(tuning_budget, int) \
+                or tuning_budget < 1:
+            raise ValueError("tuning_budget deve ser inteiro positivo.")
+        if isinstance(bootstrap_iterations, bool) or not isinstance(
+                bootstrap_iterations, int) or bootstrap_iterations < 1:
+            raise ValueError("bootstrap_iterations deve ser inteiro positivo.")
         self.datasets = dict(datasets)
         self.output = Path(output)
+        self.tuning_budget = tuning_budget
+        self.bootstrap_iterations = bootstrap_iterations
         self.runtime_policy = runtime_policy
         self._cache: dict[tuple[Any, ...], Mapping[str, Any]] = {}
 
@@ -60,12 +76,14 @@ class ExistingBenchmarkDelegateV3:
         if dataset.feature_schema["feature_view_sha256"] != run.feature_view_hash:
             raise StageFailureV3(RunStatusV3.FAILED_INPUT_VALIDATION, "feature_view",
                                  "FeatureView do benchmark diverge do plano.")
-        cache_key = (*key, run.method, run.seed, dataset.dataset_hash)
+        cache_key = (*protocol_key, run.method, self.tuning_budget,
+                     self.bootstrap_iterations, dataset.dataset_hash)
         if cache_key not in self._cache:
             try:
                 self._cache[cache_key] = train_and_evaluate(
                     run.method, dataset, self.output, seed=run.seed,
-                    tuning_budget=1, bootstrap_iterations=100,
+                    tuning_budget=self.tuning_budget,
+                    bootstrap_iterations=self.bootstrap_iterations,
                     runtime_policy=self.runtime_policy)
             except Exception as exc:
                 raise StageFailureV3(RunStatusV3.FAILED_MODEL_EXECUTION,
@@ -77,7 +95,9 @@ class ExistingBenchmarkDelegateV3:
             raise StageFailureV3(RunStatusV3.FAILED_INPUT_VALIDATION, "benchmark_prediction",
                                  "Incidente não pertence ao test split do artefato.")
         return {"metrics": report["metrics"], "incident_prediction": prediction,
-                "manifest": report["manifest"], "artifact_dir": report["artifact_dir"]}
+                "manifest": report["manifest"], "artifact_dir": report["artifact_dir"],
+                "effective_tuning_budget": self.tuning_budget,
+                "bootstrap_iterations": self.bootstrap_iterations}
 
 
 class H1ExperimentExecutor:
@@ -94,6 +114,7 @@ class H1ExperimentExecutor:
                                      "NO_GRAPH exige pruning disabled_ablation.")
         report = self.delegate(run)
         prediction = report.get("incident_prediction", {})
+        reciprocal_rank = _reciprocal_rank(prediction)
         metrics = report.get("metrics", {})
         manifest = report.get("manifest", {})
         _validate_benchmark_split(run, manifest)
@@ -118,12 +139,14 @@ class H1ExperimentExecutor:
                  "pruning": pruning},
                 {"benchmark_version": "rca-model-benchmark-v3",
                  "benchmark_delegated": True,
+                 "effective_tuning_budget": report.get("effective_tuning_budget"),
                  "source_manifest_hash": report.get("source_manifest_hash"),
                  "model_manifest": manifest,
                  "train_ids": list(run.train_incident_ids),
                  "validation_ids": list(run.validation_incident_ids),
                  "test_ids": list(run.test_incident_ids)},
                 {**metrics, **pruning,
+                 "reciprocal_rank": reciprocal_rank,
                  "ground_truth_services": prediction.get("actual_services", ())})
 
 
@@ -139,16 +162,18 @@ class H2ExperimentExecutor:
         manifest = report.get("manifest", {})
         _validate_benchmark_split(run, manifest)
         prediction = report.get("incident_prediction", {})
+        reciprocal_rank = _reciprocal_rank(prediction)
         return ({"predicted_ranking": _pipeline_safe_ranking(prediction.get("ranking", ())),
                  "core_metrics": report.get("metrics", {})},
                 {"benchmark_version": "rca-model-benchmark-v3", "benchmark_delegated": True,
+                 "effective_tuning_budget": report.get("effective_tuning_budget"),
                  "source_manifest_hash": report.get("source_manifest_hash"),
                  "train_ids": manifest.get("splits", {}).get("train", ()),
                  "validation_ids": manifest.get("splits", {}).get("validation", ()),
                  "test_ids": manifest.get("splits", {}).get("test", ()),
                  "tuning_manifest": manifest.get("tuning_protocol"),
                  "model_artifact_hash": manifest.get("model_sha256")},
-                {**report.get("metrics", {}),
+                {**report.get("metrics", {}), "reciprocal_rank": reciprocal_rank,
                  "ground_truth_services": prediction.get("actual_services", ())})
 
 
@@ -179,7 +204,8 @@ class H3ExperimentExecutor:
             raise StageFailureV3(RunStatusV3.FAILED_EXPLANATION, "explanation_service",
                                  str(exc)) from exc
         prompt_text = output.prompt.prompt
-        if "ground_truth" in prompt_text.lower():
+        if any(field_name in prompt_text.lower()
+               for field_name in GROUND_TRUTH_FIELD_NAMES):
             raise StageFailureV3(RunStatusV3.FAILED_EXPLANATION, "prompt_safety",
                                  "Ground truth detectado no prompt.")
         explanation = output.explanation
@@ -210,6 +236,8 @@ class H3ExperimentExecutor:
         }
         return ({"root_cause": explanation.root_cause, "summary": explanation.summary,
                  "confidence": explanation.confidence, "reliability": explanation.reliability,
+                 "cited_evidence_ids": list(explanation.cited_evidence_ids),
+                 "evidence_statements": [item.to_dict() for item in statements],
                  "used_fallback": explanation.used_fallback,
                  "fallback_reason": explanation.fallback_reason,
                  "supporting_context": output.prompt.sanitized_context},

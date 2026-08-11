@@ -8,6 +8,15 @@ from typing import Any, Iterable, Mapping
 from explanations_v2.contracts import EvidenceObjectV1, PromptPayload
 
 
+GROUND_TRUTH_FIELD_NAMES = frozenset({
+    'ground_truth',
+    'fault_service',
+    'fault_location',
+    'is_root_cause',
+    'actual_services',
+})
+
+
 @dataclass(frozen=True)
 class PromptBuilder:
     prompt_builder_version: str = 'prompt-builder-v1'
@@ -66,13 +75,12 @@ class PromptBuilder:
         )
 
     def _sanitize_raw(self, values: Iterable[Mapping[str, Any]]) -> list[dict[str, Any]]:
-        forbidden = {'ground_truth', 'fault_service', 'fault_location', 'is_root_cause'}
         def scrub(value):
             if hasattr(value, 'value'):
                 return scrub(value.value)
             if isinstance(value, Mapping):
                 return {str(key): scrub(item) for key, item in sorted(value.items())
-                        if str(key).lower() not in forbidden}
+                        if str(key).lower() not in GROUND_TRUTH_FIELD_NAMES}
             if isinstance(value, (list, tuple)):
                 return [scrub(item) for item in value]
             return value

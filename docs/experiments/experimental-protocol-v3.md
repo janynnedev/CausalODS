@@ -30,6 +30,8 @@ ativa grafo/pruning e exclui business; GRAPH_BUSINESS ativa ambos e requer a
 modalidade. H1-C usa METRIC_ONLY, TRACE_ONLY, METRIC_TRACE, METRIC_TRACE_LOG e
 METRIC_TRACE_LOG_BUSINESS. Cada view guarda ID e hash. H2 delega os três baselines,
 LR, RF, XGBoost e MLP ao benchmark com mesmos splits, view, seed e tuning budget.
+O `tuning_budget` configurado é passado sem substituição ao benchmark v3, faz
+parte da chave de cache e coincide com o valor registrado no campaign manifest.
 
 ## H3
 
@@ -37,7 +39,9 @@ A amostra é determinística por dataset, sistema, tipo de falha e incidente,
 aceita estratos opcionais de correção RCA, reliability e cenário, e respeita
 `sample_size`. Generic recebe contexto mínimo; raw recebe até 50 itens
 ordenados, sanitizados e versionados; grounded recebe o EvidenceObject. Ground
-truth e campos de label são removidos. Root, confidence e reliability vêm do
+truth e campos de label são removidos recursivamente, usando o conjunto completo
+`ground_truth`, `fault_service`, `fault_location`, `is_root_cause` e
+`actual_services`. Root, confidence e reliability vêm do
 RCAResult. Fallback é registrado separadamente. Métricas de citação são `null`
 quando inaplicáveis. O export humano usa códigos cegos e mapa separado; julgamento
 humano e concordância só existem após ratings suficientes. Ratings 1–5 podem ser
@@ -72,6 +76,14 @@ são aplicáveis; `evidence_coverage` é a fração do catálogo permitido citad
 `schema_validity_rate` registra validação do schema; `fallback_rate` distingue
 fallback de resposta LLM; latência, tokens e custo vêm da provenance do cliente.
 Citation precision/coverage são `null`, nunca 1, quando semanticamente inaplicáveis.
+Toda `StructuredExplanation`, inclusive fallback determinístico, restringe
+`cited_evidence_ids` e os IDs de cada statement a `ALLOWED_EVIDENCE_IDS`.
+Generic/raw usam lista vazia e, portanto, não produzem citações estruturadas.
+
+O bootstrap pareado H1/H2 usa `reciprocal_rank` por incidente; sua média é MRR.
+McNemar permanece restrito ao endpoint Top-1 e Holm ajusta os p-values da família.
+Macro-F1 agregado permanece descritivo e nunca é replicado como observação por
+incidente no bootstrap.
 
 ## Identidade, resume, status e proveniência
 
@@ -81,6 +93,9 @@ degradação, explanation mode, repetição, execution mode e configuration hash
 Manifesto e plano antecedem runs. Resume recusa hash divergente, valida checksums e
 executa somente pendentes. SUCCESS, skips e falhas por estágio são distintos.
 Ground truth aparece somente em evaluation. `SHA256SUMS` cobre a campanha.
+Quando `SHA256SUMS` existe, resume verifica a campanha completa antes de chamar
+`prepare()` ou modificar qualquer artefato; sem o arquivo, valida índice/runs da
+campanha interrompida e continua apenas pendências.
 Status possíveis: `SUCCESS`, skips de modalidade/protocolo e falhas distintas de
 input, feature, modelo, degradação, explicação, replay, pré-condição estatística ou
 fronteira interna. Skip nunca é contado como erro nem como execução bem-sucedida.

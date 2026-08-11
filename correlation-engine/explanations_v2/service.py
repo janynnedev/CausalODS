@@ -57,7 +57,11 @@ class ExplanationService:
         prompt = self.prompt_builder.build(
             evidence, mode=mode, temperature=self.temperature,
             raw_telemetry=raw_telemetry)
-        fallback = self.deterministic_explainer.explain(evidence, prompt_hash=prompt.prompt_hash, mode=mode, fallback_reason='no_llm_client')
+        fallback = self.deterministic_explainer.explain(
+            evidence, prompt_hash=prompt.prompt_hash, mode=mode,
+            fallback_reason='no_llm_client',
+            allowed_evidence_ids=prompt.sanitized_context.get(
+                'allowed_evidence_ids', ()))
         response = None
         if self.llm_client is None:
             return self._finalize(evidence, prompt, fallback, response, True, 'no_llm_client')
@@ -255,6 +259,7 @@ class ExplanationService:
         return explanation
 
     def _finalize(self, evidence: EvidenceObjectV1, prompt: PromptPayload, explanation: StructuredExplanation, response: LLMResponse | None, used_fallback: bool, fallback_reason: str | None) -> ExplanationServiceResult:
+        self._validate_citation_boundary(explanation, prompt)
         explanation = StructuredExplanation(
             schema_version='structured-explanation-v1',
             root_cause=explanation.root_cause,
@@ -321,6 +326,16 @@ class ExplanationService:
         if self.provenance_repository is not None:
             self.provenance_repository.save(provenance)
         return ExplanationServiceResult(explanation=explanation, provenance=provenance, prompt=prompt, evidence=evidence)
+
+    @staticmethod
+    def _validate_citation_boundary(explanation: StructuredExplanation,
+                                    prompt: PromptPayload) -> None:
+        allowed = set(prompt.sanitized_context.get('allowed_evidence_ids', ()))
+        if not set(explanation.cited_evidence_ids).issubset(allowed):
+            raise ValueError('invalid_evidence_reference')
+        if any(not set(statement.evidence_ids).issubset(allowed)
+               for statement in explanation.evidence_statements):
+            raise ValueError('invalid_evidence_reference')
 
 
 def _coerce_text(value: Any) -> str:

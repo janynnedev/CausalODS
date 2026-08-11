@@ -33,6 +33,14 @@ todos. A menor adaptação foi feita no builder existente: contexto mínimo no
 generic, seleção raw limitada/determinística/sanitizada no raw, e EvidenceObject
 no grounded. O objeto completo permanece apenas na provenance interna e não é
 renderizado no prompt generic/raw. O parser limita citações aos IDs permitidos.
+O hardening final centralizou os cinco nomes de ground truth, incluindo
+`actual_services`, e o scrub raw permanece recursivo. A fronteira
+`ALLOWED_EVIDENCE_IDS` agora também é aplicada ao fallback determinístico.
+
+O delegate do benchmark recebe o `tuning_budget` da campanha e o inclui na chave
+de cache. Resume verifica a campanha checksummed antes de `prepare()`. A análise
+pareada usa reciprocal rank por incidente para bootstrap/MRR; macro-F1 agregado
+permanece apenas nas tabelas descritivas, enquanto McNemar continua Top-1.
 
 A primeira versão da integração também apenas registrava o nome do protocolo.
 Isso foi corrigido sem criar lógica concorrente: `ExperimentPlannerV3` chama
