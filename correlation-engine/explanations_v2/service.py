@@ -50,10 +50,13 @@ class ExplanationService:
         self.provenance_repository = provenance_repository
         self.temperature = temperature
 
-    def explain(self, rca_result, *, mode: str = ExplanationMode.EVIDENCE_GROUNDED) -> ExplanationServiceResult:
+    def explain(self, rca_result, *, mode: str = ExplanationMode.EVIDENCE_GROUNDED,
+                raw_telemetry=()) -> ExplanationServiceResult:
         evidence = self._build_evidence(rca_result)
         self.evidence_validator.validate(evidence)
-        prompt = self.prompt_builder.build(evidence, mode=mode, temperature=self.temperature)
+        prompt = self.prompt_builder.build(
+            evidence, mode=mode, temperature=self.temperature,
+            raw_telemetry=raw_telemetry)
         fallback = self.deterministic_explainer.explain(evidence, prompt_hash=prompt.prompt_hash, mode=mode, fallback_reason='no_llm_client')
         response = None
         if self.llm_client is None:
@@ -221,7 +224,7 @@ class ExplanationService:
         cited = tuple(data['cited_evidence_ids'])
         if statements and not cited:
             raise ValueError('missing_evidence_citation')
-        known = {ref.evidence_id for ref in evidence.evidence_catalog}
+        known = set(prompt.sanitized_context.get('allowed_evidence_ids', ()))
         if not set(cited).issubset(known):
             raise ValueError('invalid_evidence_reference')
         for stmt in statements:
