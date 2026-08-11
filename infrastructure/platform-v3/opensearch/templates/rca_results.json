@@ -1,0 +1,37 @@
+{
+  "index_patterns": ["causalods-v3-rca-results*"],
+  "priority": 300,
+  "template": {
+    "settings": {"index.mapping.total_fields.limit": 300, "number_of_shards": 1, "number_of_replicas": 0},
+    "mappings": {
+      "dynamic": false,
+      "properties": {
+        "projection_version": {"type": "keyword"},
+        "rca_result_id": {"type": "keyword"},
+        "incident_id": {"type": "keyword"},
+        "trace_id": {"type": "keyword"},
+        "root_cause_service": {"type": "keyword"},
+        "ranked_root_causes": {"type": "keyword"},
+        "predicted_probabilities": {"type": "double"},
+        "confidence": {"type": "double"},
+        "margin_to_second": {"type": "double"},
+        "reliable": {"type": "boolean"},
+        "abstained": {"type": "boolean"},
+        "failed_reliability_rules": {"type": "keyword"},
+        "model_version": {"type": "keyword"},
+        "model_hash": {"type": "keyword"},
+        "pipeline_version": {"type": "keyword"},
+        "feature_registry_hash": {"type": "keyword"},
+        "generated_at": {"type": "date"},
+        "model_top_probability": {"type": "double"},
+        "evidence_ids": {"type": "keyword"},
+        "ranking_json": {"type": "keyword", "index": false, "doc_values": false},
+        "graph_rule_versions_json": {"type": "keyword", "index": false, "doc_values": false},
+        "shap_json": {"type": "keyword", "index": false, "doc_values": false},
+        "evidence_json": {"type": "keyword", "index": false, "doc_values": false},
+        "payload_hash": {"type": "keyword"}
+      }
+    }
+  },
+  "_meta": {"schema_version": "causalods-v3-rca-results-template-v1", "retention": "external-policy-required"}
+}

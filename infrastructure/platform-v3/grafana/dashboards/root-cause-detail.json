@@ -1,0 +1,14 @@
+{
+  "uid": "causalods-v3-root-cause-detail",
+  "title": "Root Cause Detail",
+  "tags": ["causalods", "v3", "rca"],
+  "schemaVersion": 39,
+  "version": 1,
+  "time": {"from": "now-24h", "to": "now"},
+  "templating": {"list": [{"name": "incident_id", "label": "Incident ID", "type": "textbox", "query": "*", "current": {"text": "*", "value": "*"}}]},
+  "panels": [
+    {"id": 1, "title": "Ranking, probabilities and Reliability Gate", "type": "table", "datasource": {"type": "grafana-opensearch-datasource", "uid": "causalods-v3-rca"}, "gridPos": {"h": 10, "w": 24, "x": 0, "y": 0}, "targets": [{"refId": "A", "query": "incident_id:$incident_id", "metrics": [{"id": "1", "type": "raw_data", "settings": {"size": "20"}}], "bucketAggs": []}]},
+    {"id": 2, "title": "MODEL EXPLANATION — SHAP (association, not causal proof)", "type": "table", "description": "SHAP reports model contribution only.", "datasource": {"type": "grafana-opensearch-datasource", "uid": "causalods-v3-rca"}, "gridPos": {"h": 8, "w": 12, "x": 0, "y": 10}, "targets": [{"refId": "A", "query": "incident_id:$incident_id", "metrics": [{"id": "1", "type": "raw_data", "settings": {"size": "20"}}], "bucketAggs": []}]},
+    {"id": 3, "title": "STRUCTURAL / TEMPORAL EVIDENCE", "type": "table", "datasource": {"type": "grafana-opensearch-datasource", "uid": "causalods-v3-incidents"}, "gridPos": {"h": 8, "w": 12, "x": 12, "y": 10}, "targets": [{"refId": "A", "query": "incident_id:$incident_id", "metrics": [{"id": "1", "type": "raw_data", "settings": {"size": "20"}}], "bucketAggs": []}]}
+  ]
+}

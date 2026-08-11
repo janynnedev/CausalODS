@@ -1,0 +1,13 @@
+{
+  "uid": "causalods-v3-explanation-audit",
+  "title": "Explanation Audit",
+  "tags": ["causalods", "v3", "explanation", "audit"],
+  "schemaVersion": 39,
+  "version": 1,
+  "time": {"from": "now-24h", "to": "now"},
+  "templating": {"list": [{"name": "incident_id", "label": "Incident ID", "type": "textbox", "query": "*", "current": {"text": "*", "value": "*"}}]},
+  "panels": [
+    {"id": 1, "title": "Explanation validity, fallback and provenance", "type": "table", "datasource": {"type": "grafana-opensearch-datasource", "uid": "causalods-v3-explanations"}, "gridPos": {"h": 10, "w": 24, "x": 0, "y": 0}, "targets": [{"refId": "A", "query": "incident_id:$incident_id", "metrics": [{"id": "1", "type": "raw_data", "settings": {"size": "100"}}], "bucketAggs": []}]},
+    {"id": 2, "title": "Cited evidence IDs", "type": "table", "datasource": {"type": "grafana-opensearch-datasource", "uid": "causalods-v3-rca"}, "gridPos": {"h": 8, "w": 24, "x": 0, "y": 10}, "targets": [{"refId": "A", "query": "incident_id:$incident_id", "metrics": [{"id": "1", "type": "raw_data", "settings": {"size": "100"}}], "bucketAggs": []}]}
+  ]
+}

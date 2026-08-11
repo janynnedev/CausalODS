@@ -1,0 +1,13 @@
+{
+  "uid": "causalods-v3-event-evidence-graph",
+  "title": "Event Evidence Graph",
+  "tags": ["causalods", "v3", "graph"],
+  "schemaVersion": 39,
+  "version": 1,
+  "time": {"from": "now-24h", "to": "now"},
+  "templating": {"list": [{"name": "incident_id", "label": "Incident ID", "type": "textbox", "query": "*", "current": {"text": "*", "value": "*"}}]},
+  "panels": [
+    {"id": 1, "title": "Graph node/edge counts and rule versions", "type": "stat", "datasource": {"type": "grafana-opensearch-datasource", "uid": "causalods-v3-incidents"}, "gridPos": {"h": 6, "w": 24, "x": 0, "y": 0}, "targets": [{"refId": "A", "query": "incident_id:$incident_id", "metrics": [{"id": "1", "type": "raw_data", "settings": {"size": "10"}}], "bucketAggs": []}]},
+    {"id": 2, "title": "Audit path view — relation type, weight, confidence and direction", "type": "table", "description": "TEMPORAL_PRECEDENCE and CO_ANOMALY are associations, not proven causality.", "datasource": {"type": "grafana-opensearch-datasource", "uid": "causalods-v3-incidents"}, "gridPos": {"h": 12, "w": 24, "x": 0, "y": 6}, "targets": [{"refId": "A", "query": "incident_id:$incident_id", "metrics": [{"id": "1", "type": "raw_data", "settings": {"size": "20"}}], "bucketAggs": []}]}
+  ]
+}

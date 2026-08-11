@@ -1,0 +1,46 @@
+{
+  "index_patterns": ["causalods-v3-unified-events*"],
+  "priority": 300,
+  "template": {
+    "settings": {"index.mapping.total_fields.limit": 300, "number_of_shards": 1, "number_of_replicas": 0},
+    "mappings": {
+      "dynamic": false,
+      "properties": {
+        "projection_version": {"type": "keyword"},
+        "event_id": {"type": "keyword"},
+        "incident_id": {"type": "keyword"},
+        "event_name": {"type": "keyword"},
+        "event_type": {"type": "keyword"},
+        "signal_type": {"type": "keyword"},
+        "event_timestamp": {"type": "date"},
+        "observed_timestamp": {"type": "date"},
+        "ingested_timestamp": {"type": "date"},
+        "trace_id": {"type": "keyword"},
+        "span_id": {"type": "keyword"},
+        "parent_span_id": {"type": "keyword"},
+        "correlation_id": {"type": "keyword"},
+        "business_entity_type": {"type": "keyword"},
+        "business_entity_id": {"type": "keyword"},
+        "business_operation": {"type": "keyword"},
+        "business_outcome": {"type": "keyword"},
+        "service_name": {"type": "keyword"},
+        "severity": {"type": "keyword"},
+        "error_type": {"type": "keyword"},
+        "status_code": {"type": "keyword"},
+        "metric_name": {"type": "keyword"},
+        "metric_unit": {"type": "keyword"},
+        "metric_value": {"type": "double"},
+        "source_reference": {"type": "keyword"},
+        "source_dataset": {"type": "keyword"},
+        "missing_fields": {"type": "keyword"},
+        "data_quality_flags": {"type": "keyword"},
+        "late_arrival_ms": {"type": "double"},
+        "attributes_json": {"type": "keyword", "index": false, "doc_values": false},
+        "resource_attributes_json": {"type": "keyword", "index": false, "doc_values": false},
+        "scope_json": {"type": "keyword", "index": false, "doc_values": false},
+        "payload_hash": {"type": "keyword"}
+      }
+    }
+  },
+  "_meta": {"schema_version": "causalods-v3-unified-events-template-v1", "retention": "external-policy-required"}
+}

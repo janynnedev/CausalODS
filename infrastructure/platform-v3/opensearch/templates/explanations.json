@@ -1,0 +1,39 @@
+{
+  "index_patterns": ["causalods-v3-explanations*"],
+  "priority": 300,
+  "template": {
+    "settings": {"index.mapping.total_fields.limit": 300, "number_of_shards": 1, "number_of_replicas": 0},
+    "mappings": {
+      "dynamic": false,
+      "properties": {
+        "projection_version": {"type": "keyword"},
+        "incident_id": {"type": "keyword"},
+        "explanation_id": {"type": "keyword"},
+        "created_at": {"type": "date"},
+        "mode": {"type": "keyword"},
+        "root_cause_service": {"type": "keyword"},
+        "summary": {"type": "text"},
+        "evidence_references": {"type": "keyword"},
+        "missing_evidence": {"type": "keyword"},
+        "limitations": {"type": "keyword"},
+        "valid": {"type": "boolean"},
+        "fallback": {"type": "boolean"},
+        "fallback_reason": {"type": "keyword"},
+        "provider": {"type": "keyword"},
+        "model_name": {"type": "keyword"},
+        "model_version": {"type": "keyword"},
+        "model_hash": {"type": "keyword"},
+        "prompt_hash": {"type": "keyword"},
+        "evidence_hash": {"type": "keyword"},
+        "latency_ms": {"type": "double"},
+        "tokens_prompt": {"type": "long"},
+        "tokens_completion": {"type": "long"},
+        "reliable": {"type": "boolean"},
+        "confidence": {"type": "double"},
+        "evidence_statements_json": {"type": "keyword", "index": false, "doc_values": false},
+        "payload_hash": {"type": "keyword"}
+      }
+    }
+  },
+  "_meta": {"schema_version": "causalods-v3-explanations-template-v1", "retention": "external-policy-required"}
+}

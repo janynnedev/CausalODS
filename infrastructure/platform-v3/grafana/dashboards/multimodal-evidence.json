@@ -1,0 +1,13 @@
+{
+  "uid": "causalods-v3-multimodal-evidence",
+  "title": "Multimodal Evidence",
+  "tags": ["causalods", "v3", "multimodal"],
+  "schemaVersion": 39,
+  "version": 1,
+  "time": {"from": "now-24h", "to": "now"},
+  "templating": {"list": [{"name": "incident_id", "label": "Incident ID", "type": "textbox", "query": "*", "current": {"text": "*", "value": "*"}}]},
+  "panels": [
+    {"id": 1, "title": "Incident modalities and quality", "type": "table", "datasource": {"type": "grafana-opensearch-datasource", "uid": "causalods-v3-incidents"}, "gridPos": {"h": 7, "w": 24, "x": 0, "y": 0}, "targets": [{"refId": "A", "query": "incident_id:$incident_id", "metrics": [{"id": "1", "type": "raw_data", "settings": {"size": "10"}}], "bucketAggs": []}]},
+    {"id": 2, "title": "Trace / Log / Metric / Business events", "type": "table", "datasource": {"type": "grafana-opensearch-datasource", "uid": "causalods-v3-events"}, "gridPos": {"h": 11, "w": 24, "x": 0, "y": 7}, "targets": [{"refId": "A", "query": "incident_id:$incident_id", "metrics": [{"id": "1", "type": "raw_data", "settings": {"size": "200"}}], "bucketAggs": []}]}
+  ]
+}

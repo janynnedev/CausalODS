@@ -1,0 +1,67 @@
+services:
+  order-service:
+    environment:
+      SPRING_PROFILES_ACTIVE: identity-v3
+      OTEL_METRICS_EXPORTER: otlp
+      OTEL_LOGS_EXPORTER: otlp
+
+  payment-service:
+    environment:
+      SPRING_PROFILES_ACTIVE: identity-v3
+      OTEL_METRICS_EXPORTER: otlp
+      OTEL_LOGS_EXPORTER: otlp
+
+  otel-collector:
+    volumes:
+      - ./collector/otel-collector-config.platform-v3.yaml:/etc/otelcol/config.yaml:ro
+    depends_on:
+      - kafka
+      - tempo
+
+  tempo:
+    image: grafana/tempo:2.7.2
+    container_name: causalods-tempo-v3
+    command: ["-config.file=/etc/tempo.yaml"]
+    volumes:
+      - ./infrastructure/platform-v3/tempo/tempo.yaml:/etc/tempo.yaml:ro
+      - causalods-tempo-v3-data:/var/tempo
+    ports:
+      - "3200:3200"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:3200/ready >/dev/null || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+    networks:
+      - observability
+
+  grafana:
+    image: grafana/grafana:11.6.2
+    container_name: causalods-grafana-v3
+    depends_on:
+      opensearch:
+        condition: service_healthy
+      tempo:
+        condition: service_healthy
+    environment:
+      GF_AUTH_ANONYMOUS_ENABLED: "true"
+      GF_AUTH_ANONYMOUS_ORG_ROLE: Viewer
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_PLUGINS_PREINSTALL: grafana-opensearch-datasource@2.25.0
+    volumes:
+      - ./infrastructure/platform-v3/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./infrastructure/platform-v3/grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - causalods-grafana-v3-data:/var/lib/grafana
+    ports:
+      - "3000:3000"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:3000/api/health >/dev/null || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+    networks:
+      - observability
+
+volumes:
+  causalods-tempo-v3-data:
+  causalods-grafana-v3-data:

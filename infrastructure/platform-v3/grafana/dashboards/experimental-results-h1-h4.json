@@ -1,0 +1,21 @@
+{
+  "uid": "causalods-v3-experimental-results",
+  "title": "Experimental Results H1-H4",
+  "tags": ["causalods", "v3", "evaluation"],
+  "schemaVersion": 39,
+  "version": 1,
+  "time": {"from": "now-30d", "to": "now"},
+  "templating": {"list": [
+    {"name": "campaign", "label": "Campaign", "type": "textbox", "query": "*", "current": {"text": "*", "value": "*"}},
+    {"name": "dataset", "label": "Dataset", "type": "textbox", "query": "*", "current": {"text": "*", "value": "*"}},
+    {"name": "system", "label": "System", "type": "textbox", "query": "*", "current": {"text": "*", "value": "*"}},
+    {"name": "hypothesis", "label": "Hypothesis", "type": "custom", "query": "H1,H2,H3,H4", "includeAll": true, "allValue": "*"},
+    {"name": "model", "label": "Model", "type": "textbox", "query": "*", "current": {"text": "*", "value": "*"}},
+    {"name": "protocol", "label": "Protocol", "type": "textbox", "query": "*", "current": {"text": "*", "value": "*"}}
+  ]},
+  "panels": [
+    {"id": 1, "title": "Canonical Prompt 11 run results", "type": "table", "description": "Grafana presents orchestrator values; it does not recompute metrics.", "datasource": {"type": "grafana-opensearch-datasource", "uid": "causalods-v3-experiments"}, "gridPos": {"h": 12, "w": 24, "x": 0, "y": 0}, "targets": [{"refId": "A", "query": "campaign_id:$campaign AND dataset:$dataset AND system:$system AND hypothesis:$hypothesis AND model:$model AND protocol:$protocol", "metrics": [{"id": "1", "type": "raw_data", "settings": {"size": "500"}}], "bucketAggs": []}]},
+    {"id": 2, "title": "H1/H2 ranking, performance and pruning", "type": "table", "datasource": {"type": "grafana-opensearch-datasource", "uid": "causalods-v3-experiments"}, "gridPos": {"h": 8, "w": 12, "x": 0, "y": 12}, "targets": [{"refId": "A", "query": "campaign_id:$campaign AND dataset:$dataset AND system:$system AND hypothesis:(H1 OR H2) AND model:$model AND protocol:$protocol", "metrics": [{"id": "1", "type": "raw_data", "settings": {"size": "300"}}], "bucketAggs": []}]},
+    {"id": 3, "title": "H3/H4 explanation and degradation", "type": "table", "datasource": {"type": "grafana-opensearch-datasource", "uid": "causalods-v3-experiments"}, "gridPos": {"h": 8, "w": 12, "x": 12, "y": 12}, "targets": [{"refId": "A", "query": "campaign_id:$campaign AND dataset:$dataset AND system:$system AND hypothesis:(H3 OR H4) AND model:$model AND protocol:$protocol", "metrics": [{"id": "1", "type": "raw_data", "settings": {"size": "300"}}], "bucketAggs": []}]}
+  ]
+}

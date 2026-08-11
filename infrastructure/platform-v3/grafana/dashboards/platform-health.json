@@ -1,0 +1,15 @@
+{
+  "uid": "causalods-v3-platform-health",
+  "title": "Platform Health",
+  "tags": ["causalods", "v3", "health"],
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "15s",
+  "time": {"from": "now-1h", "to": "now"},
+  "panels": [
+    {"id": 1, "title": "Instrumented service availability", "type": "stat", "datasource": {"type": "prometheus", "uid": "causalods-prometheus"}, "gridPos": {"h": 6, "w": 8, "x": 0, "y": 0}, "targets": [{"refId": "A", "expr": "up{job=~\"order-service|payment-service\"}", "legendFormat": "{{job}}"}]},
+    {"id": 2, "title": "HTTP request rate", "type": "timeseries", "datasource": {"type": "prometheus", "uid": "causalods-prometheus"}, "gridPos": {"h": 8, "w": 16, "x": 8, "y": 0}, "targets": [{"refId": "A", "expr": "sum(rate(http_server_requests_seconds_count[5m])) by (job)", "legendFormat": "{{job}}"}]},
+    {"id": 3, "title": "OpenSearch-backed RCA writes", "type": "stat", "datasource": {"type": "grafana-opensearch-datasource", "uid": "causalods-v3-rca"}, "gridPos": {"h": 6, "w": 8, "x": 0, "y": 8}, "options": {"reduceOptions": {"calcs": ["sum"], "fields": "", "values": false}}, "targets": [{"refId": "A", "query": "*", "queryType": "lucene", "luceneQueryType": "Metric", "timeField": "generated_at", "metrics": [{"id": "1", "type": "count"}], "bucketAggs": [{"id": "2", "type": "date_histogram", "field": "generated_at", "settings": {"interval": "auto", "min_doc_count": "0"}}]}]},
+    {"id": 4, "title": "Processing records (available signals only)", "type": "table", "datasource": {"type": "grafana-opensearch-datasource", "uid": "causalods-v3-events"}, "gridPos": {"h": 10, "w": 16, "x": 8, "y": 8}, "targets": [{"refId": "A", "query": "*", "metrics": [{"id": "1", "type": "raw_data", "settings": {"size": "100"}}], "bucketAggs": []}]}
+  ]
+}

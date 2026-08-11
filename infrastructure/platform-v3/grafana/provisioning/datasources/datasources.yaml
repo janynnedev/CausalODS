@@ -1,0 +1,47 @@
+apiVersion: 1
+
+datasources:
+  - name: CausalODS v3 Unified Events
+    uid: causalods-v3-events
+    type: grafana-opensearch-datasource
+    access: proxy
+    url: http://opensearch:9200
+    isDefault: false
+    jsonData: {database: causalods-v3-unified-events, flavor: opensearch, version: 2.19.0, timeField: event_timestamp}
+  - name: CausalODS v3 Incidents
+    uid: causalods-v3-incidents
+    type: grafana-opensearch-datasource
+    access: proxy
+    url: http://opensearch:9200
+    jsonData: {database: causalods-v3-incidents, flavor: opensearch, version: 2.19.0, timeField: analysis_window_start}
+  - name: CausalODS v3 RCA Results
+    uid: causalods-v3-rca
+    type: grafana-opensearch-datasource
+    access: proxy
+    url: http://opensearch:9200
+    jsonData: {database: causalods-v3-rca-results, flavor: opensearch, version: 2.19.0, timeField: generated_at}
+  - name: CausalODS v3 Explanations
+    uid: causalods-v3-explanations
+    type: grafana-opensearch-datasource
+    access: proxy
+    url: http://opensearch:9200
+    jsonData: {database: causalods-v3-explanations, flavor: opensearch, version: 2.19.0, timeField: created_at}
+  - name: CausalODS v3 Experiments
+    uid: causalods-v3-experiments
+    type: grafana-opensearch-datasource
+    access: proxy
+    url: http://opensearch:9200
+    jsonData: {database: causalods-v3-experiment-runs, flavor: opensearch, version: 2.19.0, timeField: completed_at}
+  - name: CausalODS Prometheus
+    uid: causalods-prometheus
+    type: prometheus
+    access: proxy
+    url: http://prometheus:9090
+  - name: CausalODS Tempo
+    uid: causalods-tempo
+    type: tempo
+    access: proxy
+    url: http://tempo:3200
+    jsonData:
+      tracesToLogsV2: {datasourceUid: causalods-v3-events, spanStartTimeShift: -5m, spanEndTimeShift: 5m}
+      serviceMap: {datasourceUid: causalods-prometheus}

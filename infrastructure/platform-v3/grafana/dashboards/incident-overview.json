@@ -1,0 +1,18 @@
+{
+  "uid": "causalods-v3-incident-overview",
+  "title": "Incident Overview",
+  "tags": ["causalods", "v3", "operational"],
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "30s",
+  "time": {"from": "now-24h", "to": "now"},
+  "templating": {"list": [
+    {"name": "service", "label": "Service", "type": "custom", "query": "order-service,payment-service,correlation-engine", "includeAll": true, "allValue": "*"},
+    {"name": "reliability", "label": "Reliability", "type": "custom", "query": "true,false", "includeAll": true}
+  ]},
+  "panels": [
+    {"id": 1, "title": "RCA results", "type": "stat", "datasource": {"type": "grafana-opensearch-datasource", "uid": "causalods-v3-rca"}, "gridPos": {"h": 6, "w": 6, "x": 0, "y": 0}, "options": {"reduceOptions": {"calcs": ["sum"], "fields": "", "values": false}}, "targets": [{"refId": "A", "query": "*", "queryType": "lucene", "luceneQueryType": "Metric", "timeField": "generated_at", "metrics": [{"id": "1", "type": "count"}], "bucketAggs": [{"id": "2", "type": "date_histogram", "field": "generated_at", "settings": {"interval": "auto", "min_doc_count": "0"}}]}]},
+    {"id": 2, "title": "Reliable / unreliable / abstained", "type": "table", "datasource": {"type": "grafana-opensearch-datasource", "uid": "causalods-v3-rca"}, "gridPos": {"h": 8, "w": 18, "x": 6, "y": 0}, "targets": [{"refId": "A", "query": "*", "metrics": [{"id": "1", "type": "raw_data", "settings": {"size": "100"}}], "bucketAggs": []}]},
+    {"id": 3, "title": "Incident windows, services and modalities", "type": "table", "datasource": {"type": "grafana-opensearch-datasource", "uid": "causalods-v3-incidents"}, "gridPos": {"h": 10, "w": 24, "x": 0, "y": 8}, "targets": [{"refId": "A", "query": "*", "metrics": [{"id": "1", "type": "raw_data", "settings": {"size": "100"}}], "bucketAggs": []}]}
+  ]
+}

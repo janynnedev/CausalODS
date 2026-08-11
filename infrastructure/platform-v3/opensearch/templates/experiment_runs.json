@@ -1,0 +1,32 @@
+{
+  "index_patterns": ["causalods-v3-experiment-runs*"],
+  "priority": 300,
+  "template": {
+    "settings": {"index.mapping.total_fields.limit": 300, "number_of_shards": 1, "number_of_replicas": 0},
+    "mappings": {
+      "dynamic": false,
+      "properties": {
+        "projection_version": {"type": "keyword"},
+        "evaluation": {"type": "boolean"},
+        "campaign_id": {"type": "keyword"},
+        "run_id": {"type": "keyword"},
+        "hypothesis": {"type": "keyword"},
+        "experiment_family": {"type": "keyword"},
+        "dataset": {"type": "keyword"},
+        "system": {"type": "keyword"},
+        "protocol": {"type": "keyword"},
+        "model": {"type": "keyword"},
+        "feature_view": {"type": "keyword"},
+        "explanation_mode": {"type": "keyword"},
+        "status": {"type": "keyword"},
+        "started_at": {"type": "date"},
+        "completed_at": {"type": "date"},
+        "degradation": {"properties": {"operator": {"type": "keyword"}, "severity": {"type": "double"}}},
+        "metrics_json": {"type": "keyword", "index": false, "doc_values": false},
+        "provenance_json": {"type": "keyword", "index": false, "doc_values": false},
+        "payload_hash": {"type": "keyword"}
+      }
+    }
+  },
+  "_meta": {"schema_version": "causalods-v3-experiment-runs-template-v1", "retention": "scientific-artifacts-remain-canonical"}
+}
