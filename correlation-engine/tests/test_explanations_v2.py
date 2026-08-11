@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field, replace
 from datetime import datetime, timezone
+import hashlib
+import json
 import pytest
 
 from explanations_v2 import (
@@ -16,6 +18,7 @@ from explanations_v2 import (
     InMemoryExplanationProvenanceRepository,
     LLMResponse,
     PromptBuilder,
+    StructuredExplanation,
 )
 from models.evidence import EvidenceDirection, EvidenceItem, EvidenceType
 from models.rca_result import (
@@ -150,6 +153,30 @@ class TimeoutClient:
 
     def generate(self, prompt: str, *, temperature: float):
         raise TimeoutError('timeout')
+
+
+class ProviderErrorClient:
+    requested_model = 'actual-model'
+
+    def generate(self, prompt: str, *, temperature: float):
+        raise RuntimeError('provider unavailable')
+
+
+def valid_llm_payload(**changes):
+    payload = {
+        'root_cause': 'payment-service',
+        'summary': 'ok',
+        'evidence_statements': [{'text': 'root', 'evidence_ids': ['e-root']}],
+        'propagation_path': ['payment failure'],
+        'recommendations': ['inspect payment'],
+        'cited_evidence_ids': ['e-root'],
+    }
+    payload.update(changes)
+    return payload
+
+
+def client_for_payload(payload):
+    return FakeClient(json.dumps(payload, separators=(',', ':')))
 
 
 def build_real_rca_result(
@@ -394,7 +421,13 @@ def test_real_rca_result_is_supported_with_offset_window():
     )
 
     assert result.explanation.root_cause == 'payment-service'
+    assert result.explanation.confidence == 0.569
+    assert result.explanation.reliability is True
     assert result.explanation.used_fallback is False
+    assert result.evidence.model_probabilities['payment-service'] == 0.99
+    assert result.evidence.final_ranking_scores['payment-service'] == 0.569
+    assert result.evidence.confidence == 0.569
+    assert result.evidence.root_cause_evidence_ids == ('real-temporal', 'real-shap')
     assert result.evidence.analysis_window['start'] == '2026-08-10T00:00:00Z'
     assert result.evidence.analysis_window['end'] == '2026-08-10T01:00:00Z'
     assert result.provenance.actual_model == 'actual-model'
@@ -451,6 +484,12 @@ def test_prompt_and_evidence_payloads_are_deep_frozen():
 
     with pytest.raises(TypeError):
         result.prompt.sanitized_context['evidence_catalog'][0]['raw_value']['nested']['values'][0] = 3  # type: ignore[index]
+
+    with pytest.raises(TypeError):
+        result.evidence.feature_values['latency_zscore']['nested']['values'][0] = 3  # type: ignore[index]
+
+    with pytest.raises(TypeError):
+        result.evidence.feature_baselines['latency_zscore']['nested']['values'][0] = 3  # type: ignore[index]
 
 
 @pytest.mark.parametrize(
@@ -514,8 +553,15 @@ def test_invalid_schema_falls_back_deterministically():
     assert result.provenance.fallback_reason == 'invalid_schema'
     assert result.provenance.validation_status == 'passed'
 
-def test_uncertainty_policy_version_cannot_be_tampered():
+def test_uncertainty_policy_version_is_fixed():
     result = build_service().explain(FakeRCA())
+
+    assert result.explanation.uncertainty_policy_version == 'uncertainty-policy-v1'
+    assert result.provenance.uncertainty_policy_version == 'uncertainty-policy-v1'
+    assert (
+        result.provenance.uncertainty_policy_version
+        == result.explanation.uncertainty_policy_version
+    )
 
     with pytest.raises(ValueError, match="uncertainty_policy_version"):
         replace(
@@ -527,4 +573,349 @@ def test_uncertainty_policy_version_cannot_be_tampered():
         replace(
             result.provenance,
             uncertainty_policy_version="evil",
-        )    
+        )
+
+
+def test_uncertainty_policy_coordinated_tampering_is_impossible():
+    result = build_service().explain(FakeRCA())
+
+    with pytest.raises(ValueError, match='uncertainty_policy_version'):
+        replace(result.explanation, uncertainty_policy_version='evil')
+
+    with pytest.raises(ValueError, match='uncertainty_policy_version'):
+        replace(
+            result.provenance,
+            explanation=None,
+            uncertainty_policy_version='evil',
+        )
+
+
+def test_provider_exception_uses_exact_fallback_reason():
+    result = build_service(ProviderErrorClient()).explain(FakeRCA())
+
+    assert result.explanation.used_fallback is True
+    assert result.provenance.fallback_reason == 'provider_error'
+
+
+@pytest.mark.parametrize('response_text', ['', '   '])
+def test_empty_provider_response_uses_exact_fallback_reason(response_text):
+    result = build_service(InvalidResponseClient(response_text)).explain(FakeRCA())
+
+    assert result.explanation.used_fallback is True
+    assert result.provenance.fallback_reason == 'empty_response'
+
+
+@pytest.mark.parametrize(
+    'payload',
+    [
+        {},
+        {'summary': 'ok'},
+        [],
+        valid_llm_payload(unknown=True),
+    ],
+    ids=['empty-object', 'summary-only', 'top-level-list', 'unknown-field'],
+)
+def test_closed_llm_schema_rejects_invalid_payloads(payload):
+    result = build_service(client_for_payload(payload)).explain(FakeRCA())
+
+    assert result.explanation.used_fallback is True
+    assert result.provenance.fallback_reason == 'invalid_schema'
+
+
+@pytest.mark.parametrize(
+    'missing_field',
+    [
+        'root_cause',
+        'summary',
+        'evidence_statements',
+        'propagation_path',
+        'recommendations',
+        'cited_evidence_ids',
+    ],
+)
+def test_closed_llm_schema_rejects_each_missing_required_field(missing_field):
+    payload = valid_llm_payload()
+    del payload[missing_field]
+
+    result = build_service(client_for_payload(payload)).explain(FakeRCA())
+
+    assert result.explanation.used_fallback is True
+    assert result.provenance.fallback_reason == 'invalid_schema'
+
+
+@pytest.mark.parametrize(
+    'returned_root, expected_fallback_reason',
+    [
+        ('payment-service', None),
+        ('order-service', 'root_cause_mismatch'),
+        ('unknown-service', 'root_cause_mismatch'),
+    ],
+)
+def test_llm_cannot_change_trusted_root(returned_root, expected_fallback_reason):
+    rca = FakeRCA()
+    result = build_service(
+        client_for_payload(valid_llm_payload(root_cause=returned_root))
+    ).explain(rca)
+
+    assert result.explanation.root_cause == rca.root_cause_service
+    assert result.explanation.used_fallback is (expected_fallback_reason is not None)
+    assert result.provenance.fallback_reason == expected_fallback_reason
+
+
+def test_statement_as_string_is_invalid_schema():
+    payload = valid_llm_payload(evidence_statements=['foo'])
+
+    result = build_service(client_for_payload(payload)).explain(FakeRCA())
+
+    assert result.provenance.fallback_reason == 'invalid_schema'
+
+
+def test_statement_without_evidence_ids_is_rejected_by_rigid_contract():
+    payload = valid_llm_payload(
+        evidence_statements=[{'text': 'root', 'evidence_ids': []}],
+        cited_evidence_ids=[],
+    )
+
+    result = build_service(client_for_payload(payload)).explain(FakeRCA())
+
+    assert result.explanation.used_fallback is True
+    assert result.provenance.fallback_reason == 'invalid_schema'
+
+
+@pytest.mark.parametrize('invalid_id', ['made-up-evidence', 'trace-1'])
+def test_only_canonical_evidence_ids_are_citable(invalid_id):
+    payload = valid_llm_payload(
+        evidence_statements=[{'text': 'root', 'evidence_ids': [invalid_id]}],
+        cited_evidence_ids=[invalid_id],
+    )
+
+    result = build_service(client_for_payload(payload)).explain(FakeRCA())
+
+    assert result.explanation.used_fallback is True
+    assert result.provenance.fallback_reason == 'invalid_evidence_reference'
+
+
+@pytest.mark.parametrize(
+    'trusted_field, provider_value',
+    [
+        ('uncertainty', 'low'),
+        ('missing_evidence', []),
+        ('limitations', []),
+        ('confidence', 1.0),
+        ('reliability', False),
+    ],
+)
+def test_llm_cannot_supply_trusted_fields(trusted_field, provider_value):
+    result = build_service(
+        client_for_payload(valid_llm_payload(**{trusted_field: provider_value}))
+    ).explain(FakeRCA())
+
+    assert result.explanation.used_fallback is True
+    assert result.provenance.fallback_reason == 'invalid_schema'
+
+
+def test_temporal_only_fallback_uses_canonical_evidence():
+    rca = FakeRCA(
+        ranking=(
+            FakeRankedService('payment-service', FakeScore(0.99, 0.569), ('e-temporal',)),
+            FakeRankedService('order-service', FakeScore(0.40, 0.20)),
+        ),
+        evidence=(FakeEvidence('e-temporal', 'temporal'),),
+    )
+
+    result = build_service().explain(rca)
+
+    assert result.explanation.root_cause == 'payment-service'
+    assert result.explanation.used_fallback is True
+    assert any('temporal' in item.text for item in result.explanation.evidence_statements)
+    assert result.explanation.cited_evidence_ids == ('e-temporal',)
+
+
+def test_graph_only_fallback_uses_canonical_evidence():
+    rca = FakeRCA(
+        ranking=(
+            FakeRankedService('payment-service', FakeScore(0.99, 0.569), ('e-graph',)),
+            FakeRankedService('order-service', FakeScore(0.40, 0.20)),
+        ),
+        evidence=(FakeEvidence('e-graph', 'graph'),),
+    )
+
+    result = build_service().explain(rca)
+
+    assert result.explanation.root_cause == 'payment-service'
+    assert result.explanation.used_fallback is True
+    assert any('estrutural' in item.text for item in result.explanation.evidence_statements)
+    assert result.explanation.cited_evidence_ids == ('e-graph',)
+
+
+def test_no_shap_fallback_remains_valid():
+    rca = replace(
+        FakeRCA(),
+        evidence=(
+            FakeEvidence('e-root', 'temporal'),
+            FakeEvidence('e-alt', 'graph', service_name='order-service'),
+        ),
+    )
+
+    result = build_service().explain(rca)
+
+    assert result.explanation.root_cause == 'payment-service'
+    assert result.explanation.used_fallback is True
+    assert result.evidence.top_shap_features == ()
+
+
+def test_root_without_evidence_ids_does_not_invent_citations():
+    rca = FakeRCA(
+        ranking=(
+            FakeRankedService('payment-service', FakeScore(0.99, 0.569)),
+            FakeRankedService('order-service', FakeScore(0.40, 0.20)),
+        ),
+        evidence=(),
+    )
+
+    result = build_service().explain(rca)
+
+    assert result.explanation.root_cause == 'payment-service'
+    assert 'root_cause_without_citable_evidence' in result.evidence.limitations
+    assert result.explanation.evidence_statements == ()
+    assert result.explanation.cited_evidence_ids == ()
+
+
+@pytest.mark.parametrize('client', [None, FakeClient()], ids=['fallback', 'valid-llm'])
+def test_trusted_rca_values_are_preserved_in_all_paths(client):
+    rca = FakeRCA()
+
+    result = build_service(client).explain(rca)
+
+    assert result.explanation.root_cause == rca.root_cause_service
+    assert result.explanation.confidence == 0.569
+    assert result.explanation.reliability is True
+
+
+@pytest.mark.parametrize('invalid_score', [float('nan'), float('inf'), -0.1, 1.1, True])
+@pytest.mark.parametrize('field_name', ['model_probabilities', 'final_ranking_scores', 'confidence'])
+def test_evidence_object_rejects_invalid_scores(field_name, invalid_score):
+    evidence = build_service()._build_evidence(FakeRCA())
+    mutation = {field_name: invalid_score}
+    if field_name != 'confidence':
+        mutation[field_name] = {'payment-service': invalid_score}
+
+    with pytest.raises((TypeError, ValueError)):
+        replace(evidence, **mutation)
+
+
+def test_shap_semantics_are_preserved():
+    rca = FakeRCA(
+        ranking=(
+            FakeRankedService('payment-service', FakeScore(0.99, 0.569), ('shap-low',)),
+            FakeRankedService('order-service', FakeScore(0.40, 0.20)),
+        ),
+        evidence=(
+            FakeEvidence('shap-low', 'shap', source_component='shap', metric_name='f-low', raw_value=0.2, attributes={'feature_value': 1.2, 'baseline': 0.1}),
+            FakeEvidence('shap-high', 'shap', source_component='shap', metric_name='f-high', raw_value=-0.8, attributes={'feature_value': 2.3}),
+            FakeEvidence('shap-mid', 'shap', source_component='shap', metric_name='latency_zscore', raw_value=0.5, attributes={'feature_value': 4.8}),
+            FakeEvidence('shap-other', 'shap', source_component='shap', service_name='order-service', metric_name='other', raw_value=-99.0, attributes={'feature_value': 99.0}),
+        ),
+    )
+
+    evidence = build_service()._build_evidence(rca)
+
+    assert [item.raw_value for item in evidence.top_shap_features] == [-0.8, 0.5, 0.2]
+    assert all(item.service_name == 'payment-service' for item in evidence.top_shap_features)
+    assert evidence.feature_values['latency_zscore'] == 4.8
+    assert 'f-high' not in evidence.feature_baselines
+    assert 'latency_zscore' not in evidence.feature_baselines
+    assert 'feature_baseline' in evidence.missing_evidence
+
+
+@pytest.mark.parametrize(
+    'text, evidence_ids',
+    [
+        ('', ('e1',)),
+        ('   ', ('e1',)),
+        ('texto', ()),
+        ('texto', ('bad id',)),
+        ('texto', 'e1'),
+    ],
+)
+def test_evidence_statement_rejects_invalid_values(text, evidence_ids):
+    with pytest.raises((TypeError, ValueError)):
+        EvidenceStatementV1(text, evidence_ids)
+
+
+@pytest.mark.parametrize(
+    'mutation',
+    [
+        {'tokens_prompt': True},
+        {'tokens_prompt': 1.5},
+        {'tokens_completion': -1},
+        {'latency_ms': True},
+        {'latency_ms': float('nan')},
+        {'cost_usd': float('nan')},
+        {'cost_usd': -1},
+        {'response_hash': 'bad'},
+        {'response_hash': '0' * 64},
+    ],
+)
+def test_llm_response_rejects_invalid_values(mutation):
+    with pytest.raises((TypeError, ValueError)):
+        LLMResponse(text='abc', model_name='model', **mutation)
+
+
+def test_llm_response_computes_hash_from_text():
+    response = LLMResponse(text='abc', model_name='model', response_hash=None)
+
+    assert response.response_hash == hashlib.sha256(b'abc').hexdigest()
+
+
+@pytest.mark.parametrize(
+    'mutation',
+    [
+        {'schema_version': 'different'},
+        {'uncertainty': 'unknown'},
+        {'uncertainty_policy_version': 'evil'},
+        {'mode': 'unknown'},
+        {'confidence': 1.1},
+        {'confidence': float('nan')},
+        {'reliability': 1},
+        {'tokens_prompt': -1},
+        {'tokens_prompt': True},
+        {'latency_ms': float('nan')},
+        {'cost_usd': float('nan')},
+        {'prompt_hash': 'bad'},
+        {'used_fallback': True, 'fallback_reason': None},
+        {'used_fallback': False, 'fallback_reason': 'timeout'},
+    ],
+)
+def test_structured_explanation_rejects_invalid_values(mutation):
+    explanation = build_service(FakeClient()).explain(FakeRCA()).explanation
+
+    with pytest.raises((TypeError, ValueError)):
+        replace(explanation, **mutation)
+
+
+def test_evidence_reference_raw_value_is_deep_frozen_and_source_isolated():
+    source = {'nested': {'values': [1]}}
+    reference = EvidenceReferenceV1(
+        evidence_id='e1',
+        evidence_type='temporal',
+        source_component='test',
+        raw_value=source,
+    )
+
+    source['nested']['values'].append(2)
+    assert reference.raw_value['nested']['values'] == (1,)
+
+    with pytest.raises(TypeError):
+        reference.raw_value['nested']['values'][0] = 3  # type: ignore[index]
+
+
+def test_invalid_json_preserves_complete_provider_provenance():
+    result = build_service(InvalidResponseClient()).explain(FakeRCA())
+
+    assert result.provenance.response_hash == hashlib.sha256(b'not-json').hexdigest()
+    assert result.provenance.actual_model == 'actual-model'
+    assert result.provenance.tokens_prompt == 7
+    assert result.provenance.tokens_completion == 1
+    assert result.provenance.latency_ms == 5.0
+    assert result.provenance.cost_usd == 0.01

@@ -606,6 +606,8 @@ class ExplanationProvenanceRecordV1:
         object.__setattr__(self, "explanation_hash", _ensure_text(self.explanation_hash, "explanation_hash"))
         if not _SHA256.fullmatch(self.explanation_hash):
             raise ValueError("explanation_hash inválido")
+        if self.uncertainty_policy_version != "uncertainty-policy-v1":
+            raise ValueError("uncertainty_policy_version inválida")
         expected_provenance_id = sha256_canonical(
             {
                 "prompt_hash": self.prompt_hash,
@@ -664,8 +666,6 @@ class ExplanationProvenanceRecordV1:
                 raise ValueError("used_fallback não corresponde à explanation")
             if self.fallback_reason != self.explanation.fallback_reason:
                 raise ValueError("fallback_reason não corresponde à explanation")
-            if self.uncertainty_policy_version != "uncertainty-policy-v1":
-                raise ValueError("uncertainty_policy_version inválida")
             if self.uncertainty_policy_version != self.explanation.uncertainty_policy_version:
                 raise ValueError("uncertainty_policy_version não corresponde à explanation")
             if self.explanation_hash != sha256_canonical(self.explanation.to_dict()):
