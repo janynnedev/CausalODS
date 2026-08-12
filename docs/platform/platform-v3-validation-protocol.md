@@ -23,6 +23,13 @@ somente em `evaluation`; um scan das projeções operacionais comprova ausência
 leakage. O checksum, o hash do modelo e os hashes do registry/view são revalidados
 dinamicamente pelo release gate.
 
+As evidências de regressão e fault E2E são criptograficamente vinculadas ao
+mesmo snapshot-fonte determinístico. O fingerprint usa caminhos Git versionados
+e SHA-256 dos conteúdos, excluindo apenas artefatos gerados autorreferentes,
+caches e os modelos já validados pelo gate criptográfico próprio. O relatório de
+validação recalcula o snapshot uma vez e o reconcilia com `test-results.json`,
+`fault-e2e-live.json` e `release-manifest.json`.
+
 ## Comandos
 
 ```bash

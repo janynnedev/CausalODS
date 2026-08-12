@@ -15,6 +15,7 @@
 - [x] Artefato operacional `xgboost-rca-v3` publicado e verificado por hash/load/inferência.
 - [x] Runtime multimodal v3 conectado ponta a ponta e com health composto.
 - [x] Fault E2E Docker payment failure completo, 19/19 estágios e checksum.
+- [x] Evidências de regressão, fault E2E, validação e manifesto vinculadas ao mesmo snapshot-fonte SHA-256.
 - [x] OpenSearch indexing/query live validado nos cinco índices.
 - [x] Grafana API/provisioning/query live validado.
 - [x] Tempo: ingestão, busca por TraceId e proxy Grafana validados.
