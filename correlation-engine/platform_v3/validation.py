@@ -22,7 +22,9 @@ from platform_v3.constants import (
     RELEASE_SCHEMA_VERSION, REQUIRED_DASHBOARDS, ROOT, VALIDATION_SCHEMA_VERSION,
 )
 from platform_v3.fixtures import build_demo_scenario
+from platform_v3.fault_e2e import fault_e2e_live_status
 from platform_v3.opensearch import TemplateCatalog
+from platform_v3.operational_model import operational_model_status
 from platform_v3.serialization import canonical_json
 from platform_v3.smoke import run_contract_smoke
 from ranking.evidence_builder import EvidenceBuilder
@@ -319,6 +321,7 @@ def live_health() -> dict[str, Any]:
         "grafana": _probe("http://localhost:3000/api/health"),
         "tempo": _probe("http://localhost:3200/ready"),
         "prometheus": _probe("http://localhost:9090/-/ready"),
+        "platform_v3_runtime": _probe("http://localhost:8090/ready"),
     }
 
 
@@ -334,7 +337,8 @@ def validate_platform(*, live: bool = False) -> dict[str, Any]:
     smoke = run_contract_smoke()
     security = security_scan()
     regressions = regression_results()
-    model_candidates = tuple((ROOT / "artifacts/platform-v3/models").glob("xgboost_rca_v3*"))
+    model = operational_model_status()
+    fault_e2e = fault_e2e_live_status() if live else {}
     live_opensearch = live_opensearch_status() if live else {}
     live_grafana = live_grafana_status() if live else {}
     live_tempo = live_tempo_status() if live else {}
@@ -353,9 +357,9 @@ def validate_platform(*, live: bool = False) -> dict[str, Any]:
         _gate("experimental_orchestrator", PASS, "Prompt 11 importável e coberto pela regressão dedicada", {"version": "experimental-orchestrator-v3"}),
         _gate(
             "operational_xgboost_rca_v3",
-            PASS if model_candidates else FAIL,
-            "artefato operacional xgboost-rca-v3 presente" if model_candidates else "benchmark v3 existe, mas nenhum artefato operacional v3 foi publicado",
-            {"artifacts": [str(item.relative_to(ROOT)) for item in model_candidates]},
+            PASS if model["valid"] else FAIL,
+            model["reason"],
+            model,
         ),
     ]
     if live:
@@ -366,7 +370,10 @@ def validate_platform(*, live: bool = False) -> dict[str, Any]:
             _gate("live_opensearch", PASS if opensearch_ok else FAIL, "cluster, cinco índices e contagens consultáveis", live_opensearch),
             _gate("live_grafana", PASS if grafana_ok else FAIL, "8 dashboards, datasources, query e alert state consultáveis", live_grafana),
             _gate("live_tempo", PASS if tempo_ok else SKIP, "trace real pesquisável direto e via Grafana" if tempo_ok else "TEMPO_NOT_ENABLED ou nenhum trace de validação disponível", live_tempo, required=False),
-            _gate("fault_e2e_live", FAIL, "o runner live multimodal até OpenSearch/Grafana ainda não está conectado ao runtime v3"),
+            _gate(
+                "fault_e2e_live", PASS if fault_e2e["valid"] else FAIL,
+                fault_e2e["reason"], fault_e2e,
+            ),
         ])
     else:
         gates.extend([
@@ -407,7 +414,7 @@ def validate_platform(*, live: bool = False) -> dict[str, Any]:
             "correlation_id": "preserved_and_distinct_from_trace_id",
             "modalities": ["trace", "log", "metric", "business_event"],
             "graph": "EventEvidenceGraph exercised by contract smoke",
-            "model": "xgboost-rca-v3 artifact missing" if not model_candidates else "artifact present",
+            "model": "operational xgboost-rca-v3 verified" if model["valid"] else "operational model invalid",
             "reliability": "RCAResult reliability/abstention contract exercised",
             "explanation": "EvidenceBuilder + deterministic StructuredExplanation exercised",
             "experimental_orchestrator": "experimental-orchestrator-v3",
@@ -423,10 +430,9 @@ def validate_platform(*, live: bool = False) -> dict[str, Any]:
         },
         "decision": "READY_FOR_FINAL_EXPERIMENTS" if ready else "NOT_READY_FOR_FINAL_EXPERIMENTS",
         "limitations": [
-            "runtime multimodal v3 não está ligado a um sink operacional completo",
-            "artefato operacional xgboost-rca-v3 ausente",
             "live LLM é opcional e não foi utilizado",
-            "Tempo recebe traces somente quando o collector v3 está ativado no overlay",
+            "business events live permanecem capability não bloqueante e não são fabricados",
+            "o modelo operacional serve somente a runtime_e2e_validation, não a resultados científicos H1/H2",
         ],
     }
 
@@ -435,6 +441,8 @@ def release_manifest(validation: dict[str, Any]) -> dict[str, Any]:
     registry = FeatureRegistryV3()
     freeze = v2_freeze_status()
     graph_rules = dict(build_demo_scenario("payment_failure").graph.rule_versions)
+    model = operational_model_status()
+    fault = fault_e2e_live_status()
     return {
         "schema_version": RELEASE_SCHEMA_VERSION,
         "generated_at": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
@@ -453,7 +461,9 @@ def release_manifest(validation: dict[str, Any]) -> dict[str, Any]:
             "feature_registry_version": registry.schema_version,
             "feature_registry_hash": registry.fingerprint,
             "model_version": "xgboost-rca-v3",
-            "model_hash": None,
+            "model_hash": model.get("artifact_sha256") if model["valid"] else None,
+            "model_purpose": model.get("manifest", {}).get("purpose") if model["valid"] else None,
+            "fault_e2e_artifact_hash": fault.get("report_sha256") if fault["valid"] else None,
             "reliability_version": "reliability-gate-v1",
             "EvidenceBuilder_version": EvidenceBuilder.BUILDER_VERSION,
             "PromptBuilder_version": "prompt-builder-v1",

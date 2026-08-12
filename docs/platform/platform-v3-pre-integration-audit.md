@@ -44,10 +44,26 @@ Os marcos estão presentes no histórico por commits/tags, de
 | Resultados v1/v2 | `results/` e `docs/realignment/v2-freeze-manifest.md` |
 | Persistência OpenSearch | `correlation-engine/persistence/opensearch/` |
 
-Não existe artefato operacional persistido `xgboost-rca-v3` no repositório. O nome
-é implementado e validado no benchmark científico, que produz artefatos por execução.
-Isso impede declarar que o runtime online já carrega o modelo v3 sem uma integração
-posterior explícita.
+## Wiring operacional do Prompt 12
+
+A auditoria de integração confirmou e reutilizou as APIs, sem redefinir contratos:
+
+| Etapa | API usada pelo runtime |
+|---|---|
+| Kafka/normalização | `MultimodalKafkaConsumer.process_message` e `MultimodalIngestionService.prepare/deliver/confirm` |
+| Lifecycle | `IncidentEvidenceAssembler.ingest/active_bundles` com identidade correlation/trace e idle determinístico |
+| Grafo/pruning | `EventGraphBuilder.build` e `CandidatePruner.prune`, sem ground truth |
+| Features | `RCAFeatureExtractorV3.extract` e full view de `FeatureRegistryV3` (40 colunas) |
+| Treino/load | `benchmark_v3.train_and_evaluate`, `load_verified_artifact`, pipeline `joblib` e `positive_scores` |
+| Ranking/RCA | `EvidenceBuilder.build`, `RCARankingService.rank_context`, `ReliabilityGate.evaluate`, `RCAResult.create` |
+| Explicação | `explanations_v2.ExplanationService`; fallback determinístico preserva root cause/confiança/citações |
+| Persistência | `VisualizationDocumentAdapter` e `OpenSearchProjectionRepository` |
+
+O artefato em `artifacts/platform-v3/models/` declara
+`purpose=runtime_e2e_validation`. Ele usa o manifesto e a cadeia de integridade do
+benchmark real, mas não constitui resultado científico H1/H2 nem usa o conjunto de
+teste final. O runtime novo existe somente em `platform_v3` e no overlay; a auditoria
+do runtime v2 continua com zero imports para `multimodal_v1`.
 
 ## OpenSearch existente
 

@@ -62,6 +62,45 @@ services:
     networks:
       - observability
 
+  platform-v3-runtime:
+    build:
+      context: ./correlation-engine
+    container_name: causalods-platform-v3-runtime
+    command: ["python", "-m", "platform_v3", "runtime"]
+    restart: unless-stopped
+    depends_on:
+      kafka:
+        condition: service_healthy
+      opensearch:
+        condition: service_healthy
+    environment:
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      MULTIMODAL_CONSUMER_GROUP: causalods-platform-v3-runtime
+      MULTIMODAL_TRACE_TOPIC: traces-v3
+      MULTIMODAL_LOG_TOPIC: logs-v1
+      MULTIMODAL_METRIC_TOPIC: metrics-v1
+      BUSINESS_EVENT_TOPIC: business-events-v1
+      MULTIMODAL_DEAD_LETTER_TOPIC: multimodal-dead-letter-v1
+      PLATFORM_V3_OPENSEARCH_HOST: causalods-opensearch
+      PLATFORM_V3_OPENSEARCH_PORT: "9200"
+      PLATFORM_V3_MODEL_ROOT: /models
+      PLATFORM_V3_TEMPLATE_ROOT: /platform-v3-templates
+      PLATFORM_V3_HEALTH_PORT: "8090"
+      PLATFORM_V3_INCIDENT_IDLE_SECONDS: "3"
+    volumes:
+      - ./artifacts/platform-v3/models:/models:ro
+      - ./infrastructure/platform-v3/opensearch/templates:/platform-v3-templates:ro
+    ports:
+      - "8090:8090"
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import json,urllib.request; assert json.load(urllib.request.urlopen('http://localhost:8090/ready', timeout=2))['ready']\""]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+      start_period: 20s
+    networks:
+      - observability
+
 volumes:
   causalods-tempo-v3-data:
   causalods-grafana-v3-data:

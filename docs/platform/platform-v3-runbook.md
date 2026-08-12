@@ -48,13 +48,14 @@ CAUSALODS_PAYMENT_FAULT_MODE=none docker compose -f docker-compose.yml -f docker
 
 Latency usa o mesmo fluxo com
 `CAUSALODS_PAYMENT_FAULT_MODE=latency` e
-`CAUSALODS_PAYMENT_FAULT_DELAY_MS=750`. Esses cenários validam o caminho até
-Tempo; enquanto o runtime multimodal/modelo v3 estiver desconectado, não são o
-fault E2E requerido pelo release gate.
+`CAUSALODS_PAYMENT_FAULT_DELAY_MS=750`. O gate final usa o comando automatizado
+`e2e-live`; os comandos manuais continuam úteis apenas para diagnóstico.
 
 ## Smoke, validação e experimento reduzido
 
 ```bash
+PYTHONPATH=correlation-engine .venv-host/bin/python -m platform_v3 publish-operational-model
+PYTHONPATH=correlation-engine .venv-host/bin/python -m platform_v3 e2e-live --scenario payment_failure --output artifacts/platform-v3
 PYTHONPATH=correlation-engine .venv-host/bin/python -m platform_v3 smoke
 PYTHONPATH=correlation-engine .venv-host/bin/python -m platform_v3 seed-demo
 PYTHONPATH=correlation-engine .venv-host/bin/python -m platform_v3 validate --live --output /tmp/causalods-platform-v3-live
@@ -70,6 +71,7 @@ Nenhum desses comandos executa a campanha científica completa ou live LLM.
 - OpenSearch health: `curl -fsS http://localhost:9200/_cluster/health`;
 - Tempo ready: `curl -fsS http://localhost:3200/ready`;
 - Prometheus: `http://localhost:9090`.
+- Runtime v3 health: `http://localhost:8090/health` (`alive`, consumer, modelo, OpenSearch e `ready`).
 
 ```bash
 curl -fsS 'http://localhost:9200/causalods-v3-incidents/_search?q=incident_id:INCIDENT_ID'
@@ -81,5 +83,6 @@ curl -fsS --get 'http://localhost:3200/api/search' --data-urlencode 'q={ resourc
 curl -fsS 'http://localhost:3200/api/traces/TRACE_ID'
 ```
 
-Os cenários healthy/fault/latency live continuam bloqueados até o runtime v3
-possuir um runner que injete a falha e encadeie o sink multimodal até os índices.
+O runner `e2e-live` restaura os fault modes para `none` no bloco final e grava
+`fault-e2e-live.json` mais seu SHA-256. Não interrompa o processo durante a
+recriação dos serviços; se isso ocorrer, restaure explicitamente o modo `none`.

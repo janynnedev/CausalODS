@@ -1,6 +1,6 @@
 # Platform v3 validation report
 
-Decision: **NOT_READY_FOR_FINAL_EXPERIMENTS**
+Decision: **READY_FOR_FINAL_EXPERIMENTS**
 
 | Gate | Status | Reason |
 |---|---|---|
@@ -12,15 +12,14 @@ Decision: **NOT_READY_FOR_FINAL_EXPERIMENTS**
 | security | PASS | scan não imprime valores encontrados |
 | regression_suites | PASS | suítes e checks finais registrados |
 | experimental_orchestrator | PASS | Prompt 11 importável e coberto pela regressão dedicada |
-| operational_xgboost_rca_v3 | FAIL | benchmark v3 existe, mas nenhum artefato operacional v3 foi publicado |
+| operational_xgboost_rca_v3 | PASS | manifesto, hashes, benchmark, load, inferência e ranking válidos |
 | live_opensearch | PASS | cluster, cinco índices e contagens consultáveis |
 | live_grafana | PASS | 8 dashboards, datasources, query e alert state consultáveis |
 | live_tempo | PASS | trace real pesquisável direto e via Grafana |
-| fault_e2e_live | FAIL | o runner live multimodal até OpenSearch/Grafana ainda não está conectado ao runtime v3 |
+| fault_e2e_live | PASS | checksum, modelo, 19 estágios, integrações e leakage válidos |
 
 ## Limitations
 
-- runtime multimodal v3 não está ligado a um sink operacional completo
-- artefato operacional xgboost-rca-v3 ausente
 - live LLM é opcional e não foi utilizado
-- Tempo recebe traces somente quando o collector v3 está ativado no overlay
+- business events live permanecem capability não bloqueante e não são fabricados
+- o modelo operacional serve somente a runtime_e2e_validation, não a resultados científicos H1/H2

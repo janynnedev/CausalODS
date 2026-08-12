@@ -28,6 +28,13 @@ def parser() -> argparse.ArgumentParser:
     commands.add_parser("down")
     commands.add_parser("health")
     commands.add_parser("smoke")
+    commands.add_parser("runtime")
+    publish = commands.add_parser("publish-operational-model")
+    publish.add_argument("--output", type=Path, default=ARTIFACT_ROOT / "models")
+    e2e = commands.add_parser("e2e-live")
+    e2e.add_argument("--scenario", default="payment_failure", choices=("payment_failure",))
+    e2e.add_argument("--output", type=Path, default=ARTIFACT_ROOT)
+    e2e.add_argument("--timeout", type=float, default=120.0)
     validate = commands.add_parser("validate")
     validate.add_argument("--live", action="store_true", default=False)
     validate.add_argument("--output", type=Path, default=ARTIFACT_ROOT)
@@ -53,6 +60,19 @@ def main(argv: list[str] | None = None) -> int:
         report = run_contract_smoke()
         print(json.dumps(report, sort_keys=True))
         return 0 if report["status"] == "PASS" else 2
+    if args.command == "runtime":
+        from platform_v3.runtime import run_runtime
+        return run_runtime()
+    if args.command == "publish-operational-model":
+        from platform_v3.operational_model import publish_operational_model
+        report = publish_operational_model(args.output)
+        print(json.dumps({"status": "PASS", **report}, sort_keys=True, default=str))
+        return 0
+    if args.command == "e2e-live":
+        from platform_v3.e2e_live import run_fault_e2e
+        report = run_fault_e2e(args.output, scenario=args.scenario, timeout=args.timeout)
+        print(json.dumps({"status": report["status"], "output": str(args.output)}, sort_keys=True))
+        return 0 if report["status"] == "SUCCESS" else 2
     if args.command in {"validate", "report"}:
         paths = write_validation_artifacts(args.output, live=args.live)
         report = json.loads(paths["report_json"].read_text(encoding="utf-8"))

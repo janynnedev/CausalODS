@@ -37,7 +37,9 @@ apontar para vários traces; nenhum dos dois é convertido no outro.
 
 ## Estado do runtime
 
-Os contratos e o benchmark `xgboost-rca-v3` existem, mas não há artefato de
-modelo v3 publicado para o runtime online nem sink que encadeie toda a ingestão
-v3 até a persistência. O release gate marca essa lacuna como bloqueante em vez
-de inferir que o benchmark já seja o runtime.
+O serviço `platform-v3-runtime`, exclusivo do overlay, consome os tópicos v3,
+normaliza eventos, mantém lifecycle por identidade, processa bundles distribuídos
+com falha, executa o modelo operacional verificado e persiste as quatro projeções
+operacionais. Seu health só declara `ready` quando consumer, modelo e OpenSearch
+estão efetivamente disponíveis. O artefato operacional não substitui modelos das
+campanhas científicas.

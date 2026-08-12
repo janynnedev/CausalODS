@@ -17,16 +17,17 @@ signal. Ele usa eventos controlados somente nos limites declarados
 extractor, RCAResult, explicação e adaptadores são reais. Por isso ele não é
 rotulado como E2E Docker.
 
-Como validação live parcial, o injetor real produziu: healthy HTTP 200; payment
-failure HTTP 500 com 3 spans de erro; e payment latency HTTP 200 em 0,848 s,
-com trace de 846 ms. Os traces preservaram o correlation ID e envolveram
-order/payment. Missing signal permaneceu no harness/fixture. Esses testes param
-em Collector/Tempo e não satisfazem o fault E2E completo até RCA/Grafana.
+O fault live obrigatório injeta payment failure, envia uma request real e valida
+19 estágios até RCA, explicação, OpenSearch, Grafana e Tempo. Ground truth aparece
+somente em `evaluation`; um scan das projeções operacionais comprova ausência de
+leakage. O checksum, o hash do modelo e os hashes do registry/view são revalidados
+dinamicamente pelo release gate.
 
 ## Comandos
 
 ```bash
 PYTHONPATH=correlation-engine .venv-host/bin/python -m platform_v3 smoke
+PYTHONPATH=correlation-engine .venv-host/bin/python -m platform_v3 e2e-live --scenario payment_failure --output artifacts/platform-v3
 PYTHONPATH=correlation-engine .venv-host/bin/python -m platform_v3 validate --output /tmp/causalods-platform-v3
 PYTHONPATH=correlation-engine .venv-host/bin/python -m platform_v3 validate --live --output /tmp/causalods-platform-v3-live
 ```

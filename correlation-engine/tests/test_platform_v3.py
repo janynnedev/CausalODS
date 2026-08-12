@@ -3,6 +3,7 @@ from __future__ import annotations
 import hashlib
 import json
 from pathlib import Path
+import shutil
 
 import pytest
 
@@ -12,6 +13,13 @@ from platform_v3.constants import INDEX_NAMES, REQUIRED_DASHBOARDS, ROOT
 from platform_v3.documents import VisualizationDocumentAdapter
 from platform_v3.experiments import ExperimentArtifactImporter
 from platform_v3.fixtures import CORRELATION_ID, TRACE_ID, build_demo_scenario
+from platform_v3.fault_e2e import (
+    FAULT_E2E_CHECKSUM, FAULT_E2E_REPORT, FAULT_E2E_SCHEMA, STAGE_NAMES,
+    fault_e2e_live_status,
+)
+from platform_v3.operational_model import (
+    DEFAULT_MODELS_ROOT, MODEL_MANIFEST, operational_model_status,
+)
 from platform_v3.opensearch import OpenSearchProjectionRepository, TemplateCatalog
 from platform_v3.serialization import canonical_json
 from platform_v3.smoke import run_contract_smoke
@@ -219,11 +227,12 @@ def test_smoke_covers_four_scenarios_and_declares_fixture_boundaries():
     assert report["not_validated"]
 
 
-def test_release_validation_is_honest_about_missing_operational_model():
+def test_release_validation_verifies_operational_model_but_offline_e2e_remains_skip():
     report = validate_platform(live=False)
     gates = {item["name"]: item for item in report["gates"]}
     assert gates["v2_runtime_isolation"]["status"] == PASS
-    assert gates["operational_xgboost_rca_v3"]["status"] == FAIL
+    assert gates["operational_xgboost_rca_v3"]["status"] == PASS
+    assert gates["fault_e2e_live"]["status"] == "SKIP_WITH_REASON"
     assert report["decision"] == "NOT_READY_FOR_FINAL_EXPERIMENTS"
 
 
@@ -249,3 +258,130 @@ def test_v2_import_audit_remains_green():
     # O módulo legado test_training.py regrava xgboost_rca.pkl na coleta global.
     # O hash congelado é restaurado e validado pelo release gate após a suíte.
     assert v2_import_audit() == {"valid": True, "imports": [], "count": 0}
+
+
+def _model_copy(tmp_path: Path) -> Path:
+    target = tmp_path / "models"
+    shutil.copytree(DEFAULT_MODELS_ROOT, target)
+    return target
+
+
+def _rewrite_manifest(root: Path, mutation) -> dict:
+    path = root / MODEL_MANIFEST
+    manifest = json.loads(path.read_text(encoding="utf-8"))
+    mutation(manifest)
+    path.write_text(canonical_json(manifest) + "\n", encoding="utf-8")
+    return manifest
+
+
+@pytest.mark.parametrize("mutation", [
+    "dummy_file", "hash_mismatch", "missing_artifact", "registry_hash",
+    "feature_view_hash", "unloadable_model",
+])
+def test_operational_model_gate_rejects_adversarial_artifacts(tmp_path, mutation):
+    root = _model_copy(tmp_path)
+    manifest = json.loads((root / MODEL_MANIFEST).read_text(encoding="utf-8"))
+    artifact = root / manifest["artifact_filename"]
+    if mutation == "hash_mismatch":
+        _rewrite_manifest(root, lambda value: value.update(artifact_sha256="0" * 64))
+    elif mutation == "missing_artifact":
+        artifact.unlink()
+    elif mutation == "registry_hash":
+        _rewrite_manifest(root, lambda value: value.update(feature_registry_sha256="1" * 64))
+    elif mutation == "feature_view_hash":
+        _rewrite_manifest(root, lambda value: value.update(feature_view_sha256="2" * 64))
+    else:
+        artifact.write_bytes(b"not-a-real-joblib-model")
+        digest = hashlib.sha256(artifact.read_bytes()).hexdigest()
+        _rewrite_manifest(root, lambda value: value.update(artifact_sha256=digest))
+    assert operational_model_status(root)["valid"] is False
+
+
+def test_operational_model_gate_loads_and_inferrs_with_real_benchmark_artifact():
+    report = operational_model_status()
+    assert report["valid"], report["reason"]
+    ranking = report["inference"]["ranking"]
+    assert ranking[0]["service_name"] == "payment-service"
+    assert all(0 <= item["probability"] <= 1 for item in ranking)
+
+
+def _valid_fault_report() -> dict:
+    manifest = operational_model_status()["manifest"]
+    timestamp = "2026-08-12T12:00:00Z"
+    return {
+        "schema_version": FAULT_E2E_SCHEMA,
+        "platform_version": "causalods-platform-v3",
+        "generated_at": timestamp,
+        "repository_commit": "a" * 40,
+        "execution_mode": "live",
+        "scenario": "payment_failure",
+        "correlation_id": "e2e-correlation",
+        "trace_id": "a" * 32,
+        "incident_id": "incident-e2e",
+        "rca_result_id": "rca-e2e",
+        "explanation_id": "explanation-e2e",
+        "model": {
+            "model_name": manifest["model_name"],
+            "model_version": manifest["model_version"],
+            "model_sha256": manifest["artifact_sha256"],
+            "feature_registry_sha256": manifest["feature_registry_sha256"],
+            "feature_view_sha256": manifest["feature_view_sha256"],
+        },
+        "stages": [{
+            "stage": number, "name": name, "status": "PASS", "timestamp": timestamp,
+            "identifiers": {"test": number}, "reason": None,
+        } for number, name in enumerate(STAGE_NAMES, start=1)],
+        "runtime_evidence": {
+            "runtime_ready": True, "telemetry_real": True, "model_inference_real": True,
+            "opensearch_links_verified": True, "grafana_query_passed": True,
+            "tempo_direct_passed": True, "tempo_grafana_proxy_passed": True,
+            "fault_restored": True,
+        },
+        "evaluation": {
+            "predicted_root_cause": "payment-service",
+            "expected_root_cause": "payment-service", "top1_correct": True,
+        },
+        "leakage_check": {"passed": True, "forbidden_fields_found": []},
+        "status": "SUCCESS",
+    }
+
+
+def _write_fault_report(root: Path, report: dict, *, valid_checksum: bool = True) -> None:
+    root.mkdir(parents=True, exist_ok=True)
+    path = root / FAULT_E2E_REPORT
+    path.write_text(canonical_json(report) + "\n", encoding="utf-8")
+    digest = hashlib.sha256(path.read_bytes()).hexdigest() if valid_checksum else "0" * 64
+    (root / FAULT_E2E_CHECKSUM).write_text(f"{digest}  {FAULT_E2E_REPORT}\n", encoding="utf-8")
+
+
+def test_fault_e2e_gate_rejects_absent_report(tmp_path):
+    assert fault_e2e_live_status(tmp_path)["valid"] is False
+
+
+@pytest.mark.parametrize("mutation", [
+    "checksum", "fixture", "model_hash", "missing_stage", "opensearch",
+    "grafana", "tempo",
+])
+def test_fault_e2e_gate_rejects_adversarial_reports(tmp_path, mutation):
+    report = _valid_fault_report()
+    valid_checksum = mutation != "checksum"
+    if mutation == "fixture":
+        report["runtime_evidence"]["fixture_boundaries"] = True
+    elif mutation == "model_hash":
+        report["model"]["model_sha256"] = "0" * 64
+    elif mutation == "missing_stage":
+        report["stages"].pop(8)
+    elif mutation == "opensearch":
+        report["runtime_evidence"]["opensearch_links_verified"] = False
+    elif mutation == "grafana":
+        report["runtime_evidence"]["grafana_query_passed"] = False
+    elif mutation == "tempo":
+        report["runtime_evidence"]["tempo_direct_passed"] = False
+    _write_fault_report(tmp_path, report, valid_checksum=valid_checksum)
+    assert fault_e2e_live_status(tmp_path)["valid"] is False
+
+
+def test_fault_e2e_gate_accepts_only_complete_real_contract(tmp_path):
+    _write_fault_report(tmp_path, _valid_fault_report())
+    status = fault_e2e_live_status(tmp_path)
+    assert status["valid"], status["reason"]
