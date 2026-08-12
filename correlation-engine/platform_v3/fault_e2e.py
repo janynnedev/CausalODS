@@ -6,8 +6,9 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
-from platform_v3.constants import ARTIFACT_ROOT
+from platform_v3.constants import ARTIFACT_ROOT, PLATFORM_VERSION
 from platform_v3.operational_model import DEFAULT_MODELS_ROOT, operational_model_status
+from platform_v3.serialization import source_snapshot_sha256
 
 
 FAULT_E2E_SCHEMA = "fault-e2e-live-v1"
@@ -49,8 +50,15 @@ def _valid_timestamp(value: Any) -> bool:
 def fault_e2e_live_status(
     artifact_root: Path = ARTIFACT_ROOT,
     models_root: Path = DEFAULT_MODELS_ROOT,
+    *,
+    expected_source_snapshot_sha256: str | None = None,
 ) -> dict[str, Any]:
     artifact_root = Path(artifact_root)
+    current_source_snapshot = (
+        expected_source_snapshot_sha256
+        if expected_source_snapshot_sha256 is not None
+        else source_snapshot_sha256()
+    )
     report_path = artifact_root / FAULT_E2E_REPORT
     checksum_path = artifact_root / FAULT_E2E_CHECKSUM
     try:
@@ -69,6 +77,7 @@ def fault_e2e_live_status(
             raise ValueError("relatório fault E2E deve ser objeto")
         required = {
             "schema_version", "platform_version", "generated_at", "repository_commit",
+            "source_snapshot_sha256",
             "execution_mode", "scenario", "correlation_id", "trace_id", "incident_id",
             "rca_result_id", "explanation_id", "model", "stages", "runtime_evidence",
             "evaluation", "leakage_check", "status",
@@ -78,6 +87,10 @@ def fault_e2e_live_status(
             raise ValueError(f"campos E2E ausentes: {missing}")
         if report["schema_version"] != FAULT_E2E_SCHEMA:
             raise ValueError("schema E2E incompatível")
+        if report["platform_version"] != PLATFORM_VERSION:
+            raise ValueError("platform_version E2E diverge da plataforma atual")
+        if report["source_snapshot_sha256"] != current_source_snapshot:
+            raise ValueError("source snapshot E2E diverge do código atual")
         if report["execution_mode"] != "live":
             raise ValueError("relatório E2E não é live")
         if report["scenario"] != "payment_failure":

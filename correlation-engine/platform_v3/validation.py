@@ -25,7 +25,7 @@ from platform_v3.fixtures import build_demo_scenario
 from platform_v3.fault_e2e import fault_e2e_live_status
 from platform_v3.opensearch import TemplateCatalog
 from platform_v3.operational_model import operational_model_status
-from platform_v3.serialization import canonical_json
+from platform_v3.serialization import canonical_json, source_snapshot_sha256
 from platform_v3.smoke import run_contract_smoke
 from ranking.evidence_builder import EvidenceBuilder
 
@@ -56,8 +56,17 @@ DATASOURCE_UIDS = {
 }
 
 
-def regression_results() -> dict[str, Any]:
-    path = ARTIFACT_ROOT / "test-results.json"
+def regression_results(
+    *,
+    expected_source_snapshot_sha256: str | None = None,
+    artifact_root: Path = ARTIFACT_ROOT,
+) -> dict[str, Any]:
+    current_source_snapshot = (
+        expected_source_snapshot_sha256
+        if expected_source_snapshot_sha256 is not None
+        else source_snapshot_sha256()
+    )
+    path = Path(artifact_root) / "test-results.json"
     if not path.is_file():
         return {"valid": False, "reason": "test-results.json ausente", "suites": []}
     try:
@@ -66,11 +75,24 @@ def regression_results() -> dict[str, Any]:
         return {"valid": False, "reason": f"test-results.json inválido: {exception.msg}", "suites": []}
     suites = payload.get("suites", [])
     checks = payload.get("checks", [])
-    valid = bool(suites) and all(item.get("status") == PASS for item in (*suites, *checks))
+    snapshot_matches = payload.get("source_snapshot_sha256") == current_source_snapshot
+    valid = (
+        snapshot_matches
+        and bool(suites)
+        and all(item.get("status") == PASS for item in (*suites, *checks))
+    )
     return {
         "valid": valid,
+        "reason": (
+            "suítes e checks finais registrados"
+            if valid
+            else "source snapshot das regressões diverge do código atual"
+            if not snapshot_matches
+            else "regressão incompleta"
+        ),
         "schema_version": payload.get("schema_version"),
         "generated_at": payload.get("generated_at"),
+        "source_snapshot_sha256": payload.get("source_snapshot_sha256"),
         "suites": suites,
         "checks": checks,
     }
@@ -330,15 +352,20 @@ def _gate(name: str, status: str, reason: str, details: Any = None, *, required:
 
 
 def validate_platform(*, live: bool = False) -> dict[str, Any]:
+    current_source_snapshot = source_snapshot_sha256()
     freeze = v2_freeze_status()
     imports = v2_import_audit()
     templates = TemplateCatalog().validate()
     grafana = grafana_static_status()
     smoke = run_contract_smoke()
     security = security_scan()
-    regressions = regression_results()
+    regressions = regression_results(
+        expected_source_snapshot_sha256=current_source_snapshot,
+    )
     model = operational_model_status()
-    fault_e2e = fault_e2e_live_status() if live else {}
+    fault_e2e = fault_e2e_live_status(
+        expected_source_snapshot_sha256=current_source_snapshot,
+    ) if live else {}
     live_opensearch = live_opensearch_status() if live else {}
     live_grafana = live_grafana_status() if live else {}
     live_tempo = live_tempo_status() if live else {}
@@ -387,6 +414,7 @@ def validate_platform(*, live: bool = False) -> dict[str, Any]:
         "schema_version": VALIDATION_SCHEMA_VERSION,
         "generated_at": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
         "platform_version": PLATFORM_VERSION,
+        "source_snapshot_sha256": current_source_snapshot,
         "repository": {
             "commit": _git("rev-parse", "HEAD"),
             "branch": _git("branch", "--show-current"),
@@ -442,7 +470,10 @@ def release_manifest(validation: dict[str, Any]) -> dict[str, Any]:
     freeze = v2_freeze_status()
     graph_rules = dict(build_demo_scenario("payment_failure").graph.rule_versions)
     model = operational_model_status()
-    fault = fault_e2e_live_status()
+    current_source_snapshot = validation["source_snapshot_sha256"]
+    fault = fault_e2e_live_status(
+        expected_source_snapshot_sha256=current_source_snapshot,
+    )
     return {
         "schema_version": RELEASE_SCHEMA_VERSION,
         "generated_at": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
@@ -450,6 +481,10 @@ def release_manifest(validation: dict[str, Any]) -> dict[str, Any]:
             "commit": _git("rev-parse", "HEAD"),
             "branch": _git("branch", "--show-current"),
             "dirty_worktree": bool(_git("status", "--porcelain")),
+        },
+        "source": {
+            "repository_commit": validation["repository"]["commit"],
+            "source_snapshot_sha256": current_source_snapshot,
         },
         "v2": {"freeze_hashes": {"valid": freeze["valid"], "ok": freeze["ok"], "total": freeze["total"]}},
         "v3": {

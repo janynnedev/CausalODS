@@ -9,7 +9,7 @@ import pytest
 
 from multimodal_v1.contracts import UnifiedEvent
 from platform_v3.cli import main as cli_main
-from platform_v3.constants import INDEX_NAMES, REQUIRED_DASHBOARDS, ROOT
+from platform_v3.constants import INDEX_NAMES, PLATFORM_VERSION, REQUIRED_DASHBOARDS, ROOT
 from platform_v3.documents import VisualizationDocumentAdapter
 from platform_v3.experiments import ExperimentArtifactImporter
 from platform_v3.fixtures import CORRELATION_ID, TRACE_ID, build_demo_scenario
@@ -21,10 +21,10 @@ from platform_v3.operational_model import (
     DEFAULT_MODELS_ROOT, MODEL_MANIFEST, operational_model_status,
 )
 from platform_v3.opensearch import OpenSearchProjectionRepository, TemplateCatalog
-from platform_v3.serialization import canonical_json
+from platform_v3.serialization import canonical_json, source_snapshot_sha256
 from platform_v3.smoke import run_contract_smoke
 from platform_v3.validation import (
-    FAIL, PASS, grafana_static_status, release_manifest, security_scan,
+    FAIL, PASS, grafana_static_status, regression_results, release_manifest, security_scan,
     v2_import_audit, validate_platform, write_validation_artifacts,
 )
 
@@ -243,6 +243,7 @@ def test_release_artifacts_include_manifest_hash_and_machine_readable_gates(tmp_
     checksum = paths["manifest_sha256"].read_text(encoding="utf-8").split()[0]
     assert report["decision"] == "NOT_READY_FOR_FINAL_EXPERIMENTS"
     assert manifest["validation"]["decision"] == report["decision"]
+    assert manifest["source"]["source_snapshot_sha256"] == report["source_snapshot_sha256"]
     assert checksum == hashlib.sha256(paths["manifest_json"].read_bytes()).hexdigest()
     assert "release-manifest.json" in paths["manifest_sha256"].read_text(encoding="utf-8")
 
@@ -305,14 +306,15 @@ def test_operational_model_gate_loads_and_inferrs_with_real_benchmark_artifact()
     assert all(0 <= item["probability"] <= 1 for item in ranking)
 
 
-def _valid_fault_report() -> dict:
+def _valid_fault_report(source_snapshot: str | None = None) -> dict:
     manifest = operational_model_status()["manifest"]
     timestamp = "2026-08-12T12:00:00Z"
     return {
         "schema_version": FAULT_E2E_SCHEMA,
-        "platform_version": "causalods-platform-v3",
+        "platform_version": PLATFORM_VERSION,
         "generated_at": timestamp,
         "repository_commit": "a" * 40,
+        "source_snapshot_sha256": source_snapshot or source_snapshot_sha256(),
         "execution_mode": "live",
         "scenario": "payment_failure",
         "correlation_id": "e2e-correlation",
@@ -360,7 +362,7 @@ def test_fault_e2e_gate_rejects_absent_report(tmp_path):
 
 @pytest.mark.parametrize("mutation", [
     "checksum", "fixture", "model_hash", "missing_stage", "opensearch",
-    "grafana", "tempo",
+    "grafana", "tempo", "platform_version",
 ])
 def test_fault_e2e_gate_rejects_adversarial_reports(tmp_path, mutation):
     report = _valid_fault_report()
@@ -377,11 +379,73 @@ def test_fault_e2e_gate_rejects_adversarial_reports(tmp_path, mutation):
         report["runtime_evidence"]["grafana_query_passed"] = False
     elif mutation == "tempo":
         report["runtime_evidence"]["tempo_direct_passed"] = False
+    elif mutation == "platform_version":
+        report["platform_version"] = "evil"
     _write_fault_report(tmp_path, report, valid_checksum=valid_checksum)
     assert fault_e2e_live_status(tmp_path)["valid"] is False
 
 
 def test_fault_e2e_gate_accepts_only_complete_real_contract(tmp_path):
-    _write_fault_report(tmp_path, _valid_fault_report())
-    status = fault_e2e_live_status(tmp_path)
+    snapshot = "b" * 64
+    _write_fault_report(tmp_path, _valid_fault_report(snapshot))
+    status = fault_e2e_live_status(
+        tmp_path, expected_source_snapshot_sha256=snapshot,
+    )
     assert status["valid"], status["reason"]
+
+
+def test_source_snapshot_is_deterministic_for_file_enumeration_order(tmp_path):
+    (tmp_path / "src").mkdir()
+    (tmp_path / "src/a.py").write_text("A\n", encoding="utf-8")
+    (tmp_path / "src/b.py").write_text("B\n", encoding="utf-8")
+    forward = source_snapshot_sha256(tmp_path, tracked_files=("src/a.py", "src/b.py"))
+    reverse = source_snapshot_sha256(tmp_path, tracked_files=("src/b.py", "src/a.py"))
+    assert forward == reverse
+
+
+def test_generated_release_artifacts_do_not_change_source_snapshot(tmp_path):
+    source = tmp_path / "correlation-engine/platform_v3/example.py"
+    source.parent.mkdir(parents=True)
+    source.write_text("VALUE = 1\n", encoding="utf-8")
+    generated = (
+        "artifacts/platform-v3/fault-e2e-live.json",
+        "artifacts/platform-v3/platform-validation-report.json",
+        "artifacts/platform-v3/release-manifest.json",
+    )
+    for relative in generated:
+        path = tmp_path / relative
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text("{}\n", encoding="utf-8")
+    tracked = ("correlation-engine/platform_v3/example.py", *generated)
+    before = source_snapshot_sha256(tmp_path, tracked_files=tracked)
+    for relative in generated:
+        (tmp_path / relative).write_text('{"changed":true}\n', encoding="utf-8")
+    assert source_snapshot_sha256(tmp_path, tracked_files=reversed(tracked)) == before
+
+
+def test_fault_e2e_gate_rejects_stale_source_snapshot(tmp_path):
+    _write_fault_report(tmp_path, _valid_fault_report("a" * 64))
+    status = fault_e2e_live_status(
+        tmp_path, expected_source_snapshot_sha256="b" * 64,
+    )
+    assert status["valid"] is False
+    assert status["reason"] == "source snapshot E2E diverge do código atual"
+
+
+def test_regression_gate_rejects_stale_source_snapshot(tmp_path):
+    payload = {
+        "schema_version": "platform-test-results-v1",
+        "generated_at": "2026-08-12T12:00:00Z",
+        "source_snapshot_sha256": "a" * 64,
+        "suites": [{"name": "engine", "status": PASS}],
+        "checks": [{"name": "integrity", "status": PASS}],
+    }
+    (tmp_path / "test-results.json").write_text(
+        canonical_json(payload) + "\n", encoding="utf-8",
+    )
+    status = regression_results(
+        artifact_root=tmp_path,
+        expected_source_snapshot_sha256="b" * 64,
+    )
+    assert status["valid"] is False
+    assert status["reason"] == "source snapshot das regressões diverge do código atual"

@@ -21,7 +21,7 @@ from platform_v3.fault_e2e import (
     STAGE_NAMES,
 )
 from platform_v3.operational_model import DEFAULT_MODELS_ROOT, operational_model_status
-from platform_v3.serialization import canonical_json
+from platform_v3.serialization import canonical_json, source_snapshot_sha256
 
 
 COMPOSE = (
@@ -370,6 +370,7 @@ def run_fault_e2e(
         "platform_version": PLATFORM_VERSION,
         "generated_at": _now(),
         "repository_commit": _git_commit(),
+        "source_snapshot_sha256": source_snapshot_sha256(),
         "execution_mode": "live",
         "scenario": scenario,
         "correlation_id": correlation_id,
