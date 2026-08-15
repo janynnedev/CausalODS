@@ -18,7 +18,19 @@ __pycache__/
 .pytest_cache/
 .venv/
 .venv-*/
+.cache/
 
 # Public observability datasets and normalized local caches (large, external)
 /datasets/
 /.cache/causalods-datasets/
+
+# Scientific datasets persisted with Git LFS.
+!/datasets/
+/datasets/*
+!/datasets/RCAEval-data/
+!/datasets/RCAEval-data/**
+!/datasets/causalods-local-v3/
+!/datasets/causalods-local-v3/**
+
+# Downloader/cache metadata is reproducible and must not be versioned.
+/datasets/RCAEval-data/.cache/

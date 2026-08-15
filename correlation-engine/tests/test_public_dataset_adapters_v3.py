@@ -988,7 +988,7 @@ def test_permissive_integrity_and_empty_accounting_policy(rcaeval_root):
         RCAEvalAdapter(rcaeval_root).list_incidents()[0].incident_id)
     intact = replace(strict, normalization_mode="permissive")
     assert intact.usable_for_benchmark and intact.empty_incident_reason is None
-    with pytest.raises(ValueError, match="íntegro"):
+    with pytest.raises(ValueError, match="utilizável não aceita"):
         replace(intact, empty_incident_reason="motivo indevido")
     empty = replace(strict, normalization_mode="permissive", modalities=(),
                     event_count_by_modality={}, observed_modalities=(),
@@ -1058,8 +1058,21 @@ def test_remaining_contract_mutation_matrix_scenarios(tmp_path, rcaeval_root, ai
           "timestamp,serviceName,success_rate,request_count\n1705354566,x,0.9,bad\n")
     partial_adapter = AIOps2020Adapter(partial_root, strict=False)
     partial = partial_adapter.load_incident(partial_adapter.list_incidents()[0].incident_id)
-    with pytest.raises(ValueError): replace(partial, usable_for_benchmark=True)
-    with pytest.raises(ValueError): replace(partial, empty_incident_reason=None)
+    partial_usable = replace(
+        partial, usable_for_benchmark=True, empty_incident_reason=None
+    )
+    assert partial_usable.normalization_mode == "permissive"
+    assert partial_usable.usable_for_benchmark
+    assert partial_usable.rejection_reasons_by_file == partial.rejection_reasons_by_file
+    assert partial_usable.normalization_accounting_by_file \
+        == partial.normalization_accounting_by_file
+    assert partial_usable.fingerprint == replace(
+        partial, usable_for_benchmark=True, empty_incident_reason=None
+    ).fingerprint
+    with pytest.raises(ValueError, match="utilizável não aceita"):
+        replace(partial_usable, empty_incident_reason="motivo contraditório")
+    with pytest.raises(ValueError, match="não utilizável requer motivo"):
+        replace(partial, empty_incident_reason=None)
 
     unknown_root = tmp_path / "unknown-matrix" / "CUSTOM" / "cart_cpu" / "1"
     write(unknown_root / "inject_time.txt", "1705354566")

@@ -714,10 +714,6 @@ class IncidentManifest:
         rejected_cells = sum(item.rejected_metric_cells for item in accounting.values())
         partial_rows = sum(item.partially_accepted_rows for item in accounting.values())
         zero_event_file = any(item.produced_events == 0 for item in accounting.values())
-        permissive_loss = (self.rejected_row_count > 0 or rejected_cells > 0 or partial_rows > 0
-                           or bool(self.missing_expected_modalities) or self.total_event_count == 0
-                           or self.modality_policy_status == "nonofficial" or zero_event_file
-                           or not self.usable_for_benchmark)
         if self.normalization_mode == "strict" and rejected_cells:
             raise ValueError("Manifesto strict não aceita células rejeitadas.")
         if self.normalization_mode == "strict" and (not self.accepted_row_count
@@ -725,16 +721,11 @@ class IncidentManifest:
             raise ValueError("Manifesto strict requer linhas, modalidades e arquivos normalizados.")
         if self.normalization_mode == "strict" and (partial_rows or zero_event_file):
             raise ValueError("Manifesto strict não aceita linha parcial ou arquivo sem eventos.")
-        if self.normalization_mode == "permissive" and (any(reasons.values()) or not self.usable_for_benchmark) \
+        if self.usable_for_benchmark and self.empty_incident_reason is not None:
+            raise ValueError("Manifesto utilizável não aceita motivo de não utilização.")
+        if self.normalization_mode == "permissive" and not self.usable_for_benchmark \
                 and not self.empty_incident_reason:
-            raise ValueError("Manifesto permissivo com perdas requer motivo de não utilização.")
-        if self.normalization_mode == "permissive" and permissive_loss:
-            if self.usable_for_benchmark or not isinstance(self.empty_incident_reason, str) \
-                    or not self.empty_incident_reason.strip():
-                raise ValueError("Manifesto permissivo com perdas deve ser não utilizável e ter motivo.")
-        if self.normalization_mode == "permissive" and not permissive_loss \
-                and self.empty_incident_reason is not None:
-            raise ValueError("Manifesto permissivo íntegro não aceita motivo de perda.")
+            raise ValueError("Manifesto permissivo não utilizável requer motivo.")
         object.__setattr__(self, "quality_issue_reasons_by_file", deep_freeze_json(quality))
         object.__setattr__(self, "normalization_accounting_by_file",
                            deep_freeze_json({path: item.to_dict() for path, item in accounting.items()}))
