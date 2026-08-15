@@ -124,7 +124,14 @@ class NormalizedFileAccounting:
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "relative_path", _relative_path(self.relative_path, "relative_path"))
-        allowed_kinds = {"metrics", "business_metrics", "platform_metrics", "logs", "traces"}
+        # ``business_events`` is an additive source kind used by the controlled
+        # causalods-local-v3 generator.  It maps to the already frozen
+        # ``business_event`` modality and does not change the manifest wire
+        # format or the semantics of any historical source kind.
+        allowed_kinds = {
+            "metrics", "business_metrics", "platform_metrics", "logs", "traces",
+            "business_events",
+        }
         if self.kind not in allowed_kinds:
             raise ValueError("kind de accounting inválido.")
         if self.signal_type not in KNOWN_MODALITIES | {None}:
@@ -141,7 +148,11 @@ class NormalizedFileAccounting:
         if self.partially_accepted_rows > self.accepted_rows:
             raise ValueError("partially_accepted_rows excede accepted_rows.")
         metric = self.kind in {"metrics", "business_metrics", "platform_metrics"}
-        expected_signal = {"logs": "log", "traces": "trace"}.get(self.kind, "metric")
+        expected_signal = {
+            "logs": "log",
+            "traces": "trace",
+            "business_events": "business_event",
+        }.get(self.kind, "metric")
         if self.signal_type != expected_signal:
             raise ValueError("kind e signal_type são incompatíveis.")
         if self.partially_accepted_rows and (self.signal_type != "metric"
@@ -159,7 +170,9 @@ class NormalizedFileAccounting:
                     self.partially_accepted_rows)):
                 raise ValueError("Arquivo não métrico não aceita accounting de células/parciais.")
             if self.produced_events != self.accepted_rows:
-                raise ValueError("Eventos de log/trace devem igualar linhas aceitas.")
+                raise ValueError(
+                    "Eventos não métricos devem igualar linhas aceitas."
+                )
         if self.produced_events < self.accepted_rows:
             raise ValueError("produced_events não pode ser menor que accepted_rows.")
         if self.rejected_row_units != self.rejected_rows:

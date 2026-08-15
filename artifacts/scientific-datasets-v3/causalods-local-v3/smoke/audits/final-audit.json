@@ -1,0 +1,508 @@
+{
+  "anti_leakage_audit": "PASS",
+  "full_modality_audit": "PASS",
+  "generated_at": "2026-08-15T03:35:07.839183Z",
+  "ground_truth_audit": "PASS",
+  "ground_truth_rows": [
+    {
+      "configured": {
+        "fault_injected": false,
+        "root_cause_service": null,
+        "root_cause_type": "healthy"
+      },
+      "match": true,
+      "recorded": {
+        "fault_injected": false,
+        "root_cause_service": null,
+        "root_cause_type": "healthy"
+      },
+      "scenario": "healthy"
+    },
+    {
+      "configured": {
+        "fault_injected": true,
+        "root_cause_service": "order-service",
+        "root_cause_type": "error"
+      },
+      "match": true,
+      "recorded": {
+        "fault_injected": true,
+        "root_cause_service": "order-service",
+        "root_cause_type": "error"
+      },
+      "scenario": "order_error"
+    },
+    {
+      "configured": {
+        "fault_injected": true,
+        "root_cause_service": "order-service",
+        "root_cause_type": "latency"
+      },
+      "match": true,
+      "recorded": {
+        "fault_injected": true,
+        "root_cause_service": "order-service",
+        "root_cause_type": "latency"
+      },
+      "scenario": "order_latency"
+    },
+    {
+      "configured": {
+        "fault_injected": true,
+        "root_cause_service": "payment-service",
+        "root_cause_type": "error"
+      },
+      "match": true,
+      "recorded": {
+        "fault_injected": true,
+        "root_cause_service": "payment-service",
+        "root_cause_type": "error"
+      },
+      "scenario": "payment_error"
+    },
+    {
+      "configured": {
+        "fault_injected": true,
+        "root_cause_service": "payment-service",
+        "root_cause_type": "latency"
+      },
+      "match": true,
+      "recorded": {
+        "fault_injected": true,
+        "root_cause_service": "payment-service",
+        "root_cause_type": "latency"
+      },
+      "scenario": "payment_latency"
+    }
+  ],
+  "identity_audit": "PASS",
+  "incident_count": 5,
+  "integrity": {
+    "CLEAN": 5
+  },
+  "resource_report": {
+    "bytes_per_modality_by_scenario": {
+      "healthy": {
+        "business_event": 974,
+        "log": 2337,
+        "metric": 2668,
+        "trace": 1509
+      },
+      "order_error": {
+        "business_event": 727,
+        "log": 1426,
+        "metric": 5070,
+        "trace": 1216
+      },
+      "order_latency": {
+        "business_event": 972,
+        "log": 2651,
+        "metric": 5260,
+        "trace": 1508
+      },
+      "payment_error": {
+        "business_event": 979,
+        "log": 1838,
+        "metric": 5330,
+        "trace": 1525
+      },
+      "payment_latency": {
+        "business_event": 981,
+        "log": 2357,
+        "metric": 5310,
+        "trace": 1512
+      }
+    },
+    "bytes_per_scenario": {
+      "healthy": 18424,
+      "order_error": 19384,
+      "order_latency": 21567,
+      "payment_error": 20830,
+      "payment_latency": 21405
+    },
+    "coordinator_peak_rss_kib": 282348,
+    "disk_capacity_for_500": "PASS",
+    "estimated_500_run_bytes_by_scenario": 10161000,
+    "estimated_serial_500_seconds": 33942.4111,
+    "free_disk_bytes": 23815872512,
+    "max_bytes_per_run": 21567,
+    "max_window_duration_seconds": 71.053947,
+    "mean_window_duration_seconds": 67.8848222,
+    "observed_smoke_bytes": 101610,
+    "pessimistic_500_run_bytes": 10783500,
+    "safety_margin_bytes": 23805089012
+  },
+  "resume_audit": {
+    "actual_command_result_seconds": 2.3951250970130786,
+    "completed": 5,
+    "new_executions": 0,
+    "resumed": 5,
+    "skipped": 5
+  },
+  "rows": [
+    {
+      "anti_leakage": {
+        "event_count": 62,
+        "forbidden_keys": [],
+        "inspected_contract_fields": [
+          "expected_rca_answer",
+          "expected_service",
+          "fault_target",
+          "fault_target_service",
+          "fault_type",
+          "ground_truth",
+          "ground_truth_service",
+          "root_cause",
+          "root_cause_service",
+          "scenario",
+          "scenario_label"
+        ],
+        "status": "PASS"
+      },
+      "bytes": 18424,
+      "coordinator_peak_rss_kib": 211980,
+      "counts": {
+        "business_event": 4,
+        "log": 8,
+        "metric": 48,
+        "trace": 2
+      },
+      "dlq_count": 0,
+      "http_status": 200,
+      "identity": {
+        "correlation_ids": [
+          "clv3-206949311d804bec879af645"
+        ],
+        "expected_services": [
+          "order-service",
+          "payment-service"
+        ],
+        "identity_status": "PASS",
+        "log_services": [
+          "order-service",
+          "payment-service"
+        ],
+        "trace_services": [
+          "order-service",
+          "payment-service"
+        ]
+      },
+      "integrity_status": "CLEAN",
+      "modality_bytes": {
+        "business_event": 974,
+        "log": 2337,
+        "metric": 2668,
+        "trace": 1509
+      },
+      "pipeline": {
+        "abstained": true,
+        "abstention_reason": "no_anomaly_under_frozen_policy",
+        "completed": true,
+        "failed_reliability_rules": [
+          "ranking_present"
+        ],
+        "prediction_excluded_from_ground_truth": true,
+        "ranking_produced": false,
+        "rca_result_emitted": false,
+        "reliability_gate_executed": true
+      },
+      "request_duration_seconds": 0.4894695699913427,
+      "run_id": "causalods-local-v3/healthy/0001",
+      "scenario": "healthy",
+      "usable_for_benchmark": true,
+      "window_duration_seconds": 68.70582
+    },
+    {
+      "anti_leakage": {
+        "event_count": 59,
+        "forbidden_keys": [],
+        "inspected_contract_fields": [
+          "expected_rca_answer",
+          "expected_service",
+          "fault_target",
+          "fault_target_service",
+          "fault_type",
+          "ground_truth",
+          "ground_truth_service",
+          "root_cause",
+          "root_cause_service",
+          "scenario",
+          "scenario_label"
+        ],
+        "status": "PASS"
+      },
+      "bytes": 19384,
+      "coordinator_peak_rss_kib": 281580,
+      "counts": {
+        "business_event": 2,
+        "log": 3,
+        "metric": 53,
+        "trace": 1
+      },
+      "dlq_count": 0,
+      "http_status": 503,
+      "identity": {
+        "correlation_ids": [
+          "clv3-b5f98099571b4e3a8aa0db3a"
+        ],
+        "expected_services": [
+          "order-service"
+        ],
+        "identity_status": "PASS",
+        "log_services": [
+          "order-service"
+        ],
+        "trace_services": [
+          "order-service"
+        ]
+      },
+      "integrity_status": "CLEAN",
+      "modality_bytes": {
+        "business_event": 727,
+        "log": 1426,
+        "metric": 5070,
+        "trace": 1216
+      },
+      "pipeline": {
+        "completed": true,
+        "incident_ids": [
+          "inc-v3-e27386d16b281883dc1b677b"
+        ],
+        "prediction_excluded_from_ground_truth": true,
+        "ranking_produced": true,
+        "rca_result_emitted": true,
+        "rca_result_ids": [
+          "rca-v3-b9f342293429dfb6b3291732"
+        ],
+        "reliability_gate_executed": true
+      },
+      "request_duration_seconds": 0.1112389030167833,
+      "run_id": "causalods-local-v3/order_error/0001",
+      "scenario": "order_error",
+      "usable_for_benchmark": true,
+      "window_duration_seconds": 62.763741
+    },
+    {
+      "anti_leakage": {
+        "event_count": 75,
+        "forbidden_keys": [],
+        "inspected_contract_fields": [
+          "expected_rca_answer",
+          "expected_service",
+          "fault_target",
+          "fault_target_service",
+          "fault_type",
+          "ground_truth",
+          "ground_truth_service",
+          "root_cause",
+          "root_cause_service",
+          "scenario",
+          "scenario_label"
+        ],
+        "status": "PASS"
+      },
+      "bytes": 21567,
+      "coordinator_peak_rss_kib": 281580,
+      "counts": {
+        "business_event": 4,
+        "log": 10,
+        "metric": 59,
+        "trace": 2
+      },
+      "dlq_count": 0,
+      "http_status": 200,
+      "identity": {
+        "correlation_ids": [
+          "clv3-b661998840404e56b116556b"
+        ],
+        "expected_services": [
+          "order-service",
+          "payment-service"
+        ],
+        "identity_status": "PASS",
+        "log_services": [
+          "order-service",
+          "payment-service"
+        ],
+        "trace_services": [
+          "order-service",
+          "payment-service"
+        ]
+      },
+      "integrity_status": "CLEAN",
+      "modality_bytes": {
+        "business_event": 972,
+        "log": 2651,
+        "metric": 5260,
+        "trace": 1508
+      },
+      "pipeline": {
+        "abstained": true,
+        "abstention_reason": "no_anomaly_under_frozen_policy",
+        "completed": true,
+        "failed_reliability_rules": [
+          "ranking_present"
+        ],
+        "prediction_excluded_from_ground_truth": true,
+        "ranking_produced": false,
+        "rca_result_emitted": false,
+        "reliability_gate_executed": true
+      },
+      "request_duration_seconds": 2.5174475939711556,
+      "run_id": "causalods-local-v3/order_latency/0001",
+      "scenario": "order_latency",
+      "usable_for_benchmark": true,
+      "window_duration_seconds": 69.381452
+    },
+    {
+      "anti_leakage": {
+        "event_count": 70,
+        "forbidden_keys": [],
+        "inspected_contract_fields": [
+          "expected_rca_answer",
+          "expected_service",
+          "fault_target",
+          "fault_target_service",
+          "fault_type",
+          "ground_truth",
+          "ground_truth_service",
+          "root_cause",
+          "root_cause_service",
+          "scenario",
+          "scenario_label"
+        ],
+        "status": "PASS"
+      },
+      "bytes": 20830,
+      "coordinator_peak_rss_kib": 282348,
+      "counts": {
+        "business_event": 4,
+        "log": 5,
+        "metric": 59,
+        "trace": 2
+      },
+      "dlq_count": 0,
+      "http_status": 500,
+      "identity": {
+        "correlation_ids": [
+          "clv3-5fcea41975674f869138912c"
+        ],
+        "expected_services": [
+          "order-service",
+          "payment-service"
+        ],
+        "identity_status": "PASS",
+        "log_services": [
+          "order-service",
+          "payment-service"
+        ],
+        "trace_services": [
+          "order-service",
+          "payment-service"
+        ]
+      },
+      "integrity_status": "CLEAN",
+      "modality_bytes": {
+        "business_event": 979,
+        "log": 1838,
+        "metric": 5330,
+        "trace": 1525
+      },
+      "pipeline": {
+        "completed": true,
+        "incident_ids": [
+          "inc-v3-c95f7fc0077a53ad437dc76f"
+        ],
+        "prediction_excluded_from_ground_truth": true,
+        "ranking_produced": true,
+        "rca_result_emitted": true,
+        "rca_result_ids": [
+          "rca-v3-9eba900d5f119cdb43848432"
+        ],
+        "reliability_gate_executed": true
+      },
+      "request_duration_seconds": 0.7138012410141528,
+      "run_id": "causalods-local-v3/payment_error/0001",
+      "scenario": "payment_error",
+      "usable_for_benchmark": true,
+      "window_duration_seconds": 71.053947
+    },
+    {
+      "anti_leakage": {
+        "event_count": 73,
+        "forbidden_keys": [],
+        "inspected_contract_fields": [
+          "expected_rca_answer",
+          "expected_service",
+          "fault_target",
+          "fault_target_service",
+          "fault_type",
+          "ground_truth",
+          "ground_truth_service",
+          "root_cause",
+          "root_cause_service",
+          "scenario",
+          "scenario_label"
+        ],
+        "status": "PASS"
+      },
+      "bytes": 21405,
+      "coordinator_peak_rss_kib": 282348,
+      "counts": {
+        "business_event": 4,
+        "log": 8,
+        "metric": 59,
+        "trace": 2
+      },
+      "dlq_count": 0,
+      "http_status": 200,
+      "identity": {
+        "correlation_ids": [
+          "clv3-097d5d52378c4ef0a6a47174"
+        ],
+        "expected_services": [
+          "order-service",
+          "payment-service"
+        ],
+        "identity_status": "PASS",
+        "log_services": [
+          "order-service",
+          "payment-service"
+        ],
+        "trace_services": [
+          "order-service",
+          "payment-service"
+        ]
+      },
+      "integrity_status": "CLEAN",
+      "modality_bytes": {
+        "business_event": 981,
+        "log": 2357,
+        "metric": 5310,
+        "trace": 1512
+      },
+      "pipeline": {
+        "abstained": true,
+        "abstention_reason": "no_anomaly_under_frozen_policy",
+        "completed": true,
+        "failed_reliability_rules": [
+          "ranking_present"
+        ],
+        "prediction_excluded_from_ground_truth": true,
+        "ranking_produced": false,
+        "rca_result_emitted": false,
+        "reliability_gate_executed": true
+      },
+      "request_duration_seconds": 1.9768097709165886,
+      "run_id": "causalods-local-v3/payment_latency/0001",
+      "scenario": "payment_latency",
+      "usable_for_benchmark": true,
+      "window_duration_seconds": 67.519151
+    }
+  ],
+  "run_isolation_audit": {
+    "correlation_ids": 5,
+    "status": "PASS",
+    "violations": []
+  }
+}

@@ -1,0 +1,267 @@
+{
+  "estimated_500_by_scenario": 10114100,
+  "estimated_500_request_seconds": 587.1508938958868,
+  "free_disk": 23820664832,
+  "max_bytes_per_run": 21555,
+  "max_coordinator_peak_rss_kib": 282348,
+  "max_request_duration": 2.5174475939711556,
+  "mean_request_duration": 1.1743017877917736,
+  "observed_smoke_bytes": 101141,
+  "pessimistic_500": 10777500,
+  "rows": [
+    {
+      "bytes": 17979,
+      "counts": {
+        "business_event": 3,
+        "log": 8,
+        "metric": 48,
+        "trace": 1
+      },
+      "dlq": 0,
+      "duration": 0.5522114300401881,
+      "expected_services": [
+        "order-service",
+        "payment-service"
+      ],
+      "http": 200,
+      "identity": "FAIL",
+      "integrity": "UNUSABLE",
+      "leakage": "PASS",
+      "log_services": [
+        "order-service",
+        "payment-service"
+      ],
+      "modalities": "PASS",
+      "modality_bytes": {
+        "business_event": 866,
+        "log": 2348,
+        "metric": 2635,
+        "trace": 1210
+      },
+      "peak_rss_kib": 212484,
+      "pipeline": {
+        "abstained": true,
+        "abstention_reason": "healthy_no_symptom",
+        "completed": true,
+        "failed_reliability_rules": [
+          "ranking_present"
+        ],
+        "prediction_excluded_from_ground_truth": true,
+        "ranking_produced": false,
+        "rca_result_emitted": false,
+        "reliability_gate_executed": true
+      },
+      "run_id": "causalods-local-v3/healthy/0001",
+      "scenario": "healthy",
+      "trace_services": [
+        "order-service"
+      ],
+      "usable": false
+    },
+    {
+      "bytes": 19384,
+      "counts": {
+        "business_event": 2,
+        "log": 3,
+        "metric": 53,
+        "trace": 1
+      },
+      "dlq": 0,
+      "duration": 0.1112389030167833,
+      "expected_services": [
+        "order-service"
+      ],
+      "http": 503,
+      "identity": "PASS",
+      "integrity": "CLEAN",
+      "leakage": "PASS",
+      "log_services": [
+        "order-service"
+      ],
+      "modalities": "PASS",
+      "modality_bytes": {
+        "business_event": 727,
+        "log": 1426,
+        "metric": 5070,
+        "trace": 1216
+      },
+      "peak_rss_kib": 281580,
+      "pipeline": {
+        "completed": true,
+        "incident_ids": [
+          "inc-v3-e27386d16b281883dc1b677b"
+        ],
+        "prediction_excluded_from_ground_truth": true,
+        "ranking_produced": true,
+        "rca_result_emitted": true,
+        "rca_result_ids": [
+          "rca-v3-b9f342293429dfb6b3291732"
+        ],
+        "reliability_gate_executed": true
+      },
+      "run_id": "causalods-local-v3/order_error/0001",
+      "scenario": "order_error",
+      "trace_services": [
+        "order-service"
+      ],
+      "usable": true
+    },
+    {
+      "bytes": 21555,
+      "counts": {
+        "business_event": 4,
+        "log": 10,
+        "metric": 59,
+        "trace": 2
+      },
+      "dlq": 0,
+      "duration": 2.5174475939711556,
+      "expected_services": [
+        "order-service",
+        "payment-service"
+      ],
+      "http": 200,
+      "identity": "PASS",
+      "integrity": "CLEAN",
+      "leakage": "PASS",
+      "log_services": [
+        "order-service",
+        "payment-service"
+      ],
+      "modalities": "PASS",
+      "modality_bytes": {
+        "business_event": 972,
+        "log": 2651,
+        "metric": 5260,
+        "trace": 1508
+      },
+      "peak_rss_kib": 281580,
+      "pipeline": {
+        "abstained": true,
+        "abstention_reason": "healthy_no_symptom",
+        "completed": true,
+        "failed_reliability_rules": [
+          "ranking_present"
+        ],
+        "prediction_excluded_from_ground_truth": true,
+        "ranking_produced": false,
+        "rca_result_emitted": false,
+        "reliability_gate_executed": true
+      },
+      "run_id": "causalods-local-v3/order_latency/0001",
+      "scenario": "order_latency",
+      "trace_services": [
+        "order-service",
+        "payment-service"
+      ],
+      "usable": true
+    },
+    {
+      "bytes": 20830,
+      "counts": {
+        "business_event": 4,
+        "log": 5,
+        "metric": 59,
+        "trace": 2
+      },
+      "dlq": 0,
+      "duration": 0.7138012410141528,
+      "expected_services": [
+        "order-service",
+        "payment-service"
+      ],
+      "http": 500,
+      "identity": "PASS",
+      "integrity": "CLEAN",
+      "leakage": "PASS",
+      "log_services": [
+        "order-service",
+        "payment-service"
+      ],
+      "modalities": "PASS",
+      "modality_bytes": {
+        "business_event": 979,
+        "log": 1838,
+        "metric": 5330,
+        "trace": 1525
+      },
+      "peak_rss_kib": 282348,
+      "pipeline": {
+        "completed": true,
+        "incident_ids": [
+          "inc-v3-c95f7fc0077a53ad437dc76f"
+        ],
+        "prediction_excluded_from_ground_truth": true,
+        "ranking_produced": true,
+        "rca_result_emitted": true,
+        "rca_result_ids": [
+          "rca-v3-9eba900d5f119cdb43848432"
+        ],
+        "reliability_gate_executed": true
+      },
+      "run_id": "causalods-local-v3/payment_error/0001",
+      "scenario": "payment_error",
+      "trace_services": [
+        "order-service",
+        "payment-service"
+      ],
+      "usable": true
+    },
+    {
+      "bytes": 21393,
+      "counts": {
+        "business_event": 4,
+        "log": 8,
+        "metric": 59,
+        "trace": 2
+      },
+      "dlq": 0,
+      "duration": 1.9768097709165886,
+      "expected_services": [
+        "order-service",
+        "payment-service"
+      ],
+      "http": 200,
+      "identity": "PASS",
+      "integrity": "CLEAN",
+      "leakage": "PASS",
+      "log_services": [
+        "order-service",
+        "payment-service"
+      ],
+      "modalities": "PASS",
+      "modality_bytes": {
+        "business_event": 981,
+        "log": 2357,
+        "metric": 5310,
+        "trace": 1512
+      },
+      "peak_rss_kib": 282348,
+      "pipeline": {
+        "abstained": true,
+        "abstention_reason": "healthy_no_symptom",
+        "completed": true,
+        "failed_reliability_rules": [
+          "ranking_present"
+        ],
+        "prediction_excluded_from_ground_truth": true,
+        "ranking_produced": false,
+        "rca_result_emitted": false,
+        "reliability_gate_executed": true
+      },
+      "run_id": "causalods-local-v3/payment_latency/0001",
+      "scenario": "payment_latency",
+      "trace_services": [
+        "order-service",
+        "payment-service"
+      ],
+      "usable": true
+    }
+  ],
+  "run_isolation": {
+    "correlation_ids": 5,
+    "status": "PASS",
+    "violations": []
+  },
+  "safety_margin_after_pessimistic": 23809887332
+}

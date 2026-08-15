@@ -1,0 +1,461 @@
+from __future__ import annotations
+
+import argparse
+import json
+import os
+import re
+import subprocess
+import sys
+import time
+import uuid
+from datetime import datetime, timedelta, timezone
+from pathlib import Path
+from typing import Any, Mapping
+from urllib.error import HTTPError, URLError
+from urllib.request import Request, urlopen
+
+ROOT = Path(__file__).resolve().parents[2]
+ENGINE = ROOT / "correlation-engine"
+if str(ENGINE) not in sys.path:
+    sys.path.insert(0, str(ENGINE))
+
+from .core import Campaign, DATASET_ID, SCENARIOS, Scenario, atomic_json, utc_now
+
+
+DEFAULT_OUTPUT = ROOT / "artifacts" / "scientific-datasets-v3" / DATASET_ID / "smoke"
+COMPOSE = ("docker", "compose", "-f", str(ROOT / "docker-compose.yml"),
+           "-f", str(ROOT / "docker-compose.causalods-local-v3.yml"))
+REQUIRED_SERVICES = ("kafka", "opensearch", "otel-collector", "payment-service",
+                     "order-service", "correlation-engine", "platform-v3-runtime")
+
+
+def command(arguments: tuple[str, ...] | list[str], *, environment=None,
+            check: bool = True, input_text: str | None = None) -> subprocess.CompletedProcess[str]:
+    completed = subprocess.run(arguments, cwd=ROOT, env=environment, capture_output=True,
+                               text=True, check=False, input=input_text)
+    if check and completed.returncode:
+        raise RuntimeError(f"Comando falhou: {' '.join(arguments)}\n{completed.stderr.strip()}")
+    return completed
+
+
+def request(url: str, *, payload: Mapping[str, Any] | None = None,
+            headers: Mapping[str, str] | None = None, timeout: float = 10,
+            allow_error: bool = False) -> tuple[int, dict[str, str], Any]:
+    data = json.dumps(payload).encode() if payload is not None else None
+    all_headers = {"Accept": "application/json", **dict(headers or {})}
+    if data is not None:
+        all_headers["Content-Type"] = "application/json"
+    req = Request(url, data=data, headers=all_headers,
+                  method="POST" if data is not None else "GET")
+    try:
+        with urlopen(req, timeout=timeout) as response:
+            raw = response.read().decode("utf-8", errors="replace")
+            try:
+                body = json.loads(raw) if raw else None
+            except json.JSONDecodeError:
+                body = raw
+            return response.status, dict(response.headers.items()), body
+    except HTTPError as exc:
+        raw = exc.read().decode("utf-8", errors="replace")
+        if not allow_error:
+            raise
+        try:
+            body = json.loads(raw) if raw else None
+        except json.JSONDecodeError:
+            body = raw
+        return exc.code, dict(exc.headers.items()), body
+
+
+def wait_until(function, *, timeout: float, description: str) -> Any:
+    deadline = time.monotonic() + timeout
+    last: Any = None
+    while time.monotonic() < deadline:
+        try:
+            last = function()
+            if last:
+                return last
+        except (OSError, HTTPError, URLError, RuntimeError, json.JSONDecodeError) as exc:
+            last = f"{type(exc).__name__}: {exc}"
+        time.sleep(1)
+    raise TimeoutError(f"Timeout aguardando {description}; último={last!r}")
+
+
+def _http_ready(url: str) -> dict[str, Any] | None:
+    status, _, body = request(url, timeout=2, allow_error=True)
+    if status != 200:
+        return None
+    if isinstance(body, dict) and body.get("status") not in (None, "UP"):
+        return None
+    if url.endswith("/ready") and isinstance(body, dict) and body.get("ready") is not True:
+        return None
+    return body if isinstance(body, dict) else {"status": status}
+
+
+def infrastructure(*, start: bool) -> dict[str, Any]:
+    before = command((*COMPOSE, "ps", "--format", "json"), check=False)
+    if start:
+        command((*COMPOSE, "up", "-d", *REQUIRED_SERVICES))
+    kafka = wait_until(
+        lambda: command((*COMPOSE, "exec", "-T", "kafka",
+                         "kafka-broker-api-versions", "--bootstrap-server", "localhost:9092"),
+                        check=False).returncode == 0,
+        timeout=120, description="Kafka readiness")
+    opensearch = wait_until(lambda: _http_ready("http://localhost:9200"), timeout=120,
+                            description="OpenSearch readiness")
+    order = wait_until(lambda: _http_ready("http://localhost:8081/actuator/health"),
+                       timeout=120, description="order-service readiness")
+    payment = wait_until(lambda: _http_ready("http://localhost:8082/actuator/health"),
+                         timeout=120, description="payment-service readiness")
+    runtime = wait_until(lambda: _http_ready("http://localhost:8090/ready"), timeout=120,
+                         description="correlation runtime readiness")
+    processes = command((*COMPOSE, "ps", "--format", "json"))
+    active = []
+    for line in processes.stdout.splitlines():
+        try:
+            active.append(json.loads(line))
+        except json.JSONDecodeError:
+            pass
+    correlation_running = any(item.get("Service") == "correlation-engine"
+                              and str(item.get("State", "")).lower() == "running"
+                              for item in active)
+    collector_running = any(item.get("Service") == "otel-collector"
+                            and str(item.get("State", "")).lower() == "running"
+                            for item in active)
+    if not correlation_running:
+        raise RuntimeError("correlation-engine não está running.")
+    if not collector_running:
+        raise RuntimeError("OpenTelemetry Collector não está running.")
+    report = {
+        "recorded_at": utc_now(), "expected_services": list(REQUIRED_SERVICES),
+        "before_compose_ps": before.stdout, "active_containers": active,
+        "ports_endpoints": {"kafka": "kafka:9092", "opensearch": "http://localhost:9200",
+                            "otel_grpc": "localhost:4317", "otel_http": "localhost:4318",
+                            "order": "http://localhost:8081/actuator/health",
+                            "payment": "http://localhost:8082/actuator/health",
+                            "correlation_runtime": "http://localhost:8090/ready"},
+        "readiness": {"kafka": bool(kafka), "opensearch": bool(opensearch),
+                      "otel-collector": collector_running,
+                      "order-service": bool(order), "payment-service": bool(payment),
+                      "correlation-engine": correlation_running,
+                      "platform-v3-runtime": bool(runtime)},
+    }
+    return report
+
+
+def configure_fault(scenario: Scenario, seed: int) -> tuple[str, dict[str, Any]]:
+    environment = os.environ.copy()
+    for prefix, service in (("ORDER", "order-service"), ("PAYMENT", "payment-service")):
+        selected = scenario.target_service == service
+        environment[f"CAUSALODS_{prefix}_FAULT_MODE"] = scenario.fault_type if selected else "none"
+        environment[f"CAUSALODS_{prefix}_FAULT_RATE"] = str(scenario.rate if selected else 0.0)
+        environment[f"CAUSALODS_{prefix}_FAULT_DELAY_MS"] = str(scenario.delay_ms if selected else 0)
+        environment[f"CAUSALODS_{prefix}_FAULT_SEED"] = str(seed)
+    started = utc_now()
+    for service in ("payment-service", "order-service"):
+        command((*COMPOSE, "up", "-d", "--force-recreate", "--no-deps", service),
+                environment=environment)
+        port = 8082 if service == "payment-service" else 8081
+        wait_until(lambda port=port: _http_ready(f"http://localhost:{port}/actuator/health"),
+                   timeout=120, description=f"{service} após fault reset/config")
+    configured = {}
+    for service in ("order-service", "payment-service"):
+        result = command((*COMPOSE, "exec", "-T", service, "sh", "-lc",
+                          "printf '%s|%s|%s|%s' \"$CAUSALODS_FAULT_MODE\" \"$CAUSALODS_FAULT_RATE\" \"$CAUSALODS_FAULT_DELAY_MS\" \"$CAUSALODS_FAULT_SEED\""))
+        mode, rate, delay, observed_seed = result.stdout.split("|")
+        configured[service] = {"mode": mode, "rate": rate, "delay_ms": delay,
+                               "seed": observed_seed}
+    return started, configured
+
+
+def restore_faults(seed: int) -> str:
+    configure_fault(SCENARIOS["healthy"], seed)
+    return utc_now()
+
+
+def publish_business_event(event_name: str, correlation_id: str, entity_id: str,
+                           service_name: str, outcome: str) -> None:
+    payload = {
+        "event_id": f"clv3-be-{uuid.uuid4().hex}", "event_name": event_name,
+        "event_timestamp": utc_now(), "correlation_id": correlation_id,
+        "business_entity_type": event_name.split(".", 1)[0],
+        "business_entity_id": entity_id, "service_name": service_name,
+        "business_operation": event_name, "business_outcome": outcome,
+        "attributes": {"controlled_dataset": DATASET_ID},
+        "source_reference": "causalods-local-v3-business-controller",
+        "source_dataset": DATASET_ID, "schema_version": "business-event-v1",
+    }
+    command((*COMPOSE, "exec", "-T", "kafka", "kafka-console-producer",
+             "--bootstrap-server", "localhost:9092", "--topic", "business-events-v1"),
+            input_text=json.dumps(payload, separators=(",", ":")) + "\n")
+
+
+def _search_events(correlation_id: str, started_at: str, finished_at: str) -> list[dict[str, Any]]:
+    query = {
+        "size": 10000,
+        "sort": [{"event_timestamp": "asc"}, {"event_id": "asc"}],
+        "query": {"bool": {"should": [
+            {"term": {"correlation_id": correlation_id}},
+            {"bool": {"must": [
+                {"term": {"signal_type": "metric"}},
+                {"terms": {"service_name": ["order-service", "payment-service"]}},
+                {"range": {"event_timestamp": {"gte": started_at, "lte": finished_at}}},
+            ]}},
+        ], "minimum_should_match": 1}},
+    }
+    status, _, body = request("http://localhost:9200/causalods-v3-unified-events/_search",
+                              payload=query, timeout=20)
+    if status != 200 or not isinstance(body, dict):
+        return []
+    events = []
+    for hit in body.get("hits", {}).get("hits", []):
+        event = dict(hit.get("_source", {}))
+        for source, target in (("attributes_json", "attributes"),
+                               ("resource_attributes_json", "resource_attributes"),
+                               ("scope_json", "instrumentation_scope")):
+            raw = event.pop(source, None)
+            if isinstance(raw, str):
+                try:
+                    event[target] = json.loads(raw)
+                except json.JSONDecodeError:
+                    event[target] = {"unparsed": raw}
+        events.append(event)
+    return events
+
+
+def _dlq_offsets() -> dict[int, int]:
+    result = command((*COMPOSE, "exec", "-T", "kafka", "kafka-get-offsets",
+                      "--bootstrap-server", "localhost:9092", "--topic",
+                      "multimodal-dead-letter-v1"), check=False)
+    offsets = {}
+    for line in result.stdout.splitlines():
+        parts = line.rsplit(":", 2)
+        if len(parts) == 3 and parts[1].isdigit() and parts[2].isdigit():
+            offsets[int(parts[1])] = int(parts[2])
+    return offsets
+
+
+def _pipeline_status(correlation_id: str) -> dict[str, Any]:
+    incident_query = {"size": 10, "query": {"term": {"correlation_ids": correlation_id}}}
+    _, _, incidents = request(
+        "http://localhost:9200/causalods-v3-incidents/_search",
+        payload=incident_query, timeout=20, allow_error=True)
+    hits = incidents.get("hits", {}).get("hits", []) if isinstance(incidents, dict) else []
+    incident_ids = [item.get("_source", {}).get("incident_id") for item in hits]
+    incident_ids = [item for item in incident_ids if item]
+    if not incident_ids:
+        return {"completed": False, "rca_result_emitted": False,
+                "ranking_produced": False, "reliability_gate_executed": False}
+    rca_query = {"size": 10, "query": {"terms": {"incident_id": incident_ids}}}
+    _, _, rca = request("http://localhost:9200/causalods-v3-rca-results/_search",
+                        payload=rca_query, timeout=20, allow_error=True)
+    rca_hits = rca.get("hits", {}).get("hits", []) if isinstance(rca, dict) else []
+    sources = [item.get("_source", {}) for item in rca_hits]
+    return {"completed": bool(sources), "rca_result_emitted": bool(sources),
+            "ranking_produced": any(item.get("ranked_root_causes") for item in sources),
+            "reliability_gate_executed": any(item.get("reliable") is not None for item in sources),
+            "incident_ids": incident_ids,
+            "rca_result_ids": [item.get("rca_result_id") for item in sources]}
+
+
+def execute_local_pipeline(events: list[Mapping[str, Any]], correlation_id: str) -> dict[str, Any]:
+    """Runs the frozen v3 pipeline technically; its prediction is never a label."""
+    from dataclasses import fields
+    from opensearchpy import OpenSearch
+    from multimodal_v1.contracts import UnifiedEvent
+    from multimodal_v1.anomaly import DEFAULT_ANOMALY_POLICY
+    from multimodal_v1.evidence import IncidentEvidenceAssembler
+    from platform_v3.opensearch import OpenSearchProjectionRepository
+    from platform_v3.operational_model import load_operational_model
+    from platform_v3.runtime import RuntimeProcessor, TOPOLOGY
+    from ranking.reliability_gate import ReliabilityGate
+
+    allowed = {item.name for item in fields(UnifiedEvent)}
+    normalized = []
+    for raw in events:
+        payload = {key: value for key, value in raw.items() if key in allowed}
+        payload.setdefault("schema_version", "unified-event-v1")
+        normalized.append(UnifiedEvent.from_dict(payload))
+    if not any(DEFAULT_ANOMALY_POLICY.is_anomalous(event) for event in normalized):
+        decision = ReliabilityGate().evaluate((), ())
+        return {"completed": True, "rca_result_emitted": False,
+                "ranking_produced": False, "reliability_gate_executed": True,
+                "abstained": True,
+                "abstention_reason": "no_anomaly_under_frozen_policy",
+                "failed_reliability_rules": list(decision.failed_rules),
+                "prediction_excluded_from_ground_truth": True}
+    bundles = IncidentEvidenceAssembler(topology=TOPOLOGY).assemble(normalized)
+    candidates = [bundle for bundle in bundles if any(
+        event.correlation_id == correlation_id for event in bundle.events)]
+    if not candidates:
+        raise RuntimeError("Pipeline local não formou IncidentEvidenceBundle correlacionado.")
+    bundle = max(candidates, key=lambda item: len(item.events))
+    client = OpenSearch(hosts=[{"host": "localhost", "port": 9200}], use_ssl=False,
+                        verify_certs=False, timeout=20)
+    result = RuntimeProcessor(
+        load_operational_model(), OpenSearchProjectionRepository(client)
+    ).process(bundle)
+    return {"completed": True, "rca_result_emitted": bool(result.get("rca_result_id")),
+            "ranking_produced": True, "reliability_gate_executed": True,
+            "incident_ids": [result.get("incident_id")],
+            "rca_result_ids": [result.get("rca_result_id")],
+            "prediction_excluded_from_ground_truth": True}
+
+
+_PROMETHEUS_SAMPLE = re.compile(
+    r"^(?P<name>[a-zA-Z_:][a-zA-Z0-9_:]*)(?:\{(?P<labels>[^}]*)\})?\s+"
+    r"(?P<value>[-+]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][-+]?\d+)?)$"
+)
+_RELEVANT_METRIC_PREFIXES = (
+    "http_server_requests_", "jvm_memory_used_bytes", "jvm_threads_live_threads",
+    "process_cpu_usage", "process_uptime_seconds", "system_cpu_usage",
+)
+
+
+def collect_real_metrics() -> list[dict[str, Any]]:
+    """Pulls already existing Micrometer series; no synthetic values are created."""
+    from multimodal_v1.contracts import UnifiedEvent
+
+    events = []
+    timestamp = utc_now()
+    for service, port in (("order-service", 8081), ("payment-service", 8082)):
+        status, _, body = request(
+            f"http://localhost:{port}/actuator/prometheus", timeout=10,
+            headers={"Accept": "text/plain;version=0.0.4"},
+        )
+        if status != 200 or not isinstance(body, str):
+            continue
+        selected = 0
+        for line in body.splitlines():
+            if line.startswith("#"):
+                continue
+            match = _PROMETHEUS_SAMPLE.fullmatch(line.strip())
+            if not match or not match.group("name").startswith(_RELEVANT_METRIC_PREFIXES):
+                continue
+            value = float(match.group("value"))
+            name = match.group("name")
+            events.append(UnifiedEvent(
+                event_id=f"clv3-metric-{service}-{uuid.uuid4().hex}",
+                event_name=name, event_type="metric", signal_type="metric",
+                event_timestamp=timestamp, service_name=service,
+                metric_name=name, metric_value=value,
+                attributes={"prometheus_labels": match.group("labels") or ""},
+                resource_attributes={"service.name": service},
+                source_reference=f"http://{service}:{port}/actuator/prometheus",
+                source_dataset=DATASET_ID,
+            ).to_dict())
+            selected += 1
+            if selected >= 64:
+                break
+    if not events:
+        raise RuntimeError("Nenhuma série métrica operacional real disponível no Actuator.")
+    return events
+
+
+class LiveExecutor:
+    def __call__(self, scenario: Scenario, seed: int, run_id: str,
+                 correlation_id: str) -> Mapping[str, Any]:
+        experiment_started = utc_now()
+        dlq_before = _dlq_offsets()
+        fault_started, configured = configure_fault(scenario, seed)
+        request_id = f"req-{uuid.uuid4().hex}"
+        entity_id = f"order-{uuid.uuid4().hex[:20]}"
+        request_started = utc_now()
+        product = f"controlled-{uuid.uuid4().hex[:16]}"
+        publish_business_event("order.created", correlation_id, entity_id,
+                               "order-service", "requested")
+        if scenario.name != "order_error":
+            publish_business_event("payment.requested", correlation_id, entity_id,
+                                   "payment-service", "requested")
+        monotonic = time.monotonic()
+        status, headers, body = request(
+            "http://localhost:8081/orders", payload={"product": product, "quantity": 1},
+            headers={"X-Correlation-Id": correlation_id, "X-Request-Id": request_id},
+            timeout=30, allow_error=True)
+        request_finished = utc_now()
+        duration = time.monotonic() - monotonic
+        success = status // 100 == 2
+        if scenario.name != "order_error":
+            publish_business_event("payment.approved" if success else "payment.failed",
+                                   correlation_id, entity_id, "payment-service",
+                                   "approved" if success else "failed")
+        publish_business_event("order.approved" if success else "order.rejected",
+                               correlation_id, entity_id, "order-service",
+                               "approved" if success else "rejected")
+        collection_finished = (datetime.now(timezone.utc) + timedelta(seconds=12)).isoformat().replace("+00:00", "Z")
+        try:
+            events = wait_until(
+            lambda: (rows if all(any(item.get("signal_type") == modality for item in rows)
+                                 for modality in ("trace", "log", "business_event"))
+                     else None)
+            if (rows := _search_events(correlation_id, experiment_started, utc_now())) else None,
+            timeout=90, description=f"trace/log/business_event de {run_id}")
+            # OTLP batch/export is asynchronous.  A deterministic grace period
+            # captures late downstream spans/logs without mixing another run,
+            # because workers=1 and the correlation predicate remains exact.
+            time.sleep(20)
+            events = _search_events(correlation_id, experiment_started, utc_now())
+            events.extend(collect_real_metrics())
+        except Exception:
+            restore_faults(seed)
+            raise
+        collection_finished = utc_now()
+        dlq_after = _dlq_offsets()
+        dlq_count = sum(max(0, dlq_after.get(partition, 0) - offset)
+                        for partition, offset in dlq_before.items())
+        fault_stopped = restore_faults(seed)
+        pipeline = execute_local_pipeline(events, correlation_id)
+        response_correlation = next((value for key, value in headers.items()
+                                     if key.lower() == "x-correlation-id"), None)
+        return {
+            "events": events, "experiment_started_at": experiment_started,
+            "request_started_at": request_started, "request_finished_at": request_finished,
+            "collection_finished_at": collection_finished,
+            "fault_started_at": fault_started, "fault_stopped_at": fault_stopped,
+            "http_status": status, "dlq_count": dlq_count,
+            "request_metadata": {"experiment_run_id": run_id, "request_id": request_id,
+                                 "business.correlation.id": correlation_id,
+                                 "request_payload": {"product": product, "quantity": 1},
+                                 "response_correlation_id": response_correlation,
+                                 "response_body_type": type(body).__name__},
+            "timing": {"duration_seconds": duration,
+                       "experiment_started_at": experiment_started,
+                       "request_started_at": request_started,
+                       "request_finished_at": request_finished,
+                       "collection_finished_at": collection_finished},
+            "fault_controller_state": configured,
+            "pipeline": pipeline,
+        }
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(description="causalods-local-v3 controlled materializer")
+    sub = parser.add_subparsers(dest="command", required=True)
+    infra = sub.add_parser("infra")
+    infra.add_argument("--start", action="store_true")
+    infra.add_argument("--report", type=Path,
+                       default=DEFAULT_OUTPUT / "audits" / "infrastructure.json")
+    run = sub.add_parser("run")
+    run.add_argument("--output", type=Path, default=DEFAULT_OUTPUT)
+    run.add_argument("--scenario", choices=("all", *SCENARIOS), default="all")
+    run.add_argument("--repeat", type=int, default=1)
+    run.add_argument("--resume", action="store_true")
+    run.add_argument("--base-seed", type=int, default=20260814)
+    audit_parser = sub.add_parser("audit")
+    audit_parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT)
+    args = parser.parse_args()
+    if args.command == "infra":
+        report = infrastructure(start=args.start)
+        atomic_json(args.report, report)
+        print(json.dumps(report, indent=2, sort_keys=True))
+        return 0
+    if args.command == "audit":
+        from .audit import build_final_audit
+        report = build_final_audit(args.output)
+        print(json.dumps(report, indent=2, sort_keys=True))
+        return 0
+    selected = tuple(SCENARIOS) if args.scenario == "all" else (args.scenario,)
+    report = Campaign(args.output, base_seed=args.base_seed,
+                      executor=LiveExecutor()).run(selected, repeat=args.repeat,
+                                                   resume=args.resume)
+    print(json.dumps(report, indent=2, sort_keys=True))
+    return 0
