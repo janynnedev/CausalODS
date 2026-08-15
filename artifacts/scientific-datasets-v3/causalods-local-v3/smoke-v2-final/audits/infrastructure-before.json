@@ -1,0 +1,313 @@
+{
+  "active_containers": [
+    {
+      "Command": "\"./opensearch-docker…\"",
+      "CreatedAt": "2026-08-01 19:55:40 -0300 -03",
+      "ExitCode": 0,
+      "Health": "healthy",
+      "ID": "40f133f0e1f0",
+      "Image": "opensearchproject/opensearch:2.19.0",
+      "Labels": "org.label-schema.description=10796,org.label-schema.license=Apache-2.0,org.label-schema.schema-version=1.0,org.label-schema.vendor=OpenSearch,com.docker.compose.config-hash=801b82c3660b3c8e4191aebad287abfc07a1348d842ef9a16f365ba70711fa1c,com.docker.compose.project=causalods,org.label-schema.build-date=2025-02-15T19:12:52Z,org.label-schema.vcs-url=https://github.com/opensearch-project/OpenSearch,com.docker.compose.container-number=1,com.docker.compose.image=sha256:1f8b88245a6af61e7aa500afe0e87d43401e4b33140bb47230a919428ce3f7cb,com.docker.compose.project.config_files=/home/janynne/projects/CausalODS/docker-compose.yml,com.docker.compose.project.working_dir=/home/janynne/projects/CausalODS,com.docker.compose.service=opensearch,org.label-schema.name=opensearch,org.label-schema.version=2.19.0,DOCKERFILE=https://github.com/opensearch-project/opensearch-build/blob/main/docker/release/dockerfiles/opensearch.al2.dockerfile,com.docker.compose.depends_on=,com.docker.compose.oneoff=False,org.label-schema.url=https://opensearch.org,com.docker.compose.version=2.40.3",
+      "LocalVolumes": "0",
+      "Mounts": "",
+      "Name": "causalods-opensearch",
+      "Names": "causalods-opensearch",
+      "Networks": "causalods_observability",
+      "Ports": "0.0.0.0:9200->9200/tcp, [::]:9200->9200/tcp, 9300/tcp, 0.0.0.0:9600->9600/tcp, [::]:9600->9600/tcp, 9650/tcp",
+      "Project": "causalods",
+      "Publishers": [
+        {
+          "Protocol": "tcp",
+          "PublishedPort": 9200,
+          "TargetPort": 9200,
+          "URL": "0.0.0.0"
+        },
+        {
+          "Protocol": "tcp",
+          "PublishedPort": 9200,
+          "TargetPort": 9200,
+          "URL": "::"
+        },
+        {
+          "Protocol": "tcp",
+          "PublishedPort": 0,
+          "TargetPort": 9300,
+          "URL": ""
+        },
+        {
+          "Protocol": "tcp",
+          "PublishedPort": 9600,
+          "TargetPort": 9600,
+          "URL": "0.0.0.0"
+        },
+        {
+          "Protocol": "tcp",
+          "PublishedPort": 9600,
+          "TargetPort": 9600,
+          "URL": "::"
+        },
+        {
+          "Protocol": "tcp",
+          "PublishedPort": 0,
+          "TargetPort": 9650,
+          "URL": ""
+        }
+      ],
+      "RunningFor": "13 days ago",
+      "Service": "opensearch",
+      "Size": "0B",
+      "State": "running",
+      "Status": "Up 17 hours (healthy)"
+    },
+    {
+      "Command": "\"python -m platform_…\"",
+      "CreatedAt": "2026-08-14 23:42:37 -0300 -03",
+      "ExitCode": 0,
+      "Health": "starting",
+      "ID": "a950b72f57ab",
+      "Image": "causalods-platform-v3-runtime",
+      "Labels": "com.docker.compose.config-hash=3c38aea3c87f0b4562c4da0df1da33d36328a10f35080aa96012561983021eb1,com.docker.compose.container-number=1,com.docker.compose.depends_on=kafka:service_healthy:false,opensearch:service_healthy:false,com.docker.compose.image=sha256:43ed5658fcb33efb4f6d98f3c5b8019f06c74f5b0b3e1d2a69eec968b96a7c19,com.docker.compose.oneoff=False,com.docker.compose.project=causalods,com.docker.compose.service=platform-v3-runtime,com.docker.compose.version=2.40.3,com.docker.compose.project.config_files=/home/janynne/projects/CausalODS/docker-compose.yml,/home/janynne/projects/CausalODS/docker-compose.causalods-local-v3.yml,com.docker.compose.project.working_dir=/home/janynne/projects/CausalODS,com.docker.compose.replace=causalods-platform-v3-runtime",
+      "LocalVolumes": "0",
+      "Mounts": "/home/janynne/…,/home/janynne/…",
+      "Name": "causalods-platform-v3-runtime",
+      "Names": "causalods-platform-v3-runtime",
+      "Networks": "causalods_observability",
+      "Ports": "0.0.0.0:8090->8090/tcp, [::]:8090->8090/tcp",
+      "Project": "causalods",
+      "Publishers": [
+        {
+          "Protocol": "tcp",
+          "PublishedPort": 8090,
+          "TargetPort": 8090,
+          "URL": "0.0.0.0"
+        },
+        {
+          "Protocol": "tcp",
+          "PublishedPort": 8090,
+          "TargetPort": 8090,
+          "URL": "::"
+        }
+      ],
+      "RunningFor": "17 hours ago",
+      "Service": "platform-v3-runtime",
+      "Size": "0B",
+      "State": "running",
+      "Status": "Up 4 seconds (health: starting)"
+    },
+    {
+      "Command": "\"python app.py\"",
+      "CreatedAt": "2026-08-11 13:08:37 -0300 -03",
+      "ExitCode": 0,
+      "Health": "",
+      "ID": "f03acb50fa6c",
+      "Image": "causalods-correlation-engine",
+      "Labels": "com.docker.compose.config-hash=acf8b3e37d1addd004641f5f4224bbcc2f1ee96e1fa4fddaafc02b63177d9559,com.docker.compose.depends_on=opensearch:service_healthy:false,kafka:service_healthy:false,com.docker.compose.image=sha256:f8389f7072b4dcc7be456ec53b7bad7f8c97d4caa513bc190fb2433b15b5533d,com.docker.compose.oneoff=False,com.docker.compose.project=causalods,com.docker.compose.project.config_files=/home/janynne/projects/CausalODS/docker-compose.yml,/home/janynne/projects/CausalODS/docker-compose.platform-v3.yml,com.docker.compose.service=correlation-engine,com.docker.compose.container-number=1,com.docker.compose.project.working_dir=/home/janynne/projects/CausalODS,com.docker.compose.replace=correlation-engine,com.docker.compose.version=2.40.3",
+      "LocalVolumes": "0",
+      "Mounts": "/home/janynne/…",
+      "Name": "correlation-engine",
+      "Names": "correlation-engine",
+      "Networks": "causalods_observability",
+      "Ports": "",
+      "Project": "causalods",
+      "Publishers": [],
+      "RunningFor": "4 days ago",
+      "Service": "correlation-engine",
+      "Size": "0B",
+      "State": "running",
+      "Status": "Up 17 hours"
+    },
+    {
+      "Command": "\"/etc/confluent/dock…\"",
+      "CreatedAt": "2026-08-01 19:55:40 -0300 -03",
+      "ExitCode": 0,
+      "Health": "healthy",
+      "ID": "b62f4404a6ed",
+      "Image": "confluentinc/cp-kafka:7.8.0",
+      "Labels": "com.docker.compose.service=kafka,com.docker.compose.version=2.40.3,io.confluent.docker=true,vcs-ref=4f8da2b64a13f2a264bd802d8909bf803211fb20,vendor=Confluent,io.confluent.docker.git.id=6d97843,version=6d97843,com.docker.compose.project.config_files=/home/janynne/projects/CausalODS/docker-compose.yml,com.docker.compose.project.working_dir=/home/janynne/projects/CausalODS,com.redhat.license_terms=https://www.redhat.com/en/about/red-hat-end-user-license-agreements#UBI,io.buildah.version=1.33.8,io.confluent.docker.build.number=349ed81f,url=https://access.redhat.com/containers/#/registry.access.redhat.com/ubi8-minimal/images/8.10-1130,vcs-type=git,architecture=x86_64,com.docker.compose.container-number=1,com.redhat.component=ubi8-minimal-container,name=cp-kafka,com.docker.compose.depends_on=,release=7.8.0-83,summary=Confluent platform Kafka.,io.openshift.tags=minimal rhel8,maintainer=partner-support@confluent.io,com.docker.compose.config-hash=5ba241d221ba9c4edbc50af10b20c091eafe2f571d3b2b9be6c8bd70bb85d8d6,com.docker.compose.oneoff=False,description=Common base image for Confluent's Docker images.,distribution-scope=public,io.confluent.docker.git.repo=confluentinc/kafka-images,io.k8s.description=The Universal Base Image Minimal is a stripped down image that uses microdnf as a package manager. This base image is freely redistributable, but Red Hat only supports Red Hat technologies through subscriptions for Red Hat products. This image is maintained by Red Hat and updated regularly.,io.k8s.display-name=Red Hat Universal Base Image 8 Minimal,io.openshift.expose-services=,build-date=2024-10-30T23:56:36,com.docker.compose.image=sha256:adc392d28a1e99e8c9a1ec7f087e9e91041837b35b8b7cc8b8a691b82dd581b0,com.docker.compose.project=causalods",
+      "LocalVolumes": "2",
+      "Mounts": "0d56b8447d4e07…,30b3f4df044346…",
+      "Name": "kafka",
+      "Names": "kafka",
+      "Networks": "causalods_observability",
+      "Ports": "0.0.0.0:9092->9092/tcp, [::]:9092->9092/tcp",
+      "Project": "causalods",
+      "Publishers": [
+        {
+          "Protocol": "tcp",
+          "PublishedPort": 9092,
+          "TargetPort": 9092,
+          "URL": "0.0.0.0"
+        },
+        {
+          "Protocol": "tcp",
+          "PublishedPort": 9092,
+          "TargetPort": 9092,
+          "URL": "::"
+        }
+      ],
+      "RunningFor": "13 days ago",
+      "Service": "kafka",
+      "Size": "0B",
+      "State": "running",
+      "Status": "Up 17 hours (healthy)"
+    },
+    {
+      "Command": "\"java -jar app.jar\"",
+      "CreatedAt": "2026-08-15 16:12:51 -0300 -03",
+      "ExitCode": 0,
+      "Health": "",
+      "ID": "4d9c9b9e2a27",
+      "Image": "causalods-order-service",
+      "Labels": "com.docker.compose.container-number=1,com.docker.compose.project=causalods,org.opencontainers.image.description=The Ubuntu container image maintained by Canonical\n\nUbuntu is a Debian-based Linux operating system that runs from the desktop to the cloud, to all your internet connected things.\nIt is the world's most popular operating system across public clouds and OpenStack clouds.\nIt is the number one platform for containers; from Docker to Kubernetes to LXD, Ubuntu can run your containers at scale.\nFast, secure and simple, Ubuntu powers millions of PCs worldwide.\n,com.docker.compose.config-hash=67c807610394f9e88f02d0c17ce8dceafe2b53f7e31716b1675d4d59e0e85c10,com.docker.compose.depends_on=,com.docker.compose.project.config_files=/home/janynne/projects/CausalODS/docker-compose.yml,/home/janynne/projects/CausalODS/docker-compose.causalods-local-v3.yml,org.opencontainers.image.created=2026-07-24T12:48:28.650696+00:00,com.docker.compose.image=sha256:31615005da70e1478d94b0841cd6295f530be3b697c78bb1c344cf794aab46e6,com.docker.compose.oneoff=False,com.docker.compose.replace=order-service,com.docker.compose.version=2.40.3,org.opencontainers.image.title=ubuntu,org.opencontainers.image.version=26.04,com.docker.compose.project.working_dir=/home/janynne/projects/CausalODS,com.docker.compose.service=order-service",
+      "LocalVolumes": "0",
+      "Mounts": "/home/janynne/…",
+      "Name": "order-service",
+      "Names": "order-service",
+      "Networks": "causalods_observability",
+      "Ports": "0.0.0.0:8081->8081/tcp, [::]:8081->8081/tcp",
+      "Project": "causalods",
+      "Publishers": [
+        {
+          "Protocol": "tcp",
+          "PublishedPort": 8081,
+          "TargetPort": 8081,
+          "URL": "0.0.0.0"
+        },
+        {
+          "Protocol": "tcp",
+          "PublishedPort": 8081,
+          "TargetPort": 8081,
+          "URL": "::"
+        }
+      ],
+      "RunningFor": "6 minutes ago",
+      "Service": "order-service",
+      "Size": "0B",
+      "State": "running",
+      "Status": "Up 6 minutes"
+    },
+    {
+      "Command": "\"/otelcol-contrib --…\"",
+      "CreatedAt": "2026-08-14 23:42:37 -0300 -03",
+      "ExitCode": 0,
+      "Health": "",
+      "ID": "74b3849e9ff4",
+      "Image": "otel/opentelemetry-collector-contrib:0.130.0",
+      "Labels": "com.docker.compose.depends_on=kafka:service_started:false,com.docker.compose.project.config_files=/home/janynne/projects/CausalODS/docker-compose.yml,/home/janynne/projects/CausalODS/docker-compose.causalods-local-v3.yml,com.docker.compose.project.working_dir=/home/janynne/projects/CausalODS,com.docker.compose.replace=otel-collector,org.opencontainers.image.licenses=Apache-2.0,org.opencontainers.image.revision=da345d462cb1dece85124a00b7c7c965314bdc15,com.docker.compose.config-hash=2ac27621197745c2e9e2c40a53773a371581c1c8321e19412f32ac57607e872b,org.opencontainers.image.name=opentelemetry-collector-releases,org.opencontainers.image.source=https://github.com/open-telemetry/opentelemetry-collector-releases,com.docker.compose.container-number=1,com.docker.compose.image=sha256:867d1074c2f750936fb9358ec9eefa009308053cf156b2c7ca1761ba5ef78452,com.docker.compose.oneoff=False,org.opencontainers.image.version=0.130.0,com.docker.compose.project=causalods,com.docker.compose.service=otel-collector,com.docker.compose.version=2.40.3,org.opencontainers.image.created=2025-07-15T10:42:23Z",
+      "LocalVolumes": "0",
+      "Mounts": "/home/janynne/…",
+      "Name": "otel-collector",
+      "Names": "otel-collector",
+      "Networks": "causalods_observability",
+      "Ports": "0.0.0.0:4317-4318->4317-4318/tcp, [::]:4317-4318->4317-4318/tcp, 55678-55679/tcp",
+      "Project": "causalods",
+      "Publishers": [
+        {
+          "Protocol": "tcp",
+          "PublishedPort": 4317,
+          "TargetPort": 4317,
+          "URL": "0.0.0.0"
+        },
+        {
+          "Protocol": "tcp",
+          "PublishedPort": 4317,
+          "TargetPort": 4317,
+          "URL": "::"
+        },
+        {
+          "Protocol": "tcp",
+          "PublishedPort": 4318,
+          "TargetPort": 4318,
+          "URL": "0.0.0.0"
+        },
+        {
+          "Protocol": "tcp",
+          "PublishedPort": 4318,
+          "TargetPort": 4318,
+          "URL": "::"
+        },
+        {
+          "Protocol": "tcp",
+          "PublishedPort": 0,
+          "TargetPort": 55678,
+          "URL": ""
+        },
+        {
+          "Protocol": "tcp",
+          "PublishedPort": 0,
+          "TargetPort": 55679,
+          "URL": ""
+        }
+      ],
+      "RunningFor": "17 hours ago",
+      "Service": "otel-collector",
+      "Size": "0B",
+      "State": "running",
+      "Status": "Up 22 seconds"
+    },
+    {
+      "Command": "\"java -jar app.jar\"",
+      "CreatedAt": "2026-08-15 16:12:29 -0300 -03",
+      "ExitCode": 0,
+      "Health": "",
+      "ID": "3d20e3730dd3",
+      "Image": "causalods-payment-service",
+      "Labels": "org.opencontainers.image.description=The Ubuntu container image maintained by Canonical\n\nUbuntu is a Debian-based Linux operating system that runs from the desktop to the cloud, to all your internet connected things.\nIt is the world's most popular operating system across public clouds and OpenStack clouds.\nIt is the number one platform for containers; from Docker to Kubernetes to LXD, Ubuntu can run your containers at scale.\nFast, secure and simple, Ubuntu powers millions of PCs worldwide.\n,com.docker.compose.oneoff=False,com.docker.compose.version=2.40.3,org.opencontainers.image.created=2026-07-24T12:48:28.650696+00:00,org.opencontainers.image.version=26.04,com.docker.compose.container-number=1,com.docker.compose.replace=payment-service,com.docker.compose.service=payment-service,com.docker.compose.depends_on=,com.docker.compose.project.config_files=/home/janynne/projects/CausalODS/docker-compose.yml,/home/janynne/projects/CausalODS/docker-compose.causalods-local-v3.yml,org.opencontainers.image.title=ubuntu,com.docker.compose.config-hash=6daeefe2b0efaf1f701b04bb1265d1ad33ff56e45eae29e36576976e65d522ad,com.docker.compose.image=sha256:5bbf2c069ac15fcf54a6ea2ef5c64147864a134735a64418db2efaabeff16a63,com.docker.compose.project=causalods,com.docker.compose.project.working_dir=/home/janynne/projects/CausalODS",
+      "LocalVolumes": "0",
+      "Mounts": "/home/janynne/…",
+      "Name": "payment-service",
+      "Names": "payment-service",
+      "Networks": "causalods_observability",
+      "Ports": "0.0.0.0:8082->8082/tcp, [::]:8082->8082/tcp",
+      "Project": "causalods",
+      "Publishers": [
+        {
+          "Protocol": "tcp",
+          "PublishedPort": 8082,
+          "TargetPort": 8082,
+          "URL": "0.0.0.0"
+        },
+        {
+          "Protocol": "tcp",
+          "PublishedPort": 8082,
+          "TargetPort": 8082,
+          "URL": "::"
+        }
+      ],
+      "RunningFor": "6 minutes ago",
+      "Service": "payment-service",
+      "Size": "0B",
+      "State": "running",
+      "Status": "Up 6 minutes"
+    }
+  ],
+  "before_compose_ps": "{\"Command\":\"\\\"./opensearch-docker…\\\"\",\"CreatedAt\":\"2026-08-01 19:55:40 -0300 -03\",\"ExitCode\":0,\"Health\":\"healthy\",\"ID\":\"40f133f0e1f0\",\"Image\":\"opensearchproject/opensearch:2.19.0\",\"Labels\":\"org.label-schema.description=10796,org.label-schema.url=https://opensearch.org,org.label-schema.vcs-url=https://github.com/opensearch-project/OpenSearch,org.label-schema.vendor=OpenSearch,com.docker.compose.container-number=1,com.docker.compose.image=sha256:1f8b88245a6af61e7aa500afe0e87d43401e4b33140bb47230a919428ce3f7cb,com.docker.compose.project.working_dir=/home/janynne/projects/CausalODS,com.docker.compose.version=2.40.3,org.label-schema.name=opensearch,org.label-schema.version=2.19.0,com.docker.compose.config-hash=801b82c3660b3c8e4191aebad287abfc07a1348d842ef9a16f365ba70711fa1c,com.docker.compose.oneoff=False,com.docker.compose.project.config_files=/home/janynne/projects/CausalODS/docker-compose.yml,com.docker.compose.service=opensearch,org.label-schema.license=Apache-2.0,DOCKERFILE=https://github.com/opensearch-project/opensearch-build/blob/main/docker/release/dockerfiles/opensearch.al2.dockerfile,com.docker.compose.depends_on=,org.label-schema.build-date=2025-02-15T19:12:52Z,org.label-schema.schema-version=1.0,com.docker.compose.project=causalods\",\"LocalVolumes\":\"0\",\"Mounts\":\"\",\"Name\":\"causalods-opensearch\",\"Names\":\"causalods-opensearch\",\"Networks\":\"causalods_observability\",\"Ports\":\"0.0.0.0:9200-\\u003e9200/tcp, [::]:9200-\\u003e9200/tcp, 9300/tcp, 0.0.0.0:9600-\\u003e9600/tcp, [::]:9600-\\u003e9600/tcp, 9650/tcp\",\"Project\":\"causalods\",\"Publishers\":[{\"URL\":\"0.0.0.0\",\"TargetPort\":9200,\"PublishedPort\":9200,\"Protocol\":\"tcp\"},{\"URL\":\"::\",\"TargetPort\":9200,\"PublishedPort\":9200,\"Protocol\":\"tcp\"},{\"URL\":\"\",\"TargetPort\":9300,\"PublishedPort\":0,\"Protocol\":\"tcp\"},{\"URL\":\"0.0.0.0\",\"TargetPort\":9600,\"PublishedPort\":9600,\"Protocol\":\"tcp\"},{\"URL\":\"::\",\"TargetPort\":9600,\"PublishedPort\":9600,\"Protocol\":\"tcp\"},{\"URL\":\"\",\"TargetPort\":9650,\"PublishedPort\":0,\"Protocol\":\"tcp\"}],\"RunningFor\":\"13 days ago\",\"Service\":\"opensearch\",\"Size\":\"0B\",\"State\":\"running\",\"Status\":\"Up 17 hours (healthy)\"}\n{\"Command\":\"\\\"python -m platform_…\\\"\",\"CreatedAt\":\"2026-08-14 23:42:37 -0300 -03\",\"ExitCode\":0,\"Health\":\"starting\",\"ID\":\"a950b72f57ab\",\"Image\":\"causalods-platform-v3-runtime\",\"Labels\":\"com.docker.compose.project.working_dir=/home/janynne/projects/CausalODS,com.docker.compose.config-hash=3c38aea3c87f0b4562c4da0df1da33d36328a10f35080aa96012561983021eb1,com.docker.compose.container-number=1,com.docker.compose.oneoff=False,com.docker.compose.project=causalods,com.docker.compose.project.config_files=/home/janynne/projects/CausalODS/docker-compose.yml,/home/janynne/projects/CausalODS/docker-compose.causalods-local-v3.yml,com.docker.compose.replace=causalods-platform-v3-runtime,com.docker.compose.service=platform-v3-runtime,com.docker.compose.version=2.40.3,com.docker.compose.depends_on=kafka:service_healthy:false,opensearch:service_healthy:false,com.docker.compose.image=sha256:43ed5658fcb33efb4f6d98f3c5b8019f06c74f5b0b3e1d2a69eec968b96a7c19\",\"LocalVolumes\":\"0\",\"Mounts\":\"/home/janynne/…,/home/janynne/…\",\"Name\":\"causalods-platform-v3-runtime\",\"Names\":\"causalods-platform-v3-runtime\",\"Networks\":\"causalods_observability\",\"Ports\":\"0.0.0.0:8090-\\u003e8090/tcp, [::]:8090-\\u003e8090/tcp\",\"Project\":\"causalods\",\"Publishers\":[{\"URL\":\"0.0.0.0\",\"TargetPort\":8090,\"PublishedPort\":8090,\"Protocol\":\"tcp\"},{\"URL\":\"::\",\"TargetPort\":8090,\"PublishedPort\":8090,\"Protocol\":\"tcp\"}],\"RunningFor\":\"17 hours ago\",\"Service\":\"platform-v3-runtime\",\"Size\":\"0B\",\"State\":\"running\",\"Status\":\"Up Less than a second (health: starting)\"}\n{\"Command\":\"\\\"python app.py\\\"\",\"CreatedAt\":\"2026-08-11 13:08:37 -0300 -03\",\"ExitCode\":0,\"Health\":\"\",\"ID\":\"f03acb50fa6c\",\"Image\":\"causalods-correlation-engine\",\"Labels\":\"com.docker.compose.config-hash=acf8b3e37d1addd004641f5f4224bbcc2f1ee96e1fa4fddaafc02b63177d9559,com.docker.compose.depends_on=opensearch:service_healthy:false,kafka:service_healthy:false,com.docker.compose.project.config_files=/home/janynne/projects/CausalODS/docker-compose.yml,/home/janynne/projects/CausalODS/docker-compose.platform-v3.yml,com.docker.compose.service=correlation-engine,com.docker.compose.container-number=1,com.docker.compose.image=sha256:f8389f7072b4dcc7be456ec53b7bad7f8c97d4caa513bc190fb2433b15b5533d,com.docker.compose.oneoff=False,com.docker.compose.project=causalods,com.docker.compose.project.working_dir=/home/janynne/projects/CausalODS,com.docker.compose.replace=correlation-engine,com.docker.compose.version=2.40.3\",\"LocalVolumes\":\"0\",\"Mounts\":\"/home/janynne/…\",\"Name\":\"correlation-engine\",\"Names\":\"correlation-engine\",\"Networks\":\"causalods_observability\",\"Ports\":\"\",\"Project\":\"causalods\",\"Publishers\":[],\"RunningFor\":\"4 days ago\",\"Service\":\"correlation-engine\",\"Size\":\"0B\",\"State\":\"running\",\"Status\":\"Up 17 hours\"}\n{\"Command\":\"\\\"/etc/confluent/dock…\\\"\",\"CreatedAt\":\"2026-08-01 19:55:40 -0300 -03\",\"ExitCode\":0,\"Health\":\"healthy\",\"ID\":\"b62f4404a6ed\",\"Image\":\"confluentinc/cp-kafka:7.8.0\",\"Labels\":\"io.k8s.display-name=Red Hat Universal Base Image 8 Minimal,io.openshift.tags=minimal rhel8,maintainer=partner-support@confluent.io,summary=Confluent platform Kafka.,vcs-ref=4f8da2b64a13f2a264bd802d8909bf803211fb20,com.docker.compose.project.config_files=/home/janynne/projects/CausalODS/docker-compose.yml,io.confluent.docker.git.id=6d97843,com.docker.compose.container-number=1,distribution-scope=public,io.buildah.version=1.33.8,io.confluent.docker.git.repo=confluentinc/kafka-images,url=https://access.redhat.com/containers/#/registry.access.redhat.com/ubi8-minimal/images/8.10-1130,vendor=Confluent,com.docker.compose.depends_on=,com.docker.compose.image=sha256:adc392d28a1e99e8c9a1ec7f087e9e91041837b35b8b7cc8b8a691b82dd581b0,com.redhat.component=ubi8-minimal-container,com.docker.compose.oneoff=False,com.docker.compose.project=causalods,io.confluent.docker.build.number=349ed81f,name=cp-kafka,version=6d97843,build-date=2024-10-30T23:56:36,com.docker.compose.config-hash=5ba241d221ba9c4edbc50af10b20c091eafe2f571d3b2b9be6c8bd70bb85d8d6,com.docker.compose.service=kafka,com.redhat.license_terms=https://www.redhat.com/en/about/red-hat-end-user-license-agreements#UBI,description=Common base image for Confluent's Docker images.,release=7.8.0-83,architecture=x86_64,com.docker.compose.version=2.40.3,io.openshift.expose-services=,com.docker.compose.project.working_dir=/home/janynne/projects/CausalODS,io.confluent.docker=true,io.k8s.description=The Universal Base Image Minimal is a stripped down image that uses microdnf as a package manager. This base image is freely redistributable, but Red Hat only supports Red Hat technologies through subscriptions for Red Hat products. This image is maintained by Red Hat and updated regularly.,vcs-type=git\",\"LocalVolumes\":\"2\",\"Mounts\":\"30b3f4df044346…,0d56b8447d4e07…\",\"Name\":\"kafka\",\"Names\":\"kafka\",\"Networks\":\"causalods_observability\",\"Ports\":\"0.0.0.0:9092-\\u003e9092/tcp, [::]:9092-\\u003e9092/tcp\",\"Project\":\"causalods\",\"Publishers\":[{\"URL\":\"0.0.0.0\",\"TargetPort\":9092,\"PublishedPort\":9092,\"Protocol\":\"tcp\"},{\"URL\":\"::\",\"TargetPort\":9092,\"PublishedPort\":9092,\"Protocol\":\"tcp\"}],\"RunningFor\":\"13 days ago\",\"Service\":\"kafka\",\"Size\":\"0B\",\"State\":\"running\",\"Status\":\"Up 17 hours (healthy)\"}\n{\"Command\":\"\\\"java -jar app.jar\\\"\",\"CreatedAt\":\"2026-08-15 16:12:51 -0300 -03\",\"ExitCode\":0,\"Health\":\"\",\"ID\":\"4d9c9b9e2a27\",\"Image\":\"causalods-order-service\",\"Labels\":\"org.opencontainers.image.created=2026-07-24T12:48:28.650696+00:00,org.opencontainers.image.description=The Ubuntu container image maintained by Canonical\\n\\nUbuntu is a Debian-based Linux operating system that runs from the desktop to the cloud, to all your internet connected things.\\nIt is the world's most popular operating system across public clouds and OpenStack clouds.\\nIt is the number one platform for containers; from Docker to Kubernetes to LXD, Ubuntu can run your containers at scale.\\nFast, secure and simple, Ubuntu powers millions of PCs worldwide.\\n,com.docker.compose.depends_on=,com.docker.compose.config-hash=67c807610394f9e88f02d0c17ce8dceafe2b53f7e31716b1675d4d59e0e85c10,com.docker.compose.container-number=1,com.docker.compose.project.working_dir=/home/janynne/projects/CausalODS,com.docker.compose.version=2.40.3,com.docker.compose.project.config_files=/home/janynne/projects/CausalODS/docker-compose.yml,/home/janynne/projects/CausalODS/docker-compose.causalods-local-v3.yml,org.opencontainers.image.title=ubuntu,org.opencontainers.image.version=26.04,com.docker.compose.image=sha256:31615005da70e1478d94b0841cd6295f530be3b697c78bb1c344cf794aab46e6,com.docker.compose.oneoff=False,com.docker.compose.project=causalods,com.docker.compose.replace=order-service,com.docker.compose.service=order-service\",\"LocalVolumes\":\"0\",\"Mounts\":\"/home/janynne/…\",\"Name\":\"order-service\",\"Names\":\"order-service\",\"Networks\":\"causalods_observability\",\"Ports\":\"0.0.0.0:8081-\\u003e8081/tcp, [::]:8081-\\u003e8081/tcp\",\"Project\":\"causalods\",\"Publishers\":[{\"URL\":\"0.0.0.0\",\"TargetPort\":8081,\"PublishedPort\":8081,\"Protocol\":\"tcp\"},{\"URL\":\"::\",\"TargetPort\":8081,\"PublishedPort\":8081,\"Protocol\":\"tcp\"}],\"RunningFor\":\"6 minutes ago\",\"Service\":\"order-service\",\"Size\":\"0B\",\"State\":\"running\",\"Status\":\"Up 5 minutes\"}\n{\"Command\":\"\\\"/otelcol-contrib --…\\\"\",\"CreatedAt\":\"2026-08-14 23:42:37 -0300 -03\",\"ExitCode\":0,\"Health\":\"\",\"ID\":\"74b3849e9ff4\",\"Image\":\"otel/opentelemetry-collector-contrib:0.130.0\",\"Labels\":\"com.docker.compose.depends_on=kafka:service_started:false,com.docker.compose.project.working_dir=/home/janynne/projects/CausalODS,org.opencontainers.image.revision=da345d462cb1dece85124a00b7c7c965314bdc15,com.docker.compose.replace=otel-collector,org.opencontainers.image.licenses=Apache-2.0,org.opencontainers.image.version=0.130.0,com.docker.compose.version=2.40.3,com.docker.compose.container-number=1,com.docker.compose.oneoff=False,com.docker.compose.project=causalods,com.docker.compose.project.config_files=/home/janynne/projects/CausalODS/docker-compose.yml,/home/janynne/projects/CausalODS/docker-compose.causalods-local-v3.yml,com.docker.compose.service=otel-collector,org.opencontainers.image.source=https://github.com/open-telemetry/opentelemetry-collector-releases,com.docker.compose.image=sha256:867d1074c2f750936fb9358ec9eefa009308053cf156b2c7ca1761ba5ef78452,org.opencontainers.image.name=opentelemetry-collector-releases,org.opencontainers.image.created=2025-07-15T10:42:23Z,com.docker.compose.config-hash=2ac27621197745c2e9e2c40a53773a371581c1c8321e19412f32ac57607e872b\",\"LocalVolumes\":\"0\",\"Mounts\":\"/home/janynne/…\",\"Name\":\"otel-collector\",\"Names\":\"otel-collector\",\"Networks\":\"causalods_observability\",\"Ports\":\"0.0.0.0:4317-4318-\\u003e4317-4318/tcp, [::]:4317-4318-\\u003e4317-4318/tcp, 55678-55679/tcp\",\"Project\":\"causalods\",\"Publishers\":[{\"URL\":\"0.0.0.0\",\"TargetPort\":4317,\"PublishedPort\":4317,\"Protocol\":\"tcp\"},{\"URL\":\"::\",\"TargetPort\":4317,\"PublishedPort\":4317,\"Protocol\":\"tcp\"},{\"URL\":\"0.0.0.0\",\"TargetPort\":4318,\"PublishedPort\":4318,\"Protocol\":\"tcp\"},{\"URL\":\"::\",\"TargetPort\":4318,\"PublishedPort\":4318,\"Protocol\":\"tcp\"},{\"URL\":\"\",\"TargetPort\":55678,\"PublishedPort\":0,\"Protocol\":\"tcp\"},{\"URL\":\"\",\"TargetPort\":55679,\"PublishedPort\":0,\"Protocol\":\"tcp\"}],\"RunningFor\":\"17 hours ago\",\"Service\":\"otel-collector\",\"Size\":\"0B\",\"State\":\"running\",\"Status\":\"Up 18 seconds\"}\n{\"Command\":\"\\\"java -jar app.jar\\\"\",\"CreatedAt\":\"2026-08-15 16:12:29 -0300 -03\",\"ExitCode\":0,\"Health\":\"\",\"ID\":\"3d20e3730dd3\",\"Image\":\"causalods-payment-service\",\"Labels\":\"org.opencontainers.image.title=ubuntu,org.opencontainers.image.description=The Ubuntu container image maintained by Canonical\\n\\nUbuntu is a Debian-based Linux operating system that runs from the desktop to the cloud, to all your internet connected things.\\nIt is the world's most popular operating system across public clouds and OpenStack clouds.\\nIt is the number one platform for containers; from Docker to Kubernetes to LXD, Ubuntu can run your containers at scale.\\nFast, secure and simple, Ubuntu powers millions of PCs worldwide.\\n,com.docker.compose.depends_on=,com.docker.compose.image=sha256:5bbf2c069ac15fcf54a6ea2ef5c64147864a134735a64418db2efaabeff16a63,com.docker.compose.project.config_files=/home/janynne/projects/CausalODS/docker-compose.yml,/home/janynne/projects/CausalODS/docker-compose.causalods-local-v3.yml,com.docker.compose.version=2.40.3,com.docker.compose.project=causalods,com.docker.compose.service=payment-service,org.opencontainers.image.created=2026-07-24T12:48:28.650696+00:00,org.opencontainers.image.version=26.04,com.docker.compose.config-hash=6daeefe2b0efaf1f701b04bb1265d1ad33ff56e45eae29e36576976e65d522ad,com.docker.compose.container-number=1,com.docker.compose.oneoff=False,com.docker.compose.project.working_dir=/home/janynne/projects/CausalODS,com.docker.compose.replace=payment-service\",\"LocalVolumes\":\"0\",\"Mounts\":\"/home/janynne/…\",\"Name\":\"payment-service\",\"Names\":\"payment-service\",\"Networks\":\"causalods_observability\",\"Ports\":\"0.0.0.0:8082-\\u003e8082/tcp, [::]:8082-\\u003e8082/tcp\",\"Project\":\"causalods\",\"Publishers\":[{\"URL\":\"0.0.0.0\",\"TargetPort\":8082,\"PublishedPort\":8082,\"Protocol\":\"tcp\"},{\"URL\":\"::\",\"TargetPort\":8082,\"PublishedPort\":8082,\"Protocol\":\"tcp\"}],\"RunningFor\":\"6 minutes ago\",\"Service\":\"payment-service\",\"Size\":\"0B\",\"State\":\"running\",\"Status\":\"Up 6 minutes\"}\n",
+  "expected_services": [
+    "kafka",
+    "opensearch",
+    "otel-collector",
+    "payment-service",
+    "order-service",
+    "correlation-engine",
+    "platform-v3-runtime"
+  ],
+  "ports_endpoints": {
+    "correlation_runtime": "http://localhost:8090/ready",
+    "kafka": "kafka:9092",
+    "opensearch": "http://localhost:9200",
+    "order": "http://localhost:8081/actuator/health",
+    "otel_grpc": "localhost:4317",
+    "otel_http": "localhost:4318",
+    "payment": "http://localhost:8082/actuator/health"
+  },
+  "readiness": {
+    "correlation-engine": true,
+    "kafka": true,
+    "opensearch": true,
+    "order-service": true,
+    "otel-collector": true,
+    "payment-service": true,
+    "platform-v3-runtime": true
+  },
+  "recorded_at": "2026-08-15T19:18:55.745360Z"
+}

@@ -105,9 +105,11 @@ class RuntimeHealth:
 class RuntimeSink:
     """Borda idempotente entre ingestão Kafka e lifecycle de incidentes."""
 
-    def __init__(self, repository: OpenSearchProjectionRepository, health: RuntimeHealth):
+    def __init__(self, repository: OpenSearchProjectionRepository, health: RuntimeHealth,
+                 *, index_unassociated_events: bool = False):
         self.repository = repository
         self.health = health
+        self.index_unassociated_events = index_unassociated_events
         self.adapter = VisualizationDocumentAdapter()
         self.assembler = IncidentEvidenceAssembler(topology=TOPOLOGY)
         self._last_seen: dict[str, float] = {}
@@ -118,11 +120,14 @@ class RuntimeSink:
         with self._lock:
             for event in events:
                 decision = self.assembler.ingest(event)
-                if not decision.associated or not decision.incident_id:
+                if (not decision.associated or not decision.incident_id) \
+                        and not self.index_unassociated_events:
                     continue
-                document = self.adapter.unified_event(event, incident_id=decision.incident_id)
+                incident_id = decision.incident_id if decision.associated else None
+                document = self.adapter.unified_event(event, incident_id=incident_id)
                 self.repository.index("unified_events", document["event_id"], document)
-                self._last_seen[decision.incident_id] = time.monotonic()
+                if incident_id:
+                    self._last_seen[incident_id] = time.monotonic()
                 self.health.increment("consumed_events")
 
     def ready_bundles(self, *, idle_seconds: float) -> tuple[Any, ...]:
@@ -397,7 +402,11 @@ def run_runtime() -> int:
     if not connected:
         raise RuntimeError("Consumer Kafka não localizou os tópicos multimodais obrigatórios.")
 
-    sink = RuntimeSink(repository, health)
+    index_unassociated = os.getenv(
+        "PLATFORM_V3_INDEX_UNASSOCIATED_EVENTS", "false"
+    ).strip().lower() in {"1", "true", "yes", "on"}
+    sink = RuntimeSink(repository, health,
+                       index_unassociated_events=index_unassociated)
     consumer = MultimodalKafkaConsumer(sink, settings, consumer=raw_consumer)
     processor = RuntimeProcessor(model, repository)
 

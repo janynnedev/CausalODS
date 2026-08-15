@@ -3,6 +3,7 @@ services:
     environment:
       SPRING_PROFILES_ACTIVE: identity-v3
       OTEL_METRICS_EXPORTER: otlp
+      OTEL_METRIC_EXPORT_INTERVAL: "30000"
       OTEL_LOGS_EXPORTER: otlp
       OTEL_INSTRUMENTATION_LOGBACK_APPENDER_EXPERIMENTAL_CAPTURE_MDC_ATTRIBUTES: "*"
       LOGGING_LEVEL_BR_COM_OBS_ORDER_SERVICE_FAULT: "OFF"
@@ -11,6 +12,7 @@ services:
     environment:
       SPRING_PROFILES_ACTIVE: identity-v3
       OTEL_METRICS_EXPORTER: otlp
+      OTEL_METRIC_EXPORT_INTERVAL: "30000"
       OTEL_LOGS_EXPORTER: otlp
       OTEL_INSTRUMENTATION_LOGBACK_APPENDER_EXPERIMENTAL_CAPTURE_MDC_ATTRIBUTES: "*"
       LOGGING_LEVEL_PAYMENT_SERVICE_FAULT: "OFF"
@@ -44,6 +46,9 @@ services:
       PLATFORM_V3_TEMPLATE_ROOT: /platform-v3-templates
       PLATFORM_V3_HEALTH_PORT: "8090"
       PLATFORM_V3_INCIDENT_IDLE_SECONDS: "3"
+      # Dataset-only projection: retain valid normalized metric points even
+      # when they carry no transaction identity. Default runtime remains false.
+      PLATFORM_V3_INDEX_UNASSOCIATED_EVENTS: "true"
     volumes:
       - ./artifacts/platform-v3/models:/models:ro
       - ./infrastructure/platform-v3/opensearch/templates:/platform-v3-templates:ro

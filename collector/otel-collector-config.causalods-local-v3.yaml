@@ -11,6 +11,11 @@ processors:
     check_interval: 1s
     limit_mib: 512
   batch: {}
+  filter/scientific_metrics:
+    error_mode: propagate
+    metrics:
+      metric:
+        - 'name != "http.server.request.duration" and name != "http.client.request.duration" and name != "jvm.cpu.recent_utilization"'
 
 exporters:
   kafka/traces_v3:
@@ -38,5 +43,5 @@ service:
       exporters: [kafka/logs_v1]
     metrics:
       receivers: [otlp]
-      processors: [memory_limiter, batch]
+      processors: [memory_limiter, filter/scientific_metrics, batch]
       exporters: [kafka/metrics_v1]

@@ -4,11 +4,12 @@ import argparse
 import json
 import os
 import re
+import shutil
 import subprocess
 import sys
 import time
 import uuid
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Mapping
 from urllib.error import HTTPError, URLError
@@ -19,14 +20,37 @@ ENGINE = ROOT / "correlation-engine"
 if str(ENGINE) not in sys.path:
     sys.path.insert(0, str(ENGINE))
 
-from .core import Campaign, DATASET_ID, SCENARIOS, Scenario, atomic_json, utc_now
+from .core import (
+    Campaign, DATASET_ID, SCENARIOS, ObservedFaultControllerState, Scenario,
+    atomic_json, requested_fault_configuration, utc_now,
+    validate_fault_controller_binding,
+)
 
 
-DEFAULT_OUTPUT = ROOT / "artifacts" / "scientific-datasets-v3" / DATASET_ID / "smoke"
+DEFAULT_OUTPUT = ROOT / "artifacts" / "scientific-datasets-v3" / DATASET_ID / "smoke-v2"
+FINAL_OUTPUT = ROOT / "artifacts" / "scientific-datasets-v3" / DATASET_ID / "final-500"
 COMPOSE = ("docker", "compose", "-f", str(ROOT / "docker-compose.yml"),
            "-f", str(ROOT / "docker-compose.causalods-local-v3.yml"))
 REQUIRED_SERVICES = ("kafka", "opensearch", "otel-collector", "payment-service",
                      "order-service", "correlation-engine", "platform-v3-runtime")
+SCIENTIFIC_COLLECTION_TIMEOUT_SECONDS = 240
+
+
+def validate_run_mode(mode: str, scenario: str, repeat: int,
+                      output: Path | None = None) -> Path:
+    if mode == "smoke":
+        if repeat != 1:
+            raise ValueError("MODE=smoke exige repeat=1.")
+        return Path(output) if output is not None else DEFAULT_OUTPUT
+    if mode != "final":
+        raise ValueError("Mode deve ser smoke ou final.")
+    if repeat != 100 or scenario != "all":
+        raise ValueError("MODE=final exige scenario=all e repeat=100.")
+    destination = Path(output) if output is not None else FINAL_OUTPUT
+    lowered = {part.lower() for part in destination.parts}
+    if any(part.startswith("smoke") for part in lowered) or "promotion-validation" in lowered:
+        raise ValueError("Campanha final exige output separado de smoke/validation.")
+    return destination
 
 
 def command(arguments: tuple[str, ...] | list[str], *, environment=None,
@@ -162,8 +186,13 @@ def configure_fault(scenario: Scenario, seed: int) -> tuple[str, dict[str, Any]]
         result = command((*COMPOSE, "exec", "-T", service, "sh", "-lc",
                           "printf '%s|%s|%s|%s' \"$CAUSALODS_FAULT_MODE\" \"$CAUSALODS_FAULT_RATE\" \"$CAUSALODS_FAULT_DELAY_MS\" \"$CAUSALODS_FAULT_SEED\""))
         mode, rate, delay, observed_seed = result.stdout.split("|")
+        container = command((*COMPOSE, "ps", "-q", service)).stdout.strip()
+        inspection = command(("docker", "inspect", "--format",
+                              "{{.Id}}|{{.State.StartedAt}}", container)).stdout.strip()
+        container_id, container_started_at = inspection.split("|", 1)
         configured[service] = {"mode": mode, "rate": rate, "delay_ms": delay,
-                               "seed": observed_seed}
+                               "seed": observed_seed, "container_id": container_id,
+                               "container_started_at": container_started_at}
     return started, configured
 
 
@@ -222,16 +251,73 @@ def _search_events(correlation_id: str, started_at: str, finished_at: str) -> li
     return events
 
 
-def _dlq_offsets() -> dict[int, int]:
-    result = command((*COMPOSE, "exec", "-T", "kafka", "kafka-get-offsets",
-                      "--bootstrap-server", "localhost:9092", "--topic",
-                      "multimodal-dead-letter-v1"), check=False)
-    offsets = {}
-    for line in result.stdout.splitlines():
-        parts = line.rsplit(":", 2)
-        if len(parts) == 3 and parts[1].isdigit() and parts[2].isdigit():
-            offsets[int(parts[1])] = int(parts[2])
-    return offsets
+TELEMETRY_TOPICS = ("traces-v3", "logs-v1", "metrics-v1", "business-events-v1",
+                    "multimodal-dead-letter-v1")
+
+
+def kafka_topic_offsets() -> dict[str, dict[str, int]]:
+    topics: dict[str, dict[str, int]] = {}
+    for topic in TELEMETRY_TOPICS:
+        result = command((*COMPOSE, "exec", "-T", "kafka", "kafka-get-offsets",
+                          "--bootstrap-server", "localhost:9092", "--topic", topic),
+                         check=False)
+        offsets: dict[str, int] = {}
+        for line in result.stdout.splitlines():
+            parts = line.rsplit(":", 2)
+            if len(parts) == 3 and parts[1].isdigit() and parts[2].isdigit():
+                offsets[parts[1]] = int(parts[2])
+        topics[topic] = offsets
+    return topics
+
+
+def _directory_size(path: Path) -> int:
+    if not path.exists():
+        return 0
+    return sum(item.stat().st_size for item in path.rglob("*") if item.is_file())
+
+
+def persistent_resource_snapshot(output: Path) -> dict[str, Any]:
+    probe = output if output.exists() else output.parent
+    probe.mkdir(parents=True, exist_ok=True)
+    disk = shutil.disk_usage(probe)
+    snapshot: dict[str, Any] = {
+        "recorded_at": utc_now(), "filesystem_total_bytes": disk.total,
+        "filesystem_free_bytes": disk.free, "filesystem_used_bytes": disk.used,
+        "dataset_output_bytes": _directory_size(output),
+    }
+    status, _, indices = request(
+        "http://localhost:9200/_cat/indices/causalods-v3-*?format=json&bytes=b",
+        timeout=20, allow_error=True)
+    if status == 200 and isinstance(indices, list):
+        stores = {str(row.get("index")): int(row.get("store.size", 0)) for row in indices}
+        snapshot["opensearch"] = {"available": True, "indices": stores,
+                                  "total_bytes": sum(stores.values())}
+    else:
+        snapshot["opensearch"] = {"available": False, "total_bytes": None}
+    kafka = command((*COMPOSE, "exec", "-T", "kafka", "sh", "-lc",
+                     "du -sb /var/lib/kafka/data 2>/dev/null | cut -f1"), check=False)
+    raw_kafka = kafka.stdout.strip()
+    snapshot["kafka"] = {"available": raw_kafka.isdigit(),
+                         "total_bytes": int(raw_kafka) if raw_kafka.isdigit() else None}
+    docker_df = command(("docker", "system", "df", "--format", "json"), check=False)
+    snapshot["docker_system_df"] = {"available": docker_df.returncode == 0,
+                                    "raw": docker_df.stdout.strip()}
+    log_total = 0
+    log_count = 0
+    for service in REQUIRED_SERVICES:
+        container = command((*COMPOSE, "ps", "-q", service), check=False).stdout.strip()
+        if not container:
+            continue
+        log_path = command(("docker", "inspect", "--format", "{{.LogPath}}", container),
+                           check=False).stdout.strip()
+        measured = command(("stat", "-c", "%s", log_path), check=False).stdout.strip()
+        if measured.isdigit():
+            log_total += int(measured)
+            log_count += 1
+    snapshot["docker_logs"] = {"available": log_count > 0,
+                               "measured_containers": log_count,
+                               "total_bytes": log_total if log_count else None}
+    return snapshot
 
 
 def _pipeline_status(correlation_id: str) -> dict[str, Any]:
@@ -354,9 +440,20 @@ def collect_real_metrics() -> list[dict[str, Any]]:
 class LiveExecutor:
     def __call__(self, scenario: Scenario, seed: int, run_id: str,
                  correlation_id: str) -> Mapping[str, Any]:
-        experiment_started = utc_now()
-        dlq_before = _dlq_offsets()
+        offsets_before = kafka_topic_offsets()
         fault_started, configured = configure_fault(scenario, seed)
+        observed = ObservedFaultControllerState.from_mapping(configured)
+        requested = requested_fault_configuration(scenario, seed)
+        binding = validate_fault_controller_binding(scenario, seed, observed)
+        if binding["status"] != "PASS":
+            restore_faults(seed)
+            raise RuntimeError(
+                f"FAULT_CONTROLLER_BINDING=FAIL para {run_id}: {binding['violations']}"
+            )
+        # The scientific window starts only after the configured service
+        # generations are ready. This excludes telemetry emitted by the
+        # preceding run's healthy-reset containers.
+        experiment_started = utc_now()
         request_id = f"req-{uuid.uuid4().hex}"
         entity_id = f"order-{uuid.uuid4().hex[:20]}"
         request_started = utc_now()
@@ -381,28 +478,32 @@ class LiveExecutor:
         publish_business_event("order.approved" if success else "order.rejected",
                                correlation_id, entity_id, "order-service",
                                "approved" if success else "rejected")
-        collection_finished = (datetime.now(timezone.utc) + timedelta(seconds=12)).isoformat().replace("+00:00", "Z")
+        fault_stopped = None
         try:
             events = wait_until(
-            lambda: (rows if all(any(item.get("signal_type") == modality for item in rows)
-                                 for modality in ("trace", "log", "business_event"))
-                     else None)
-            if (rows := _search_events(correlation_id, experiment_started, utc_now())) else None,
-            timeout=90, description=f"trace/log/business_event de {run_id}")
-            # OTLP batch/export is asynchronous.  A deterministic grace period
-            # captures late downstream spans/logs without mixing another run,
-            # because workers=1 and the correlation predicate remains exact.
-            time.sleep(20)
+                lambda: (rows if all(any(item.get("signal_type") == modality
+                                             for item in rows)
+                                     for modality in ("trace", "log", "metric",
+                                                      "business_event"))
+                         else None)
+                if (rows := _search_events(correlation_id, experiment_started, utc_now())) else None,
+                timeout=SCIENTIFIC_COLLECTION_TIMEOUT_SECONDS,
+                description=f"quatro modalidades de {run_id}")
+            time.sleep(10)
             events = _search_events(correlation_id, experiment_started, utc_now())
-            events.extend(collect_real_metrics())
+            collection_finished = utc_now()
+            # Reset occurs strictly after the scientific window closes, so
+            # metric evidence cannot come from the following healthy generation.
+            fault_stopped = restore_faults(seed)
         except Exception:
-            restore_faults(seed)
+            if fault_stopped is None:
+                restore_faults(seed)
             raise
-        collection_finished = utc_now()
-        dlq_after = _dlq_offsets()
+        offsets_after = kafka_topic_offsets()
+        dlq_before = offsets_before.get("multimodal-dead-letter-v1", {})
+        dlq_after = offsets_after.get("multimodal-dead-letter-v1", {})
         dlq_count = sum(max(0, dlq_after.get(partition, 0) - offset)
                         for partition, offset in dlq_before.items())
-        fault_stopped = restore_faults(seed)
         pipeline = execute_local_pipeline(events, correlation_id)
         response_correlation = next((value for key, value in headers.items()
                                      if key.lower() == "x-correlation-id"), None)
@@ -423,6 +524,12 @@ class LiveExecutor:
                        "request_finished_at": request_finished,
                        "collection_finished_at": collection_finished},
             "fault_controller_state": configured,
+            "requested_fault_configuration": requested,
+            "observed_fault_controller_state": observed.to_dict(),
+            "fault_controller_binding_audit": binding,
+            "service_state": configured,
+            "kafka_offsets_before": offsets_before,
+            "kafka_offsets_after": offsets_after,
             "pipeline": pipeline,
         }
 
@@ -435,7 +542,8 @@ def main() -> int:
     infra.add_argument("--report", type=Path,
                        default=DEFAULT_OUTPUT / "audits" / "infrastructure.json")
     run = sub.add_parser("run")
-    run.add_argument("--output", type=Path, default=DEFAULT_OUTPUT)
+    run.add_argument("--mode", choices=("smoke", "final"), required=True)
+    run.add_argument("--output", type=Path)
     run.add_argument("--scenario", choices=("all", *SCENARIOS), default="all")
     run.add_argument("--repeat", type=int, default=1)
     run.add_argument("--resume", action="store_true")
@@ -453,9 +561,16 @@ def main() -> int:
         report = build_final_audit(args.output)
         print(json.dumps(report, indent=2, sort_keys=True))
         return 0
+    args.output = validate_run_mode(args.mode, args.scenario, args.repeat, args.output)
     selected = tuple(SCENARIOS) if args.scenario == "all" else (args.scenario,)
-    report = Campaign(args.output, base_seed=args.base_seed,
+    if not args.resume:
+        atomic_json(args.output / "audits" / "resource-before.json",
+                    persistent_resource_snapshot(args.output))
+    report = Campaign(args.output, base_seed=args.base_seed, mode=args.mode,
                       executor=LiveExecutor()).run(selected, repeat=args.repeat,
                                                    resume=args.resume)
+    if not args.resume or report["new_executions"] > 0:
+        atomic_json(args.output / "audits" / "resource-after.json",
+                    persistent_resource_snapshot(args.output))
     print(json.dumps(report, indent=2, sort_keys=True))
     return 0

@@ -1,0 +1,98 @@
+{
+  "base_seed": 20260814,
+  "business_event_origin": "controlled experimental business-event emitter correlated with the real request",
+  "business_event_provenance": {
+    "correlation_id": "real",
+    "emitter": "controlled experimental harness",
+    "request": "real",
+    "services": "real",
+    "transport": "business-events-v1 through multimodal ingestion"
+  },
+  "campaign_mode": "smoke",
+  "created_at": "2026-08-15T20:23:30.837333Z",
+  "dataset_id": "causalods-local-v3",
+  "dataset_version": "3.0.0",
+  "fault_controller_version": "causalods-compose-fault-controller-v1",
+  "generator_version": "causalods-local-v3-generator-v4",
+  "git_commit": "13958034c4cb2055d612a3ad850bc6f3c7f82595",
+  "metric_export_policy": {
+    "actuator_diagnostics_excluded": true,
+    "allowlisted_series": [
+      "http.server.request.duration",
+      "http.client.request.duration",
+      "jvm.cpu.recent_utilization"
+    ],
+    "collection_timeout_seconds": 240,
+    "export_interval_ms": 30000,
+    "transport": "OTLP through OpenTelemetry Collector"
+  },
+  "parallel_scenarios": false,
+  "platform_version": "causalods-platform-v3",
+  "repeat_target": 100,
+  "scenario_definitions": {
+    "healthy": {
+      "delay_ms": 0,
+      "expected_http_family": 2,
+      "fault_injected": false,
+      "fault_type": "healthy",
+      "name": "healthy",
+      "rate": 0.0,
+      "target_service": null
+    },
+    "order_error": {
+      "delay_ms": 0,
+      "expected_http_family": 5,
+      "fault_injected": true,
+      "fault_type": "error",
+      "name": "order_error",
+      "rate": 1.0,
+      "target_service": "order-service"
+    },
+    "order_latency": {
+      "delay_ms": 1500,
+      "expected_http_family": 2,
+      "fault_injected": true,
+      "fault_type": "latency",
+      "name": "order_latency",
+      "rate": 1.0,
+      "target_service": "order-service"
+    },
+    "payment_error": {
+      "delay_ms": 0,
+      "expected_http_family": 5,
+      "fault_injected": true,
+      "fault_type": "error",
+      "name": "payment_error",
+      "rate": 1.0,
+      "target_service": "payment-service"
+    },
+    "payment_latency": {
+      "delay_ms": 1500,
+      "expected_http_family": 2,
+      "fault_injected": true,
+      "fault_type": "latency",
+      "name": "payment_latency",
+      "rate": 1.0,
+      "target_service": "payment-service"
+    }
+  },
+  "schemas": [
+    "unified-event-v1",
+    "business-event-v1",
+    "incident-manifest-v2"
+  ],
+  "seed_policy": "sha256(base_seed|dataset|scenario|repeat_index)",
+  "services": [
+    "order-service",
+    "payment-service",
+    "correlation-engine"
+  ],
+  "telemetry_topics": [
+    "traces-v3",
+    "logs-v1",
+    "metrics-v1",
+    "business-events-v1",
+    "multimodal-dead-letter-v1"
+  ],
+  "workers": 1
+}
