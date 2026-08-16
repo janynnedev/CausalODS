@@ -1,0 +1,20 @@
+{
+  "repeat_seed": 800247373,
+  "scenario": "order_latency",
+  "services": {
+    "order-service": {
+      "delay_ms": 1500,
+      "mode": "latency",
+      "rate": 1.0,
+      "seed": 800247373,
+      "service_name": "order-service"
+    },
+    "payment-service": {
+      "delay_ms": 0,
+      "mode": "none",
+      "rate": 0.0,
+      "seed": 800247373,
+      "service_name": "payment-service"
+    }
+  }
+}

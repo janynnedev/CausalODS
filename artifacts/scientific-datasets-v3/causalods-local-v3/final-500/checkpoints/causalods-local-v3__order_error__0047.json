@@ -1,0 +1,225 @@
+{
+  "artifact_hashes": {
+    "audits/causalods-local-v3__order_error__0047.json": "38ee3a774dd2f6c9f499860f71cca118b9ecee393656839f8fa592a5eb68faf1",
+    "incidents/causalods-local-v3__order_error__0047/business_event.json.gz": "0c402f815d6bd44e39e05d156b00b8aa82e54eff38fa23e9f084540da4bf91c2",
+    "incidents/causalods-local-v3__order_error__0047/fault-controller-binding-audit.json": "76473d18dacf3b4d1ecb5d7cdefa5bdbb016f236c46ac7d40fd45940e55fa761",
+    "incidents/causalods-local-v3__order_error__0047/ground-truth.json": "211f9033ae7a29ffb1533f7146e99f0079b1ba71a77ac6a9e0da2c09d057916c",
+    "incidents/causalods-local-v3__order_error__0047/kafka-offsets-after.json": "92832ef1c9703cf89672438955bca52be283a8119c9672bf43d14b1b865c26e6",
+    "incidents/causalods-local-v3__order_error__0047/kafka-offsets-before.json": "f1cf2a2b26c50d89d15a3beeba17f8c78ed33fafd9495bafbfbe6c53aa084259",
+    "incidents/causalods-local-v3__order_error__0047/kafka-topic-deltas.json": "2ec7b201eb6a44c69f78342ba5474bacce34aa328b6f51ff1bbf38bfdc35208d",
+    "incidents/causalods-local-v3__order_error__0047/log.json.gz": "633ac03f999ad124ee95114cb335d6634e358789e7c73f7277dc12ea23b74e4a",
+    "incidents/causalods-local-v3__order_error__0047/metric.json.gz": "ed552ec0590675b6b5ea3eb4bbbcaa270f30bad67844aea945e7742cd13b91a5",
+    "incidents/causalods-local-v3__order_error__0047/observed-fault-controller-state.json": "2231ba81e0deed5bcd04c69879f7d19d803d2e388601724d1f316fb6c62e93de",
+    "incidents/causalods-local-v3__order_error__0047/request-metadata.json": "c1615a47c31421a06b81f4d2c21351743d6c570705164ca62f371ccff1df13c1",
+    "incidents/causalods-local-v3__order_error__0047/requested-fault-configuration.json": "5da9c09f31f45ed616c8c1bd200b3702e595f17b5c61dcbaf665fb53011f889d",
+    "incidents/causalods-local-v3__order_error__0047/service-state-reset.json": "2c37f9de5df42d26450f4cb3fe6fd9464dcf8b337dbd7673cc1417ae7754f7f0",
+    "incidents/causalods-local-v3__order_error__0047/trace.json.gz": "b4f2e4aa67ce77ac4e19456d33463dd91b6383699ef9930a021592f605176f42",
+    "manifests/causalods-local-v3__order_error__0047.json": "c3b5a62968d3e674b817a5398341498fc489b6d7012c6d9b3b0dee2bb588fc4e"
+  },
+  "audit": {
+    "anti_leakage": {
+      "event_count": 11,
+      "forbidden_keys": [],
+      "inspected_contract_fields": [
+        "expected_rca_answer",
+        "expected_service",
+        "fault_target",
+        "fault_target_service",
+        "fault_type",
+        "ground_truth",
+        "ground_truth_service",
+        "root_cause",
+        "root_cause_service",
+        "scenario",
+        "scenario_label"
+      ],
+      "status": "PASS"
+    },
+    "correlation_ids": [
+      "clv3-c47ba253ced44843b12d7ea7"
+    ],
+    "counts": {
+      "business_event": 2,
+      "log": 3,
+      "metric": 5,
+      "trace": 1
+    },
+    "expected_services": [
+      "order-service"
+    ],
+    "identity_status": "PASS",
+    "log_services": [
+      "order-service"
+    ],
+    "metric_pipeline_provenance": {
+      "invalid_sources": [],
+      "metric_events": 5,
+      "required_source_prefix": "kafka:metrics-v1:",
+      "status": "PASS"
+    },
+    "modality_status": "PASS",
+    "services_observed": [
+      "order-service",
+      "payment-service"
+    ],
+    "trace_services": [
+      "order-service"
+    ]
+  },
+  "capabilities": [
+    "business_event",
+    "log",
+    "metric",
+    "trace"
+  ],
+  "dlq_count": 0,
+  "fault_controller_binding_audit": {
+    "active_services": [
+      "order-service"
+    ],
+    "observed": {
+      "services": {
+        "order-service": {
+          "container_id": "906c2eccf6431982d9d578126775489a59acca6a44982326295b23e89d9ca2e7",
+          "container_started_at": "2026-08-16T04:23:00.955393798Z",
+          "delay_ms": 0,
+          "mode": "error",
+          "rate": 1.0,
+          "seed": 1439593677,
+          "service_name": "order-service"
+        },
+        "payment-service": {
+          "container_id": "20239cadb9f718a07bee0cc66b58fa83e019f269c0f648b843d480c02049a890",
+          "container_started_at": "2026-08-16T04:22:43.580549785Z",
+          "delay_ms": 0,
+          "mode": "none",
+          "rate": 0.0,
+          "seed": 1439593677,
+          "service_name": "payment-service"
+        }
+      }
+    },
+    "observed_state_sha256": "b799dbf8d756e24ece7a073e2e89d34d1172a87c0d22c004532f798ac426b654",
+    "requested": {
+      "repeat_seed": 1439593677,
+      "scenario": "order_error",
+      "services": {
+        "order-service": {
+          "delay_ms": 0,
+          "mode": "error",
+          "rate": 1.0,
+          "seed": 1439593677,
+          "service_name": "order-service"
+        },
+        "payment-service": {
+          "delay_ms": 0,
+          "mode": "none",
+          "rate": 0.0,
+          "seed": 1439593677,
+          "service_name": "payment-service"
+        }
+      }
+    },
+    "requested_configuration_sha256": "0925aeeb1d7a4e50b1d2a3aa26566aa75afb1cb66a507cf190a71fc9e285044b",
+    "status": "PASS",
+    "violations": []
+  },
+  "generator_version": "causalods-local-v3-generator-v4",
+  "http_status": 503,
+  "incident_id": "causalods-local-v3/order_error/0047",
+  "integrity_status": "CLEAN",
+  "manifest_path": "manifests/causalods-local-v3__order_error__0047.json",
+  "manifest_sha256": "412ee3c21f26b7d58a1db0f67c38f33ff3b3b2d0b1fbcbdff9fd94bc328bf4b5",
+  "pipeline": {
+    "completed": true,
+    "incident_ids": [
+      "inc-v3-33ef7f2a50dfe171704e4731"
+    ],
+    "prediction_excluded_from_ground_truth": true,
+    "ranking_produced": true,
+    "rca_result_emitted": true,
+    "rca_result_ids": [
+      "rca-v3-48aeb230baad9bf932bb488e"
+    ],
+    "reliability_gate_executed": true
+  },
+  "repeat_index": 47,
+  "resource_after": {
+    "coordinator_peak_rss_kib": 297536,
+    "free_disk_bytes": 21785419776,
+    "recorded_at": "2026-08-16T04:24:41.031065Z",
+    "total_disk_bytes": 76825874432
+  },
+  "resource_before": {
+    "coordinator_peak_rss_kib": 297536,
+    "free_disk_bytes": 21791154176,
+    "recorded_at": "2026-08-16T04:22:34.275682Z",
+    "total_disk_bytes": 76825874432
+  },
+  "run_id": "causalods-local-v3/order_error/0047",
+  "scenario": "order_error",
+  "service_state_reset_audit": {
+    "request_started_at": "2026-08-16T04:23:17.866622Z",
+    "services": {
+      "order-service": {
+        "container_id": "906c2eccf6431982d9d578126775489a59acca6a44982326295b23e89d9ca2e7",
+        "container_started_at": "2026-08-16T04:23:00.955393798Z",
+        "delay_ms": "0",
+        "mode": "error",
+        "precedes_request": true,
+        "rate": "1.0",
+        "seed": "1439593677"
+      },
+      "payment-service": {
+        "container_id": "20239cadb9f718a07bee0cc66b58fa83e019f269c0f648b843d480c02049a890",
+        "container_started_at": "2026-08-16T04:22:43.580549785Z",
+        "delay_ms": "0",
+        "mode": "none",
+        "precedes_request": true,
+        "rate": "0.0",
+        "seed": "1439593677"
+      }
+    },
+    "status": "PASS"
+  },
+  "status": "COMPLETE",
+  "timing": {
+    "collection_finished_at": "2026-08-16T04:23:56.756507Z",
+    "duration_seconds": 0.10399821400642395,
+    "experiment_started_at": "2026-08-16T04:23:17.866579Z",
+    "request_finished_at": "2026-08-16T04:23:19.749067Z",
+    "request_started_at": "2026-08-16T04:23:17.866622Z"
+  },
+  "transport_audit": {
+    "note": "Kafka deltas prove transport activity, not a 1:1 event count.",
+    "status": "PASS",
+    "topics": {
+      "business-events-v1": {
+        "after_total": 948,
+        "before_total": 946,
+        "delta": 2
+      },
+      "logs-v1": {
+        "after_total": 6260,
+        "before_total": 6237,
+        "delta": 23
+      },
+      "metrics-v1": {
+        "after_total": 9216,
+        "before_total": 9206,
+        "delta": 10
+      },
+      "multimodal-dead-letter-v1": {
+        "after_total": 0,
+        "before_total": 0,
+        "delta": 0
+      },
+      "traces-v3": {
+        "after_total": 48646,
+        "before_total": 48641,
+        "delta": 5
+      }
+    }
+  },
+  "usable_for_benchmark": true
+}

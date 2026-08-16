@@ -1,0 +1,51 @@
+{
+  "active_services": [
+    "payment-service"
+  ],
+  "observed": {
+    "services": {
+      "order-service": {
+        "container_id": "8f26d28d4ec39a51afcaa5bfdce2c31000ddca2026fc86819ad4b38ecc8b3fc5",
+        "container_started_at": "2026-08-16T11:23:33.161221063Z",
+        "delay_ms": 0,
+        "mode": "none",
+        "rate": 0.0,
+        "seed": 1699057132,
+        "service_name": "order-service"
+      },
+      "payment-service": {
+        "container_id": "aafe4bfe2d3c69ac3fbd88f9656422d98fa3270032b2a0db1cd0c9db030a6521",
+        "container_started_at": "2026-08-16T11:23:18.399219936Z",
+        "delay_ms": 1500,
+        "mode": "latency",
+        "rate": 1.0,
+        "seed": 1699057132,
+        "service_name": "payment-service"
+      }
+    }
+  },
+  "observed_state_sha256": "f845eafe73ecb27b6b2c2587aa2958c333351bb84a2940e60fe6564037879f24",
+  "requested": {
+    "repeat_seed": 1699057132,
+    "scenario": "payment_latency",
+    "services": {
+      "order-service": {
+        "delay_ms": 0,
+        "mode": "none",
+        "rate": 0.0,
+        "seed": 1699057132,
+        "service_name": "order-service"
+      },
+      "payment-service": {
+        "delay_ms": 1500,
+        "mode": "latency",
+        "rate": 1.0,
+        "seed": 1699057132,
+        "service_name": "payment-service"
+      }
+    }
+  },
+  "requested_configuration_sha256": "e2b63e165ca67fdfeb4a453482665ae09f3e6a8197636f245bdb044abc235857",
+  "status": "PASS",
+  "violations": []
+}

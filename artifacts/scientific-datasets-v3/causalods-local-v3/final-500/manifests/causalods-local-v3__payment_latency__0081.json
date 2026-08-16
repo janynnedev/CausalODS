@@ -1,0 +1,142 @@
+{
+  "accepted_row_count": 21,
+  "adapter_configuration_sha256": "946e5db8621b4c74d7c6af74ade0efff802393db9aa95c423b896e90459223d3",
+  "adapter_version": "causalods-local-v3-generator-v4",
+  "analysis_window": {
+    "end": "2026-08-16T10:40:38.580063Z",
+    "start": "2026-08-16T10:39:53.221333Z"
+  },
+  "cache_key": "09c47e6048be77b925188e1dc433f902119891656da664724fab1f9b1f46d275",
+  "considered_row_count": 21,
+  "dataset_schema_report_sha256": "17114d9dbb3ddc3a2bcb27304b1f14e6079d8fa9ff852964112fa450e8b3fe26",
+  "empty_incident_reason": null,
+  "event_count_by_modality": {
+    "business_event": 4,
+    "log": 8,
+    "metric": 7,
+    "trace": 2
+  },
+  "excluded_by_window_count": 0,
+  "expected_modalities": [
+    "business_event",
+    "log",
+    "metric",
+    "trace"
+  ],
+  "fault_service": "payment-service",
+  "fault_type": "latency",
+  "fingerprint": "ae4f73a01845d2bfa14a333774e17dc83fe443218fbb2e6b991d88f9f4137cb3",
+  "ground_truth_sha256": "08398dc42d6c240da9c0906ca0a404e343ab4d5e5cacc3285859e2ed6d02e814",
+  "incident_id": "causalods-local-v3/payment_latency/0081",
+  "incident_normalization_report_sha256": "17114d9dbb3ddc3a2bcb27304b1f14e6079d8fa9ff852964112fa450e8b3fe26",
+  "missing_expected_modalities": [],
+  "modalities": [
+    "business_event",
+    "log",
+    "metric",
+    "trace"
+  ],
+  "modality_policy_status": "official",
+  "modality_policy_version": "causalods-local-v3-full-v1",
+  "normalization_accounting_by_file": {
+    "incidents/causalods-local-v3__payment_latency__0081/business_event.json.gz": {
+      "accepted_metric_cells": 0,
+      "accepted_rows": 4,
+      "excluded_rows": 0,
+      "kind": "business_events",
+      "partially_accepted_rows": 0,
+      "produced_events": 4,
+      "rejected_cell_units": 0,
+      "rejected_metric_cells": 0,
+      "rejected_row_units": 0,
+      "rejected_rows": 0,
+      "relative_path": "incidents/causalods-local-v3__payment_latency__0081/business_event.json.gz",
+      "signal_type": "business_event",
+      "total_rows": 4
+    },
+    "incidents/causalods-local-v3__payment_latency__0081/log.json.gz": {
+      "accepted_metric_cells": 0,
+      "accepted_rows": 8,
+      "excluded_rows": 0,
+      "kind": "logs",
+      "partially_accepted_rows": 0,
+      "produced_events": 8,
+      "rejected_cell_units": 0,
+      "rejected_metric_cells": 0,
+      "rejected_row_units": 0,
+      "rejected_rows": 0,
+      "relative_path": "incidents/causalods-local-v3__payment_latency__0081/log.json.gz",
+      "signal_type": "log",
+      "total_rows": 8
+    },
+    "incidents/causalods-local-v3__payment_latency__0081/metric.json.gz": {
+      "accepted_metric_cells": 7,
+      "accepted_rows": 7,
+      "excluded_rows": 0,
+      "kind": "metrics",
+      "partially_accepted_rows": 0,
+      "produced_events": 7,
+      "rejected_cell_units": 0,
+      "rejected_metric_cells": 0,
+      "rejected_row_units": 0,
+      "rejected_rows": 0,
+      "relative_path": "incidents/causalods-local-v3__payment_latency__0081/metric.json.gz",
+      "signal_type": "metric",
+      "total_rows": 7
+    },
+    "incidents/causalods-local-v3__payment_latency__0081/trace.json.gz": {
+      "accepted_metric_cells": 0,
+      "accepted_rows": 2,
+      "excluded_rows": 0,
+      "kind": "traces",
+      "partially_accepted_rows": 0,
+      "produced_events": 2,
+      "rejected_cell_units": 0,
+      "rejected_metric_cells": 0,
+      "rejected_row_units": 0,
+      "rejected_rows": 0,
+      "relative_path": "incidents/causalods-local-v3__payment_latency__0081/trace.json.gz",
+      "signal_type": "trace",
+      "total_rows": 2
+    }
+  },
+  "normalization_mode": "strict",
+  "normalized_events_sha256": "b88c8bdb77601973825b189d94f25b40e48b7c3e26977e1aed45004c8edc76ca",
+  "normalized_source_files": [
+    "incidents/causalods-local-v3__payment_latency__0081/business_event.json.gz",
+    "incidents/causalods-local-v3__payment_latency__0081/log.json.gz",
+    "incidents/causalods-local-v3__payment_latency__0081/metric.json.gz",
+    "incidents/causalods-local-v3__payment_latency__0081/trace.json.gz"
+  ],
+  "observed_interval": {
+    "end": "2026-08-16T10:40:38.580063Z",
+    "start": "2026-08-16T10:39:53.221333Z"
+  },
+  "observed_modalities": [
+    "business_event",
+    "log",
+    "metric",
+    "trace"
+  ],
+  "outside_window_event_count": 0,
+  "quality_issue_reasons_by_file": {},
+  "rejected_row_count": 0,
+  "rejection_reasons_by_file": {},
+  "schema_report_sha256": "17114d9dbb3ddc3a2bcb27304b1f14e6079d8fa9ff852964112fa450e8b3fe26",
+  "schema_version": "incident-manifest-v2",
+  "source_case": "payment_latency",
+  "source_dataset": "causalods-local-v3",
+  "source_files_sha256": {
+    "incidents/causalods-local-v3__payment_latency__0081/business_event.json.gz": "0edcb4684844c706dcec0990a471d09ee97e0fbf59e25455ee22920e29a3a652",
+    "incidents/causalods-local-v3__payment_latency__0081/log.json.gz": "784b1922177f54c1f839f0422c7a91a9b657ae8090046b4ce3dfd14c32329171",
+    "incidents/causalods-local-v3__payment_latency__0081/metric.json.gz": "1305f1ecfce4cf6fc478cca3983415a9135bcc432f2c703ac89bfffe1e3a9f07",
+    "incidents/causalods-local-v3__payment_latency__0081/trace.json.gz": "4941d53395a6d68805f7fbeaf4675f153a2e1fc1f176e853ba1f91f20ef8ca2a"
+  },
+  "source_system": "causalods",
+  "total_event_count": 21,
+  "unexpected_modalities": [],
+  "unmapped_fields": {},
+  "usable_for_benchmark": true,
+  "window_decision": "controller-bounded-before-during-after",
+  "window_policy": "causalods-local-v3-request-window-v1"
+}

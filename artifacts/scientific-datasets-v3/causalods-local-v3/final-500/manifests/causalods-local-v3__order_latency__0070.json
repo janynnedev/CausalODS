@@ -1,0 +1,142 @@
+{
+  "accepted_row_count": 21,
+  "adapter_configuration_sha256": "f3236277a3b181056569787804ae86d567259d630399271195a03614b1aa8925",
+  "adapter_version": "causalods-local-v3-generator-v4",
+  "analysis_window": {
+    "end": "2026-08-16T08:35:16.551242Z",
+    "start": "2026-08-16T08:34:29.603227Z"
+  },
+  "cache_key": "10641e32037727080060dc6b6b2f9a82f29e12b914ffbec49b936b782ddbb973",
+  "considered_row_count": 21,
+  "dataset_schema_report_sha256": "4167d520397d9c656696c0483da97a4e120138f234a2dba6e693362ca2a96b66",
+  "empty_incident_reason": null,
+  "event_count_by_modality": {
+    "business_event": 4,
+    "log": 10,
+    "metric": 5,
+    "trace": 2
+  },
+  "excluded_by_window_count": 0,
+  "expected_modalities": [
+    "business_event",
+    "log",
+    "metric",
+    "trace"
+  ],
+  "fault_service": "order-service",
+  "fault_type": "latency",
+  "fingerprint": "b5039ec62d4693ac815640871b303a85a4ef2cacf7fc63016043e61d1b7452dc",
+  "ground_truth_sha256": "11e97e0a9a22ef90d6baadd9c08fee8a5a841b1cd9d15e520ab1143fcd0abc5b",
+  "incident_id": "causalods-local-v3/order_latency/0070",
+  "incident_normalization_report_sha256": "4167d520397d9c656696c0483da97a4e120138f234a2dba6e693362ca2a96b66",
+  "missing_expected_modalities": [],
+  "modalities": [
+    "business_event",
+    "log",
+    "metric",
+    "trace"
+  ],
+  "modality_policy_status": "official",
+  "modality_policy_version": "causalods-local-v3-full-v1",
+  "normalization_accounting_by_file": {
+    "incidents/causalods-local-v3__order_latency__0070/business_event.json.gz": {
+      "accepted_metric_cells": 0,
+      "accepted_rows": 4,
+      "excluded_rows": 0,
+      "kind": "business_events",
+      "partially_accepted_rows": 0,
+      "produced_events": 4,
+      "rejected_cell_units": 0,
+      "rejected_metric_cells": 0,
+      "rejected_row_units": 0,
+      "rejected_rows": 0,
+      "relative_path": "incidents/causalods-local-v3__order_latency__0070/business_event.json.gz",
+      "signal_type": "business_event",
+      "total_rows": 4
+    },
+    "incidents/causalods-local-v3__order_latency__0070/log.json.gz": {
+      "accepted_metric_cells": 0,
+      "accepted_rows": 10,
+      "excluded_rows": 0,
+      "kind": "logs",
+      "partially_accepted_rows": 0,
+      "produced_events": 10,
+      "rejected_cell_units": 0,
+      "rejected_metric_cells": 0,
+      "rejected_row_units": 0,
+      "rejected_rows": 0,
+      "relative_path": "incidents/causalods-local-v3__order_latency__0070/log.json.gz",
+      "signal_type": "log",
+      "total_rows": 10
+    },
+    "incidents/causalods-local-v3__order_latency__0070/metric.json.gz": {
+      "accepted_metric_cells": 5,
+      "accepted_rows": 5,
+      "excluded_rows": 0,
+      "kind": "metrics",
+      "partially_accepted_rows": 0,
+      "produced_events": 5,
+      "rejected_cell_units": 0,
+      "rejected_metric_cells": 0,
+      "rejected_row_units": 0,
+      "rejected_rows": 0,
+      "relative_path": "incidents/causalods-local-v3__order_latency__0070/metric.json.gz",
+      "signal_type": "metric",
+      "total_rows": 5
+    },
+    "incidents/causalods-local-v3__order_latency__0070/trace.json.gz": {
+      "accepted_metric_cells": 0,
+      "accepted_rows": 2,
+      "excluded_rows": 0,
+      "kind": "traces",
+      "partially_accepted_rows": 0,
+      "produced_events": 2,
+      "rejected_cell_units": 0,
+      "rejected_metric_cells": 0,
+      "rejected_row_units": 0,
+      "rejected_rows": 0,
+      "relative_path": "incidents/causalods-local-v3__order_latency__0070/trace.json.gz",
+      "signal_type": "trace",
+      "total_rows": 2
+    }
+  },
+  "normalization_mode": "strict",
+  "normalized_events_sha256": "df30066a33c6e5f2e85ae2f6dd3a3a1fe0eaedb294e669ae7a0e3d51ebaea280",
+  "normalized_source_files": [
+    "incidents/causalods-local-v3__order_latency__0070/business_event.json.gz",
+    "incidents/causalods-local-v3__order_latency__0070/log.json.gz",
+    "incidents/causalods-local-v3__order_latency__0070/metric.json.gz",
+    "incidents/causalods-local-v3__order_latency__0070/trace.json.gz"
+  ],
+  "observed_interval": {
+    "end": "2026-08-16T08:35:16.551242Z",
+    "start": "2026-08-16T08:34:29.603227Z"
+  },
+  "observed_modalities": [
+    "business_event",
+    "log",
+    "metric",
+    "trace"
+  ],
+  "outside_window_event_count": 0,
+  "quality_issue_reasons_by_file": {},
+  "rejected_row_count": 0,
+  "rejection_reasons_by_file": {},
+  "schema_report_sha256": "4167d520397d9c656696c0483da97a4e120138f234a2dba6e693362ca2a96b66",
+  "schema_version": "incident-manifest-v2",
+  "source_case": "order_latency",
+  "source_dataset": "causalods-local-v3",
+  "source_files_sha256": {
+    "incidents/causalods-local-v3__order_latency__0070/business_event.json.gz": "7ddbd9038471b95c68441883282969dd3fab1b263aa2d6b3c561a4e12da944bc",
+    "incidents/causalods-local-v3__order_latency__0070/log.json.gz": "40ff8e391b9cc4496f6b88e4ee8c0450f1329bd8fe8604822af0eabafbea8199",
+    "incidents/causalods-local-v3__order_latency__0070/metric.json.gz": "35147b6201c4eecccbd4ab09be6d8f27e269a457d9a9d3b7a0a42b98aba98b73",
+    "incidents/causalods-local-v3__order_latency__0070/trace.json.gz": "08f2bb3b36ac105293d47d826c8013b75ed8f64db10c2d68dc8045812c62a3f4"
+  },
+  "source_system": "causalods",
+  "total_event_count": 21,
+  "unexpected_modalities": [],
+  "unmapped_fields": {},
+  "usable_for_benchmark": true,
+  "window_decision": "controller-bounded-before-during-after",
+  "window_policy": "causalods-local-v3-request-window-v1"
+}

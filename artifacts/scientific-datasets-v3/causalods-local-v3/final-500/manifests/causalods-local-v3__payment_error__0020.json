@@ -1,0 +1,142 @@
+{
+  "accepted_row_count": 18,
+  "adapter_configuration_sha256": "7751515708be11fe27d831013a94e5d05095516051f8deaa63004a89ffe4f608",
+  "adapter_version": "causalods-local-v3-generator-v4",
+  "analysis_window": {
+    "end": "2026-08-15T23:58:25.199100Z",
+    "start": "2026-08-15T23:57:43.978831Z"
+  },
+  "cache_key": "a741ae376f1b72df76c6ed441af3158a81e1c2269f092e66ffb33a6b83d002b7",
+  "considered_row_count": 18,
+  "dataset_schema_report_sha256": "c73eb030728769b29943a534355d6b208a113c7de656507354b1d969f3c315f2",
+  "empty_incident_reason": null,
+  "event_count_by_modality": {
+    "business_event": 4,
+    "log": 5,
+    "metric": 7,
+    "trace": 2
+  },
+  "excluded_by_window_count": 0,
+  "expected_modalities": [
+    "business_event",
+    "log",
+    "metric",
+    "trace"
+  ],
+  "fault_service": "payment-service",
+  "fault_type": "error",
+  "fingerprint": "319f68a71e19a261f7af5f80c1fc3cfa1c309f4bcdf70121aba9464b46b63e53",
+  "ground_truth_sha256": "0d187897f56d7e5936961af0ea9bcdf4062fd1664283b1077c2cdcab744ef210",
+  "incident_id": "causalods-local-v3/payment_error/0020",
+  "incident_normalization_report_sha256": "c73eb030728769b29943a534355d6b208a113c7de656507354b1d969f3c315f2",
+  "missing_expected_modalities": [],
+  "modalities": [
+    "business_event",
+    "log",
+    "metric",
+    "trace"
+  ],
+  "modality_policy_status": "official",
+  "modality_policy_version": "causalods-local-v3-full-v1",
+  "normalization_accounting_by_file": {
+    "incidents/causalods-local-v3__payment_error__0020/business_event.json.gz": {
+      "accepted_metric_cells": 0,
+      "accepted_rows": 4,
+      "excluded_rows": 0,
+      "kind": "business_events",
+      "partially_accepted_rows": 0,
+      "produced_events": 4,
+      "rejected_cell_units": 0,
+      "rejected_metric_cells": 0,
+      "rejected_row_units": 0,
+      "rejected_rows": 0,
+      "relative_path": "incidents/causalods-local-v3__payment_error__0020/business_event.json.gz",
+      "signal_type": "business_event",
+      "total_rows": 4
+    },
+    "incidents/causalods-local-v3__payment_error__0020/log.json.gz": {
+      "accepted_metric_cells": 0,
+      "accepted_rows": 5,
+      "excluded_rows": 0,
+      "kind": "logs",
+      "partially_accepted_rows": 0,
+      "produced_events": 5,
+      "rejected_cell_units": 0,
+      "rejected_metric_cells": 0,
+      "rejected_row_units": 0,
+      "rejected_rows": 0,
+      "relative_path": "incidents/causalods-local-v3__payment_error__0020/log.json.gz",
+      "signal_type": "log",
+      "total_rows": 5
+    },
+    "incidents/causalods-local-v3__payment_error__0020/metric.json.gz": {
+      "accepted_metric_cells": 7,
+      "accepted_rows": 7,
+      "excluded_rows": 0,
+      "kind": "metrics",
+      "partially_accepted_rows": 0,
+      "produced_events": 7,
+      "rejected_cell_units": 0,
+      "rejected_metric_cells": 0,
+      "rejected_row_units": 0,
+      "rejected_rows": 0,
+      "relative_path": "incidents/causalods-local-v3__payment_error__0020/metric.json.gz",
+      "signal_type": "metric",
+      "total_rows": 7
+    },
+    "incidents/causalods-local-v3__payment_error__0020/trace.json.gz": {
+      "accepted_metric_cells": 0,
+      "accepted_rows": 2,
+      "excluded_rows": 0,
+      "kind": "traces",
+      "partially_accepted_rows": 0,
+      "produced_events": 2,
+      "rejected_cell_units": 0,
+      "rejected_metric_cells": 0,
+      "rejected_row_units": 0,
+      "rejected_rows": 0,
+      "relative_path": "incidents/causalods-local-v3__payment_error__0020/trace.json.gz",
+      "signal_type": "trace",
+      "total_rows": 2
+    }
+  },
+  "normalization_mode": "strict",
+  "normalized_events_sha256": "0bc40071f31c5a1b5fbc780afd727ab5d5587568633de13b5c5c3446d68351d0",
+  "normalized_source_files": [
+    "incidents/causalods-local-v3__payment_error__0020/business_event.json.gz",
+    "incidents/causalods-local-v3__payment_error__0020/log.json.gz",
+    "incidents/causalods-local-v3__payment_error__0020/metric.json.gz",
+    "incidents/causalods-local-v3__payment_error__0020/trace.json.gz"
+  ],
+  "observed_interval": {
+    "end": "2026-08-15T23:58:25.199100Z",
+    "start": "2026-08-15T23:57:43.978831Z"
+  },
+  "observed_modalities": [
+    "business_event",
+    "log",
+    "metric",
+    "trace"
+  ],
+  "outside_window_event_count": 0,
+  "quality_issue_reasons_by_file": {},
+  "rejected_row_count": 0,
+  "rejection_reasons_by_file": {},
+  "schema_report_sha256": "c73eb030728769b29943a534355d6b208a113c7de656507354b1d969f3c315f2",
+  "schema_version": "incident-manifest-v2",
+  "source_case": "payment_error",
+  "source_dataset": "causalods-local-v3",
+  "source_files_sha256": {
+    "incidents/causalods-local-v3__payment_error__0020/business_event.json.gz": "ece1c375831bdc2211e2b7e8dcf8b37b0ecbe2b708e79cb9a05c204cea3b13a6",
+    "incidents/causalods-local-v3__payment_error__0020/log.json.gz": "3816b7c6a3f9b00ed644a09ac3989af5d2daf9e7f740ed22aed4d1b05ebd1bf4",
+    "incidents/causalods-local-v3__payment_error__0020/metric.json.gz": "c021bc76e356449a3942e295f3b9aa47cae10d477a56fe6943cbbdf815cb660f",
+    "incidents/causalods-local-v3__payment_error__0020/trace.json.gz": "74516d15a1a79784c354eeaffd7a0cf5765f9ef74a65f9ac517c5f2997d6f12e"
+  },
+  "source_system": "causalods",
+  "total_event_count": 18,
+  "unexpected_modalities": [],
+  "unmapped_fields": {},
+  "usable_for_benchmark": true,
+  "window_decision": "controller-bounded-before-during-after",
+  "window_policy": "causalods-local-v3-request-window-v1"
+}
