@@ -10,7 +10,6 @@ from multimodal_v1.event_graph.contracts import (
     EdgeClassification, EdgeDirection, EventEvidenceGraph, RelationType,
     ServiceGraphFeatures, reference_key,
 )
-from multimodal_v1.event_graph.paths import GraphPathExtractor
 
 
 @dataclass(frozen=True)
@@ -55,6 +54,8 @@ def _distance(adjacency, sources, targets):
 
 
 def _reachable(adjacency, sources):
+    if not adjacency or not any(source in adjacency for source in sources):
+        return set()
     initial = set(sources)
     visited = set(initial)
     queue = deque(sorted(visited, key=reference_key))
@@ -65,6 +66,26 @@ def _reachable(adjacency, sources):
                 visited.add(target)
                 queue.append(target)
     return visited - initial
+
+
+def _distances_from_sources(adjacency, sources):
+    """One BFS for every node instead of one BFS per destination node."""
+    ordered = tuple(sorted(set(sources), key=reference_key))
+    distances = {source: 0 for source in ordered}
+    queue = deque(ordered)
+    while queue:
+        node = queue.popleft()
+        distance = distances[node] + 1
+        for target in adjacency.get(node, ()):
+            if target not in distances:
+                distances[target] = distance
+                queue.append(target)
+    return distances
+
+
+def _freeze_adjacency(values):
+    return {source: tuple(sorted(targets, key=reference_key))
+            for source, targets in values.items() if targets}
 
 
 class GraphFeatureExtractor:
@@ -81,35 +102,70 @@ class GraphFeatureExtractor:
         for reference, event in events.items():
             if event.service_name:
                 by_service.setdefault(event.service_name, []).append(reference)
-        extractor = GraphPathExtractor(graph)
-        structural = extractor.adjacency(classifications=self.policy.structural_adjacency)
-        plausible = extractor.adjacency(classifications=self.policy.plausible_causal_adjacency)
-        plausible_reverse = extractor.adjacency(
-            classifications=self.policy.plausible_causal_adjacency, reverse=True
-        )
-        directed_in = {reference: 0 for reference in events}
-        directed_out = {reference: 0 for reference in events}
-        undirected_degree = {reference: 0 for reference in events}
+        structural_raw, plausible_raw, plausible_reverse_raw = {}, {}, {}
+        semantic_reverse_raw = {}
+        directed_in, directed_out, undirected_degree = {}, {}, {}
+        structural_degree, plausible_degree = {}, {}
+        causal_weights = {}
+        structural_targets = set()
+        business_targets = set()
+
+        def connect(mapping, source, target):
+            mapping.setdefault(source, set()).add(target)
+
+        def increment(mapping, service):
+            if service:
+                mapping[service] = mapping.get(service, 0) + 1
+
         for edge in graph.edges:
+            source_service = events[edge.source].service_name
+            target_service = events[edge.target].service_name
             if edge.direction is EdgeDirection.UNDIRECTED:
-                undirected_degree[edge.source] += 1
-                undirected_degree[edge.target] += 1
+                increment(undirected_degree, source_service)
+                increment(undirected_degree, target_service)
             else:
-                directed_out[edge.source] += 1
-                directed_in[edge.target] += 1
-        structural_in = {reference: 0 for reference in events}
-        for edge in graph.edges:
+                increment(directed_out, source_service)
+                increment(directed_in, target_service)
             if edge.classification is EdgeClassification.STRUCTURAL and edge.direction is EdgeDirection.DIRECTED:
-                structural_in[edge.target] += 1
-        roots = {reference for reference, count in structural_in.items() if count == 0}
+                structural_targets.add(edge.target)
+            if edge.classification in self.policy.structural_adjacency:
+                connect(structural_raw, edge.source, edge.target)
+                increment(structural_degree, source_service)
+                increment(structural_degree, target_service)
+                if edge.direction is EdgeDirection.UNDIRECTED:
+                    connect(structural_raw, edge.target, edge.source)
+            if edge.classification in self.policy.plausible_causal_adjacency:
+                connect(plausible_raw, edge.source, edge.target)
+                connect(plausible_reverse_raw, edge.target, edge.source)
+                increment(plausible_degree, source_service)
+                increment(plausible_degree, target_service)
+                if edge.direction is EdgeDirection.UNDIRECTED:
+                    connect(plausible_raw, edge.target, edge.source)
+                    connect(plausible_reverse_raw, edge.source, edge.target)
+            if edge.classification is EdgeClassification.SEMANTIC:
+                connect(semantic_reverse_raw, edge.target, edge.source)
+                if edge.direction is EdgeDirection.UNDIRECTED:
+                    connect(semantic_reverse_raw, edge.source, edge.target)
+            if edge.classification is EdgeClassification.CAUSAL_CANDIDATE:
+                for service in (source_service, target_service):
+                    if service:
+                        causal_weights[service] = max(causal_weights.get(service, 0.0), edge.weight)
+            if edge.relation_type is RelationType.BUSINESS_TRANSITION:
+                business_targets.add(edge.target)
+
+        structural = _freeze_adjacency(structural_raw)
+        plausible = _freeze_adjacency(plausible_raw)
+        plausible_reverse = _freeze_adjacency(plausible_reverse_raw)
+        semantic_reverse = _freeze_adjacency(semantic_reverse_raw)
+        roots = set(events) - structural_targets
+        structural_distances = _distances_from_sources(structural, roots)
         anomalies = {reference for reference, event in events.items()
                      if self.anomaly_policy.is_anomalous(event)}
         first_failure = ()
         if anomalies:
             first_failure = (min(anomalies, key=lambda ref: (events[ref].event_timestamp, *reference_key(ref))),)
-        business_targets = {
-            edge.target for edge in graph.edges if edge.relation_type is RelationType.BUSINESS_TRANSITION
-        }
+        failure_distances = _distances_from_sources(plausible_reverse, first_failure)
+        business_distances = _distances_from_sources(semantic_reverse, business_targets)
         result = {}
         for service, service_events in sorted(by_service.items()):
             descendants = _reachable(plausible, service_events)
@@ -120,31 +176,22 @@ class GraphFeatureExtractor:
                 events[ref].service_name for ref in descendant_anomalies
                 if events[ref].service_name and events[ref].service_name != service
             }
-            in_degree = sum(directed_in[ref] for ref in service_events)
-            out_degree = sum(directed_out[ref] for ref in service_events)
-            symmetric_degree = sum(undirected_degree[ref] for ref in service_events)
+            in_degree = directed_in.get(service, 0)
+            out_degree = directed_out.get(service, 0)
+            symmetric_degree = undirected_degree.get(service, 0)
             centrality = min(
                 1.0, (in_degree + out_degree + symmetric_degree) / max(1, 2 * (len(events) - 1))
             )
-            def view_centrality(classifications):
-                degree = sum(
-                    1
-                    for edge in graph.edges
-                    if edge.classification in classifications
-                    for endpoint in (edge.source, edge.target)
-                    if endpoint in service_events
-                )
-                return min(1.0, degree / max(1, 2 * (len(events) - 1)))
-
-            structural_centrality = view_centrality(set(self.policy.structural_adjacency))
-            plausible_centrality = view_centrality(set(self.policy.plausible_causal_adjacency))
-            causal_weights = [
-                edge.weight for edge in graph.edges
-                if edge.classification is EdgeClassification.CAUSAL_CANDIDATE
-                and (edge.source in service_events or edge.target in service_events)
-            ]
-            depths = [_distance(structural, roots, (reference,)) for reference in service_events]
-            valid_depths = [value for value in depths if value >= 0]
+            structural_centrality = min(
+                1.0, structural_degree.get(service, 0) / max(1, 2 * (len(events) - 1)))
+            plausible_centrality = min(
+                1.0, plausible_degree.get(service, 0) / max(1, 2 * (len(events) - 1)))
+            valid_depths = [structural_distances[reference] for reference in service_events
+                            if reference in structural_distances]
+            failure_depths = [failure_distances[reference] for reference in service_events
+                              if reference in failure_distances]
+            business_depths = [business_distances[reference] for reference in service_events
+                               if reference in business_distances]
             result[service] = ServiceGraphFeatures(
                 service_name=service,
                 depth=min(valid_depths) if valid_depths else -1,
@@ -158,12 +205,9 @@ class GraphFeatureExtractor:
                 affected_descendants=len(affected_services),
                 anomalous_upstream=len(upstream_anomalies),
                 anomalous_downstream=len(descendant_anomalies),
-                shortest_path_to_first_failure=_distance(plausible, service_events, first_failure),
-                causal_candidate_edge_weight=max(causal_weights, default=0.0),
+                shortest_path_to_first_failure=min(failure_depths) if failure_depths else -1,
+                causal_candidate_edge_weight=causal_weights.get(service, 0.0),
                 event_chain_count=len(descendants),
-                business_transition_distance=_distance(
-                    extractor.adjacency(classifications=(EdgeClassification.SEMANTIC,)),
-                    service_events, business_targets,
-                ),
+                business_transition_distance=min(business_depths) if business_depths else -1,
             )
         return result

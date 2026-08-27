@@ -8,7 +8,7 @@ from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from enum import Enum
 from types import MappingProxyType
-from typing import Any, Mapping
+from typing import Any, Mapping, Sequence
 
 from multimodal_v1.contracts import UnifiedEvent
 from multimodal_v1.canonical import canonical_json_value, deep_freeze_json
@@ -64,6 +64,46 @@ def _utc(value: datetime) -> datetime:
     if not isinstance(value, datetime) or value.tzinfo is None or value.utcoffset() is None:
         raise ValueError("derived_at deve ser timezone-aware.")
     return value.astimezone(timezone.utc)
+
+
+class _StreamingArray:
+    def __init__(self, values):
+        self.values = values
+
+
+def _canonical_chunks(value):
+    """Yield the exact json.dumps(... sort_keys=True, separators) encoding."""
+    if isinstance(value, _StreamingArray):
+        yield "["
+        first = True
+        for item in value.values:
+            if not first:
+                yield ","
+            first = False
+            # Each streamed item is bounded and plain JSON.  Let the C-backed
+            # encoder handle its nested scalars while retaining the exact
+            # canonical options used by EventEvidenceGraph.to_json().
+            yield json.dumps(item, sort_keys=True, separators=(",", ":"),
+                             ensure_ascii=False)
+        yield "]"
+    elif isinstance(value, Mapping):
+        yield "{"
+        for index, key in enumerate(sorted(value)):
+            if index:
+                yield ","
+            yield json.dumps(key, ensure_ascii=False, separators=(",", ":"))
+            yield ":"
+            yield from _canonical_chunks(value[key])
+        yield "}"
+    elif isinstance(value, (tuple, list)):
+        yield "["
+        for index, item in enumerate(value):
+            if index:
+                yield ","
+            yield from _canonical_chunks(item)
+        yield "]"
+    else:
+        yield json.dumps(value, ensure_ascii=False, separators=(",", ":"))
 
 
 @dataclass(frozen=True)
@@ -165,6 +205,12 @@ class EventEvidenceGraph:
     service_nodes: tuple[ServiceGraphNode, ...] = ()
     rule_versions: Mapping[str, str] = field(default_factory=dict)
     policy_provenance: Mapping[str, Any] = field(default_factory=dict)
+    _graph_fingerprint_cache: str | None = field(
+        default=None, init=False, repr=False, compare=False,
+    )
+    _event_fingerprints: tuple[str | bytes, ...] = field(
+        default_factory=tuple, init=False, repr=False, compare=False,
+    )
 
     def __post_init__(self) -> None:
         if not isinstance(self.context, IncidentGraphContext):
@@ -173,17 +219,19 @@ class EventEvidenceGraph:
             raise TypeError("nodes deve conter EventGraphNode.")
         if any(not isinstance(edge, EventGraphEdge) for edge in self.edges):
             raise TypeError("edges deve conter EventGraphEdge.")
-        references = [node.reference for node in self.nodes]
-        if len(references) != len(set(references)):
+        known = {node.reference for node in self.nodes}
+        if len(known) != len(self.nodes):
             raise ValueError("EventReference deve ser único por grafo.")
-        known = set(references)
-        context_references = set(self.context.association_scores)
-        context_references.update(item.event_reference for item in self.context.association_reasons)
-        context_references.update(item.event_reference for item in self.context.identity_evidence)
-        context_references.update(item.event_reference for item in self.context.external_identity_evidence)
-        context_references.update(item.event_reference for item in self.context.provenance)
-        context_references.update(self.context.late_events)
-        if not context_references <= known:
+        context_reference_groups = (
+            self.context.association_scores,
+            (item.event_reference for item in self.context.association_reasons),
+            (item.event_reference for item in self.context.identity_evidence),
+            (item.event_reference for item in self.context.external_identity_evidence),
+            (item.event_reference for item in self.context.provenance),
+            self.context.late_events,
+        )
+        if any(reference not in known for group in context_reference_groups
+               for reference in group):
             raise ValueError("Contexto contém EventReference ausente dos nós.")
         edge_keys = set()
         for edge in self.edges:
@@ -194,13 +242,19 @@ class EventEvidenceGraph:
             if edge.key in edge_keys:
                 raise ValueError("Chave de aresta duplicada na construção direta.")
             edge_keys.add(edge.key)
+        service_by_reference = {
+            node.reference: node.event.service_name
+            for node in self.nodes
+        }
         for service_node in self.service_nodes:
             if not isinstance(service_node, ServiceGraphNode):
                 raise TypeError("service_nodes deve conter ServiceGraphNode.")
             if any(reference not in known for reference in service_node.event_references):
                 raise ValueError("ServiceGraphNode contém referência inexistente.")
-            if any(next(node.event.service_name for node in self.nodes if node.reference == reference)
-                   != service_node.service_name for reference in service_node.event_references):
+            if any(
+                service_by_reference[reference] != service_node.service_name
+                for reference in service_node.event_references
+            ):
                 raise ValueError("ServiceGraphNode contém referência de outro serviço.")
         versions = dict(self.rule_versions)
         for edge in self.edges:
@@ -226,6 +280,28 @@ class EventEvidenceGraph:
         if not matches:
             raise KeyError(event_id)
         return matches[0]
+
+    def _bind_event_fingerprints(self, values: Mapping[EventReference, str] | Sequence[str | bytes]) -> None:
+        """Bind verified load-time hashes without changing the public payload."""
+        if isinstance(values, Mapping):
+            normalized = dict(values)
+            known = {node.reference for node in self.nodes}
+            if set(normalized) != known:
+                raise ValueError("Event fingerprints devem cobrir exatamente os nós.")
+            ordered = tuple(normalized[node.reference] for node in self.nodes)
+        else:
+            ordered = tuple(values)
+            if len(ordered) != len(self.nodes):
+                raise ValueError("Event fingerprints devem cobrir exatamente os nós.")
+        if any(
+            (isinstance(value, str) and not re.fullmatch(r"[0-9a-f]{64}", value))
+            or (isinstance(value, bytes) and len(value) != 32)
+            or not isinstance(value, (str, bytes))
+            for value in ordered
+        ):
+            raise ValueError("Event fingerprint inválido.")
+        object.__setattr__(self, "_event_fingerprints", ordered)
+        object.__setattr__(self, "_graph_fingerprint_cache", None)
 
     def to_dict(self) -> dict[str, Any]:
         encode = lambda ref: {"event_id": ref.event_id, "source_reference": ref.source_reference}
@@ -264,8 +340,13 @@ class EventEvidenceGraph:
                 {"reference": encode(node.reference), "service_name": node.event.service_name,
                  "signal_type": node.event.signal_type.value,
                  "event_timestamp": node.event.event_timestamp.isoformat().replace("+00:00", "Z"),
-                 "event_fingerprint": node.event.contract_fingerprint}
-                for node in self.nodes
+                 "event_fingerprint": (
+                     (self._event_fingerprints[index].hex()
+                      if isinstance(self._event_fingerprints[index], bytes)
+                      else self._event_fingerprints[index])
+                     if self._event_fingerprints
+                     else node.event.contract_fingerprint)}
+                for index, node in enumerate(self.nodes)
             ],
             "service_nodes": [
                 {"service_name": node.service_name,
@@ -286,7 +367,81 @@ class EventEvidenceGraph:
     @property
     def graph_fingerprint(self) -> str:
         """SHA-256 contratual do contexto, nós, arestas, taxonomia e rule versions."""
-        return hashlib.sha256(self.to_json().encode("utf-8")).hexdigest()
+        cached = self._graph_fingerprint_cache
+        if cached is not None:
+            return cached
+        encode = lambda ref: {"event_id": ref.event_id,
+                              "source_reference": ref.source_reference}
+        context = {
+            "incident_id": self.context.incident_id,
+            "workflow_key": self.context.workflow_key,
+            "lifecycle_generation": self.context.lifecycle_generation,
+            "association_scores": _StreamingArray(
+                {"event": encode(ref), "score": self.context.association_scores[ref]}
+                for ref in sorted(self.context.association_scores, key=reference_key)
+            ),
+            "late_events": _StreamingArray(
+                encode(ref) for ref in sorted(self.context.late_events, key=reference_key)
+            ),
+            "association_reasons": _StreamingArray(
+                {"event": encode(item.event_reference), "score": item.score,
+                 "reasons": list(item.reasons)}
+                for item in self.context.association_reasons
+            ),
+            "identity_evidence": _StreamingArray(
+                {"event": encode(item.event_reference),
+                 "identity_type": item.identity_type,
+                 "identity_value": item.identity_value, "origin": item.origin,
+                 "confidence": item.confidence, "source": item.source,
+                 "reason": item.reason}
+                for item in self.context.identity_evidence
+            ),
+            "external_identity_evidence": _StreamingArray(
+                {"event": encode(item.event_reference),
+                 "identity_type": item.identity_type,
+                 "identity_value": item.identity_value, "source": item.source,
+                 "confidence": item.confidence, "reason": item.reason}
+                for item in self.context.external_identity_evidence
+            ),
+            "provenance": _StreamingArray(
+                {"event": encode(item.event_reference),
+                 "source_dataset": item.source_dataset}
+                for item in self.context.provenance
+            ),
+        }
+        payload = {
+            "context": context,
+            "nodes": _StreamingArray(
+                {"reference": encode(node.reference),
+                 "service_name": node.event.service_name,
+                 "signal_type": node.event.signal_type.value,
+                 "event_timestamp": node.event.event_timestamp.isoformat().replace("+00:00", "Z"),
+                 "event_fingerprint": (
+                     (self._event_fingerprints[index].hex()
+                      if isinstance(self._event_fingerprints[index], bytes)
+                      else self._event_fingerprints[index])
+                     if self._event_fingerprints
+                     else node.event.contract_fingerprint)}
+                for index, node in enumerate(self.nodes)
+            ),
+            "service_nodes": _StreamingArray(
+                {"service_name": node.service_name,
+                 "event_references": [encode(ref) for ref in node.event_references]}
+                for node in self.service_nodes
+            ),
+            "edges": _StreamingArray(edge.to_dict() for edge in self.edges),
+            "rule_versions": {
+                key: value if isinstance(value, str) else list(value)
+                for key, value in sorted(self.rule_versions.items())
+            },
+            "policy_provenance": canonical_json_value(self.policy_provenance),
+        }
+        digest = hashlib.sha256()
+        for chunk in _canonical_chunks(payload):
+            digest.update(chunk.encode("utf-8"))
+        result = digest.hexdigest()
+        object.__setattr__(self, "_graph_fingerprint_cache", result)
+        return result
 
 
 @dataclass(frozen=True)

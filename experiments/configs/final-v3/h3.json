@@ -1,0 +1,25 @@
+{
+  "schema_version": "final-campaign-config-v3",
+  "campaign_id": "final-h3-v3",
+  "family": "H3",
+  "protocols": ["within-dataset"],
+  "seeds": [42],
+  "repetitions": 1,
+  "sample_size": 40,
+  "execution_mode": "offline",
+  "model_version": "rca-model-benchmark-v3-spec",
+  "model_hash": "4860ee5fe2c49a5ff8cacf34d007c1041062a78aceab0646a259ae588b6356db",
+  "criteria": {
+    "h3_input_provider": "experiments.final_campaigns_v3.providers:load_h3_inputs",
+    "model_specification": "experiments/configs/final-v3/scientific-model-specification.json",
+    "scientific_rca_results": "artifacts/final-experiments-v3/scientific-rca-results/INDEX.json",
+    "allow_live_llm": true,
+    "llm_model": null,
+    "llm_endpoint": null,
+    "llm_temperature": 0.0,
+    "llm_max_input_tokens": 16000,
+    "llm_max_output_tokens": 1024,
+    "llm_timeout_seconds": 60,
+    "blind_seed": 42
+  }
+}

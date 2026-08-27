@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from collections import defaultdict
+from bisect import bisect_left
 import hashlib
 import json
 from dataclasses import dataclass, field
@@ -80,18 +81,41 @@ class RuleContext:
     business_policy: BusinessTransitionPolicy
     topology_policy: TopologyDependencyPolicy
     anomaly_policy: AnomalyPolicyV1
+    event_references: Mapping[int, EventReference] = field(default_factory=dict)
+    span_observations: Mapping[tuple[str, str], tuple[UnifiedEvent, ...]] = field(
+        default_factory=dict)
+    correlation_identities_by_reference: Mapping[
+        EventReference, tuple[IncidentIdentityEvidence, ...]
+    ] = field(default_factory=dict)
+    events_by_service: Mapping[str, tuple[UnifiedEvent, ...]] = field(default_factory=dict)
+    service_timestamps: Mapping[str, tuple[datetime, ...]] = field(default_factory=dict)
+    anomalous_events_by_service: Mapping[str, tuple[UnifiedEvent, ...]] = field(default_factory=dict)
+    correlation_events_by_service_value: Mapping[
+        tuple[str, str], tuple[UnifiedEvent, ...]
+    ] = field(default_factory=dict)
+    entity_events_by_service_value: Mapping[
+        tuple[str, str, str], tuple[UnifiedEvent, ...]
+    ] = field(default_factory=dict)
+    structural_neighbors_by_reference: Mapping[
+        EventReference, tuple[UnifiedEvent, ...]
+    ] = field(default_factory=dict)
+    operation_counts: dict[str, int] | None = field(default=None, compare=False, repr=False)
 
 
 EdgeRule = Callable[[RuleContext], Iterable[EventGraphEdge]]
 
 
-def _ref(event):
+def _ref(event, context=None):
+    if context is not None:
+        cached = context.event_references.get(id(event))
+        if cached is not None:
+            return cached
     return EventReference(event.event_id, event.source_reference)
 
 
 def _edge(source, target, relation, context, confidence, explanation, version="v1", evidence_references=None):
     classification, direction = EDGE_TAXONOMY[relation]
-    source_ref, target_ref = _ref(source), _ref(target)
+    source_ref, target_ref = _ref(source, context), _ref(target, context)
     return EventGraphEdge(
         source_ref, target_ref, relation, confidence, confidence,
         tuple(evidence_references or (source_ref, target_ref)), version, direction, context.derived_at,
@@ -124,6 +148,15 @@ def _span_index(events):
     return spans
 
 
+def _span_parent_matches(context):
+    spans = context.span_observations or _span_index(context.events)
+    for child in context.events:
+        candidates = spans.get((child.trace_id, child.parent_span_id), ())
+        parents, policy = _preferred_observations(candidates, child)
+        for parent in parents:
+            yield parent, child, len(candidates), policy
+
+
 def _preferred_observations(candidates, target):
     same_source = [event for event in candidates if target.source_reference and event.source_reference == target.source_reference]
     if same_source:
@@ -135,18 +168,14 @@ def _preferred_observations(candidates, target):
 
 
 def span_parent_rule(context):
-    spans = _span_index(context.events)
-    for child in context.events:
-        candidates = spans.get((child.trace_id, child.parent_span_id), ())
-        parents, policy = _preferred_observations(candidates, child)
-        for parent in parents:
-            yield _edge(parent, child, RelationType.SPAN_PARENT, context, 1.0,
-                        f"Destino declara parent no mesmo trace; matching={policy}; "
-                        f"observações_candidatas={len(candidates)}.")
+    for parent, child, candidate_count, policy in _span_parent_matches(context):
+        yield _edge(parent, child, RelationType.SPAN_PARENT, context, 1.0,
+                    f"Destino declara parent no mesmo trace; matching={policy}; "
+                    f"observações_candidatas={candidate_count}.")
 
 
 def span_link_rule(context):
-    spans = _span_index(context.events)
+    spans = context.span_observations or _span_index(context.events)
     for target in context.events:
         for link in target.span_links:
             candidates = spans.get((link.get("trace_id"), link.get("span_id")), ())
@@ -158,16 +187,15 @@ def span_link_rule(context):
 
 
 def service_call_rule(context):
-    events = {_ref(event): event for event in context.events}
-    for parent in span_parent_rule(context):
-        source, target = events[parent.source], events[parent.target]
+    for source, target, _, _ in _span_parent_matches(context):
         if source.service_name and target.service_name and source.service_name != target.service_name:
             yield _edge(source, target, RelationType.SERVICE_CALL, context, 0.95,
                         "Spans parent/child no mesmo trace atravessam serviços distintos.")
 
 
 def temporal_rule(context):
-    for source, target in _chains((context.events,)):
+    # EventGraphBuilder already established this exact canonical ordering.
+    for source, target in zip(context.events, context.events[1:]):
         distance = target.event_timestamp - source.event_timestamp
         if timedelta(0) <= distance <= context.temporal_window:
             confidence = max(0.05, 1 - distance.total_seconds() / max(1, context.temporal_window.total_seconds()))
@@ -226,10 +254,9 @@ def co_anomaly_rule(context):
 
 
 def _semantic_supports(source, target, context):
-    source_identities = [item for item in context.identity_evidence
-                         if item.event_reference == _ref(source) and item.identity_type == "correlation_id"]
-    target_identities = [item for item in context.identity_evidence
-                         if item.event_reference == _ref(target) and item.identity_type == "correlation_id"]
+    source_ref, target_ref = _ref(source, context), _ref(target, context)
+    source_identities = context.correlation_identities_by_reference.get(source_ref, ())
+    target_identities = context.correlation_identities_by_reference.get(target_ref, ())
     matches = [
         (left, right, min(left.confidence, right.confidence))
         for left in source_identities for right in target_identities
@@ -239,7 +266,7 @@ def _semantic_supports(source, target, context):
     if matches:
         left, right, confidence = max(matches, key=lambda item: item[2])
         supports.append(TopologySupport(
-            "semantic_identity", confidence, (_ref(source), _ref(target)),
+            "semantic_identity", confidence, (source_ref, target_ref),
             f"correlation compartilhada; source={left.origin}:{left.source or 'event'}; "
             f"target={right.origin}:{right.source or 'event'}; confidence=min={confidence:.3f}",
         ))
@@ -248,20 +275,21 @@ def _semantic_supports(source, target, context):
                        == (target.business_entity_type, target.business_entity_id))
     if same_entity:
         supports.append(TopologySupport(
-            "semantic_entity", 0.90, (_ref(source), _ref(target)),
+            "semantic_entity", 0.90, (source_ref, target_ref),
             "tipo e ID da entidade de negócio coincidem",
         ))
     return tuple(supports)
 
 
-def _structural_support(source, target):
+def _structural_support(source, target, context):
     shared = bool(source.trace_id and source.trace_id == target.trace_id and (
         target.parent_span_id == source.span_id or source.parent_span_id == target.span_id
     ))
     if not shared:
         return ()
     return (TopologySupport(
-        "structural_relation", 1.0, (_ref(source), _ref(target)),
+        "structural_relation", 1.0,
+        (_ref(source, context), _ref(target, context)),
         "relação parent/span observada no mesmo trace",
     ),)
 
@@ -270,37 +298,72 @@ def _topology_supports(source, target, context):
     supports = []
     if context.anomaly_policy.is_anomalous(target):
         supports.append(TopologySupport(
-            "target_anomalous", 1.0, (_ref(target),),
+            "target_anomalous", 1.0, (_ref(target, context),),
             "destino classificado como anômalo por multimodal-anomaly-v1",
         ))
     supports.extend(_semantic_supports(source, target, context))
-    supports.extend(_structural_support(source, target))
+    supports.extend(_structural_support(source, target, context))
     if context.topology_policy.allow_healthy_prior:
         supports.append(TopologySupport(
             "configured_healthy_prior", context.topology_policy.healthy_prior_confidence,
-            (_ref(source), _ref(target)), "prior saudável habilitado explicitamente",
+            (_ref(source, context), _ref(target, context)),
+            "prior saudável habilitado explicitamente",
         ))
     return tuple(supports)
 
 
 def topology_rule(context):
-    by_service = defaultdict(list)
-    for event in context.events:
-        if event.service_name:
-            by_service[event.service_name].append(event)
+    by_service = context.events_by_service
     for source_service, targets in sorted(context.topology.items()):
         for target_service in targets:
-            for source in by_service[source_service]:
-                choices = [event for event in by_service[target_service]
-                           if timedelta(0) <= event.event_timestamp - source.event_timestamp <= context.temporal_window]
-                if not choices:
-                    continue
-                supported = [(target, _topology_supports(source, target, context)) for target in choices]
-                supported = [(target, supports) for target, supports in supported if supports]
-                if supported:
-                    target, supports = min(
-                        supported, key=lambda item: (item[0].event_timestamp, *reference_key(_ref(item[0])))
+            target_events = by_service.get(target_service, ())
+            if not target_events:
+                continue
+            for source in by_service.get(source_service, ()):
+                candidate_lists = [context.anomalous_events_by_service.get(target_service, ())]
+                source_ref = _ref(source, context)
+                for identity in context.correlation_identities_by_reference.get(source_ref, ()):
+                    candidate_lists.append(context.correlation_events_by_service_value.get(
+                        (target_service, identity.identity_value), ()))
+                if source.business_entity_type and source.business_entity_id:
+                    candidate_lists.append(context.entity_events_by_service_value.get((
+                        target_service, source.business_entity_type,
+                        source.business_entity_id,
+                    ), ()))
+                candidate_lists.append(tuple(
+                    event for event in context.structural_neighbors_by_reference.get(source_ref, ())
+                    if event.service_name == target_service
+                ))
+                if context.topology_policy.allow_healthy_prior:
+                    candidate_lists.append(target_events)
+                candidates = []
+                for values in candidate_lists:
+                    if context.operation_counts is not None:
+                        context.operation_counts["topology_index_probes"] = (
+                            context.operation_counts.get("topology_index_probes", 0) + 1
+                        )
+                    if not values:
+                        continue
+                    index = bisect_left(
+                        values, source.event_timestamp,
+                        key=lambda event: event.event_timestamp,
                     )
+                    if (index < len(values) and values[index].event_timestamp
+                            <= source.event_timestamp + context.temporal_window):
+                        candidates.append(values[index])
+                selected = None
+                if candidates:
+                    target = min(candidates, key=lambda event: (
+                        event.event_timestamp, *reference_key(_ref(event, context))))
+                    if context.operation_counts is not None:
+                        context.operation_counts["topology_candidate_comparisons"] = (
+                            context.operation_counts.get("topology_candidate_comparisons", 0) + 1
+                        )
+                    supports = _topology_supports(source, target, context)
+                    if supports:
+                        selected = target, supports
+                if selected:
+                    target, supports = selected
                     strongest = max(support.confidence for support in supports)
                     confidence = min(context.topology_policy.configured_topology_weight, strongest)
                     evidence = (

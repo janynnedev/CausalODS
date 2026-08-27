@@ -82,6 +82,8 @@ def _finite_number(value: Any, name: str) -> float | None:
 
 
 def _freeze(value: Any) -> Any:
+    if isinstance(value, MappingProxyType):
+        return value
     if isinstance(value, Mapping):
         return MappingProxyType(
             {key: _freeze(item) for key, item in value.items()}

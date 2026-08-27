@@ -1,0 +1,18 @@
+{
+  "schema_version": "final-campaign-config-v3",
+  "campaign_id": "final-h4-v3",
+  "family": "H4",
+  "protocols": ["within-dataset", "cross-system", "cross-source", "leave-one-system-out"],
+  "seeds": [42],
+  "repetitions": 1,
+  "execution_mode": "offline",
+  "model_version": "rca-model-benchmark-v3-spec",
+  "model_hash": "4860ee5fe2c49a5ff8cacf34d007c1041062a78aceab0646a259ae588b6356db",
+  "criteria": {
+    "h4_input_provider": "experiments.final_campaigns_v3.providers:load_h4_inputs",
+    "model_specification": "experiments/configs/final-v3/scientific-model-specification.json",
+    "scientific_benchmark_catalog": "artifacts/final-experiments-v3/scientific-inputs/benchmark-catalog.json",
+    "model_retrained_between_severities": false,
+    "runtime_predictions_reused": false
+  }
+}

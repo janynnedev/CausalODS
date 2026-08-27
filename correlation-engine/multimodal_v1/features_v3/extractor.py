@@ -10,8 +10,9 @@ from multimodal_v1.evidence.contracts import IncidentEvidenceBundle
 from multimodal_v1.evidence.contracts import EventReference
 from multimodal_v1.event_graph import GraphFeatureExtractor
 from multimodal_v1.event_graph.features import GraphFeaturePolicy
-from multimodal_v1.event_graph.contracts import EventEvidenceGraph, PruningResult, RelationType
-from multimodal_v1.event_graph.paths import GraphPathExtractor
+from multimodal_v1.event_graph.contracts import (
+    EdgeDirection, EventEvidenceGraph, PruningResult, RelationType, reference_key,
+)
 from multimodal_v1.features_v3.baselines import (
     BaselineSnapshotV3, event_latency_ms, log_template, metric_kind,
 )
@@ -74,18 +75,20 @@ class RCAFeatureExtractorV3:
             raise ValueError("workflow_key diverge entre grafo e bundle.")
         if graph.context.lifecycle_generation != bundle.lifecycle_generation:
             raise ValueError("lifecycle_generation diverge entre grafo e bundle.")
-        bundle_refs = {EventReference(event.event_id, event.source_reference) for event in bundle.events}
-        graph_refs = {node.reference for node in graph.nodes}
-        if bundle_refs != graph_refs:
+        bundle_events = {
+            EventReference(event.event_id, event.source_reference): event for event in bundle.events
+        }
+        graph_events = {node.reference: node.event for node in graph.nodes}
+        graph_refs = set(graph_events)
+        if set(bundle_events) != graph_refs:
             raise ValueError("Conjunto de EventReference diverge entre grafo e bundle.")
-        bundle_event_fingerprints = {
-            EventReference(event.event_id, event.source_reference): event.contract_fingerprint
-            for event in bundle.events
-        }
-        graph_event_fingerprints = {
-            node.reference: node.event.contract_fingerprint for node in graph.nodes
-        }
-        if bundle_event_fingerprints != graph_event_fingerprints:
+        # EventGraphBuilder retains the exact UnifiedEvent objects.  Only copied
+        # or externally constructed graphs need the expensive canonical hash.
+        if any(
+            graph_events[reference] is not event
+            and graph_events[reference].contract_fingerprint != event.contract_fingerprint
+            for reference, event in bundle_events.items()
+        ):
             raise ValueError("Payload canônico dos eventos diverge entre grafo e bundle.")
         if (graph.context.association_scores != bundle.association_scores
                 or graph.context.association_reasons != bundle.association_reasons
@@ -117,16 +120,39 @@ class RCAFeatureExtractorV3:
             self.graph_feature_policy, self.anomaly_policy
         ).extract(graph)
         by_service: dict[str, list[UnifiedEvent]] = defaultdict(list)
+        references_by_service: dict[str, list[EventReference]] = defaultdict(list)
         for event in bundle.events:
             if event.service_name:
                 by_service[event.service_name].append(event)
+        for reference, event in graph_events.items():
+            if event.service_name:
+                references_by_service[event.service_name].append(reference)
         for evidence in bundle.services:
             by_service.setdefault(evidence.identity.service_name, [])
         for node in graph.service_nodes:
             by_service.setdefault(node.service_name, [])
+        expected_pairs = {
+            (edge.source, edge.target) for edge in graph.edges
+            if edge.relation_type is RelationType.BUSINESS_TRANSITION
+        }
+        plausible_raw = defaultdict(set)
+        for edge in graph.edges:
+            if edge.classification not in self.graph_feature_policy.plausible_causal_adjacency:
+                continue
+            plausible_raw[edge.source].add(edge.target)
+            if edge.direction is EdgeDirection.UNDIRECTED:
+                plausible_raw[edge.target].add(edge.source)
+        plausible = {
+            source: tuple(sorted(targets, key=reference_key))
+            for source, targets in plausible_raw.items() if targets
+        }
+        instrumented = {event.service_name for event in bundle.events if event.service_name}
         return tuple(
             self._service(bundle, service, sorted(events, key=lambda e: (e.event_timestamp, e.event_id, e.source_reference or "")),
-                          graph, graph_features.get(service), baselines, pruning, normalized_topology)
+                          graph, graph_features.get(service), baselines, pruning,
+                          normalized_topology, expected_pairs, graph_refs, plausible,
+                          graph_events, instrumented,
+                          set(references_by_service.get(service, ())))
             for service, events in sorted(by_service.items())
         )
 
@@ -147,7 +173,9 @@ class RCAFeatureExtractorV3:
                 result[target].add(source)
         return {key: frozenset(value) for key, value in result.items()}
 
-    def _service(self, bundle, service, events, graph, gf, baselines, pruning, topology):
+    def _service(self, bundle, service, events, graph, gf, baselines, pruning, topology,
+                 expected_pairs, known_references, plausible, graph_events,
+                 instrumented, service_refs):
         traces = [event for event in events if event.signal_type is SignalType.TRACE]
         logs = [event for event in events if event.signal_type is SignalType.LOG]
         metrics = [event for event in events if event.signal_type is SignalType.METRIC]
@@ -187,11 +215,6 @@ class RCAFeatureExtractorV3:
         known = baselines.known_templates(service) if baselines else None
         outcomes = [(event.business_outcome or "").lower() for event in business]
         success_times = [event.event_timestamp for event in business if (event.business_outcome or "").lower() in SUCCESSES]
-        expected_pairs = {
-            (edge.source, edge.target) for edge in graph.edges
-            if edge.relation_type is RelationType.BUSINESS_TRANSITION
-        }
-        known_references = {node.reference for node in graph.nodes}
         entities: dict[tuple[str, str], list[UnifiedEvent]] = defaultdict(list)
         for event in business:
             if event.business_entity_type and event.business_entity_id:
@@ -217,13 +240,8 @@ class RCAFeatureExtractorV3:
                 or (baseline is not None and abs(baseline.zscore(value)) >= 3)
                 for event, value in samples
             )
-        instrumented = {name for name, items in ((e.service_name, e) for e in bundle.events) if name}
         neighbors = topology.get(service, frozenset()) if topology is not None else None
         absent_neighbors = neighbors - instrumented if neighbors is not None else None
-        plausible = GraphPathExtractor(graph).adjacency(
-            classifications=self.graph_feature_policy.plausible_causal_adjacency
-        )
-        service_refs = {node.reference for node in graph.nodes if node.event.service_name == service}
         reachable, pending = set(), list(service_refs)
         while pending:
             source = pending.pop()
@@ -231,7 +249,6 @@ class RCAFeatureExtractorV3:
                 if target not in reachable and target not in service_refs:
                     reachable.add(target)
                     pending.append(target)
-        graph_events = {node.reference: node.event for node in graph.nodes}
         failed_trace_descendants = sum(
             graph_events[reference].signal_type is SignalType.TRACE
             and self.anomaly_policy.is_anomalous(graph_events[reference])
