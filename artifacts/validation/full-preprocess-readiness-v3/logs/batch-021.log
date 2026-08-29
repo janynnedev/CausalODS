@@ -1,0 +1,34 @@
+
+COMMAND:
+/usr/bin/time -v /home/janynne/projects/CausalODS/correlation-engine/.venv/bin/python -m experiments.rcaeval_official_v3 materialize --root datasets/RCAEval-data --output /home/janynne/projects/CausalODS/artifacts/validation/rcaeval-train-cache-batches-v3/batch-021 --cache /home/janynne/mnt/rcaeval-official-v3 --resume --incident-id rcaeval:re3tt_ts-route-service_f1_1 --incident-id rcaeval:re3tt_ts-route-service_f4_1 --incident-id rcaeval:re3tt_ts-route-service_f3_2 --incident-id rcaeval:re3tt_ts-route-service_f2_1 --incident-id rcaeval:re3tt_ts-route-service_f2_3 --incident-id rcaeval:re3tt_ts-route-service_f1_3
+
+[001/006] RE3 TT re3tt_ts-route-service_f1_1 modalities=log,metric,trace events=791384 usable=true elapsed=320.8s percent=16.7 eta=1604.2s rss=330014720 peak_rss=330014720 cache_hits=0 cache_misses=1
+[002/006] RE3 TT re3tt_ts-route-service_f1_3 modalities=log,metric,trace events=809910 usable=true elapsed=647.8s percent=33.3 eta=1295.6s rss=331411456 peak_rss=331411456 cache_hits=0 cache_misses=2
+[003/006] RE3 TT re3tt_ts-route-service_f2_1 modalities=log,metric,trace events=805694 usable=true elapsed=970.1s percent=50.0 eta=970.1s rss=334311424 peak_rss=334311424 cache_hits=0 cache_misses=3
+[004/006] RE3 TT re3tt_ts-route-service_f2_3 modalities=log,metric,trace events=808566 usable=true elapsed=1294.6s percent=66.7 eta=647.3s rss=334311424 peak_rss=334311424 cache_hits=0 cache_misses=4
+[005/006] RE3 TT re3tt_ts-route-service_f3_2 modalities=log,metric,trace events=802760 usable=true elapsed=1616.8s percent=83.3 eta=323.4s rss=334311424 peak_rss=334311424 cache_hits=0 cache_misses=5
+[006/006] RE3 TT re3tt_ts-route-service_f4_1 modalities=log,metric,trace events=795985 usable=true elapsed=1936.2s percent=100.0 eta=0.0s rss=334311424 peak_rss=334311424 cache_hits=0 cache_misses=6
+{"cache_hits":0,"cache_misses":6,"coordinator_peak_rss_bytes":334311424,"elapsed_seconds":1936.3194477210054,"errors":0,"free_disk_after":11549237248,"free_disk_before":11831263232,"global_schema_computations":1,"global_schema_sha256":"513d65b8d761396ecb2705df50292c05aa509079e66a43546ba978c735522a62","heavy_recomputations":6,"manifest_usable_for_benchmark":6,"max_worker_peak_rss_bytes":1646878720,"mode":"targeted","peak_rss":334311424,"planned":6,"processed":6,"requested_incidents":["rcaeval:re3tt_ts-route-service_f1_1","rcaeval:re3tt_ts-route-service_f4_1","rcaeval:re3tt_ts-route-service_f3_2","rcaeval:re3tt_ts-route-service_f2_1","rcaeval:re3tt_ts-route-service_f2_3","rcaeval:re3tt_ts-route-service_f1_3"],"selected_incidents":["rcaeval:re3tt_ts-route-service_f1_1","rcaeval:re3tt_ts-route-service_f1_3","rcaeval:re3tt_ts-route-service_f2_1","rcaeval:re3tt_ts-route-service_f2_3","rcaeval:re3tt_ts-route-service_f3_2","rcaeval:re3tt_ts-route-service_f4_1"],"unusable":0,"usable_for_benchmark":6,"valid":6,"version":"rcaeval-official-hf-materializer-v3"}
+	Command being timed: "/home/janynne/projects/CausalODS/correlation-engine/.venv/bin/python -m experiments.rcaeval_official_v3 materialize --root datasets/RCAEval-data --output /home/janynne/projects/CausalODS/artifacts/validation/rcaeval-train-cache-batches-v3/batch-021 --cache /home/janynne/mnt/rcaeval-official-v3 --resume --incident-id rcaeval:re3tt_ts-route-service_f1_1 --incident-id rcaeval:re3tt_ts-route-service_f4_1 --incident-id rcaeval:re3tt_ts-route-service_f3_2 --incident-id rcaeval:re3tt_ts-route-service_f2_1 --incident-id rcaeval:re3tt_ts-route-service_f2_3 --incident-id rcaeval:re3tt_ts-route-service_f1_3"
+	User time (seconds): 1922.23
+	System time (seconds): 24.41
+	Percent of CPU this job got: 100%
+	Elapsed (wall clock) time (h:mm:ss or m:ss): 32:18.40
+	Average shared text size (kbytes): 0
+	Average unshared data size (kbytes): 0
+	Average stack size (kbytes): 0
+	Average total size (kbytes): 0
+	Maximum resident set size (kbytes): 1608280
+	Average resident set size (kbytes): 0
+	Major (requiring I/O) page faults: 0
+	Minor (reclaiming a frame) page faults: 7418318
+	Voluntary context switches: 1414
+	Involuntary context switches: 48912
+	Swaps: 0
+	File system inputs: 79520
+	File system outputs: 1273032
+	Socket messages sent: 0
+	Socket messages received: 0
+	Signals delivered: 0
+	Page size (bytes): 4096
+	Exit status: 0

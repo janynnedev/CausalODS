@@ -1,0 +1,30 @@
+
+COMMAND:
+/usr/bin/time -v /home/janynne/projects/CausalODS/correlation-engine/.venv/bin/python -m experiments.rcaeval_official_v3 materialize --root datasets/RCAEval-data --output /home/janynne/projects/CausalODS/artifacts/validation/rcaeval-train-cache-batches-v3/batch-032 --cache /home/janynne/mnt/rcaeval-official-v3 --resume --incident-id rcaeval:re2tt_ts-order-service_cpu_3 --incident-id rcaeval:re2tt_ts-travel-service_disk_1
+
+[001/002] RE2 TT re2tt_ts-order-service_cpu_3 modalities=log,metric,trace events=1651621 usable=true elapsed=701.7s percent=50.0 eta=701.7s rss=343425024 peak_rss=343425024 cache_hits=0 cache_misses=1
+[002/002] RE2 TT re2tt_ts-travel-service_disk_1 modalities=log,metric,trace events=1689947 usable=true elapsed=1418.1s percent=100.0 eta=0.0s rss=349077504 peak_rss=349077504 cache_hits=0 cache_misses=2
+{"cache_hits":0,"cache_misses":2,"coordinator_peak_rss_bytes":349077504,"elapsed_seconds":1418.1603695830272,"errors":0,"free_disk_after":7677550592,"free_disk_before":7908876288,"global_schema_computations":1,"global_schema_sha256":"5a9bcfe8a95497ccbb392a87cf57dc911cbf90f7ebb282cfdcf757eacd337c38","heavy_recomputations":2,"manifest_usable_for_benchmark":2,"max_worker_peak_rss_bytes":3831193600,"mode":"targeted","peak_rss":349077504,"planned":2,"processed":2,"requested_incidents":["rcaeval:re2tt_ts-order-service_cpu_3","rcaeval:re2tt_ts-travel-service_disk_1"],"selected_incidents":["rcaeval:re2tt_ts-order-service_cpu_3","rcaeval:re2tt_ts-travel-service_disk_1"],"unusable":0,"usable_for_benchmark":2,"valid":2,"version":"rcaeval-official-hf-materializer-v3"}
+	Command being timed: "/home/janynne/projects/CausalODS/correlation-engine/.venv/bin/python -m experiments.rcaeval_official_v3 materialize --root datasets/RCAEval-data --output /home/janynne/projects/CausalODS/artifacts/validation/rcaeval-train-cache-batches-v3/batch-032 --cache /home/janynne/mnt/rcaeval-official-v3 --resume --incident-id rcaeval:re2tt_ts-order-service_cpu_3 --incident-id rcaeval:re2tt_ts-travel-service_disk_1"
+	User time (seconds): 1403.23
+	System time (seconds): 18.54
+	Percent of CPU this job got: 100%
+	Elapsed (wall clock) time (h:mm:ss or m:ss): 23:40.65
+	Average shared text size (kbytes): 0
+	Average unshared data size (kbytes): 0
+	Average stack size (kbytes): 0
+	Average total size (kbytes): 0
+	Maximum resident set size (kbytes): 3741400
+	Average resident set size (kbytes): 0
+	Major (requiring I/O) page faults: 0
+	Minor (reclaiming a frame) page faults: 5955883
+	Voluntary context switches: 539
+	Involuntary context switches: 36836
+	Swaps: 0
+	File system inputs: 98808
+	File system outputs: 1004000
+	Socket messages sent: 0
+	Socket messages received: 0
+	Signals delivered: 0
+	Page size (bytes): 4096
+	Exit status: 0

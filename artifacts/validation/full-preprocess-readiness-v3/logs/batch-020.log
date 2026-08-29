@@ -1,0 +1,35 @@
+
+COMMAND:
+/usr/bin/time -v /home/janynne/projects/CausalODS/correlation-engine/.venv/bin/python -m experiments.rcaeval_official_v3 materialize --root datasets/RCAEval-data --output /home/janynne/projects/CausalODS/artifacts/validation/rcaeval-train-cache-batches-v3/batch-020 --cache /home/janynne/mnt/rcaeval-official-v3 --resume --incident-id rcaeval:re2ob_checkoutservice_mem_3 --incident-id rcaeval:re2ob_recommendationservice_disk_3 --incident-id rcaeval:re2ob_emailservice_loss_2 --incident-id rcaeval:re2ob_emailservice_disk_2 --incident-id rcaeval:re2ob_emailservice_cpu_3 --incident-id rcaeval:re2tt_ts-travel-service_socket_1 --incident-id rcaeval:re2tt_ts-travel-service_disk_3
+
+[001/007] RE2 OB re2ob_checkoutservice_mem_3 modalities=log,metric,trace events=695043 usable=true elapsed=295.1s percent=14.3 eta=1770.9s rss=330641408 peak_rss=330641408 cache_hits=0 cache_misses=1
+[002/007] RE2 OB re2ob_emailservice_cpu_3 modalities=log,metric,trace events=700298 usable=true elapsed=590.5s percent=28.6 eta=1476.2s rss=332832768 peak_rss=332832768 cache_hits=0 cache_misses=2
+[003/007] RE2 OB re2ob_emailservice_disk_2 modalities=log,metric,trace events=696186 usable=true elapsed=883.7s percent=42.9 eta=1178.3s rss=333283328 peak_rss=333283328 cache_hits=0 cache_misses=3
+[004/007] RE2 OB re2ob_emailservice_loss_2 modalities=log,metric,trace events=695884 usable=true elapsed=1177.4s percent=57.1 eta=883.0s rss=333283328 peak_rss=333283328 cache_hits=0 cache_misses=4
+[005/007] RE2 OB re2ob_recommendationservice_disk_3 modalities=log,metric,trace events=695159 usable=true elapsed=1471.2s percent=71.4 eta=588.5s rss=333283328 peak_rss=333283328 cache_hits=0 cache_misses=5
+[006/007] RE2 TT re2tt_ts-travel-service_disk_3 modalities=log,metric,trace events=731887 usable=true elapsed=1768.8s percent=85.7 eta=294.8s rss=336314368 peak_rss=336314368 cache_hits=0 cache_misses=6
+[007/007] RE2 TT re2tt_ts-travel-service_socket_1 modalities=log,metric,trace events=730375 usable=true elapsed=2063.2s percent=100.0 eta=0.0s rss=337371136 peak_rss=337371136 cache_hits=0 cache_misses=7
+{"cache_hits":0,"cache_misses":7,"coordinator_peak_rss_bytes":337371136,"elapsed_seconds":2063.3785451589793,"errors":0,"free_disk_after":11831291904,"free_disk_before":12158971904,"global_schema_computations":1,"global_schema_sha256":"bbbb929569485aac4d58c73ff9cabc07fc82f48e6a74486e1874ac9701f8df7e","heavy_recomputations":7,"manifest_usable_for_benchmark":7,"max_worker_peak_rss_bytes":1968054272,"mode":"targeted","peak_rss":337371136,"planned":7,"processed":7,"requested_incidents":["rcaeval:re2ob_checkoutservice_mem_3","rcaeval:re2ob_recommendationservice_disk_3","rcaeval:re2ob_emailservice_loss_2","rcaeval:re2ob_emailservice_disk_2","rcaeval:re2ob_emailservice_cpu_3","rcaeval:re2tt_ts-travel-service_socket_1","rcaeval:re2tt_ts-travel-service_disk_3"],"selected_incidents":["rcaeval:re2ob_checkoutservice_mem_3","rcaeval:re2ob_emailservice_cpu_3","rcaeval:re2ob_emailservice_disk_2","rcaeval:re2ob_emailservice_loss_2","rcaeval:re2ob_recommendationservice_disk_3","rcaeval:re2tt_ts-travel-service_disk_3","rcaeval:re2tt_ts-travel-service_socket_1"],"unusable":0,"usable_for_benchmark":7,"valid":7,"version":"rcaeval-official-hf-materializer-v3"}
+	Command being timed: "/home/janynne/projects/CausalODS/correlation-engine/.venv/bin/python -m experiments.rcaeval_official_v3 materialize --root datasets/RCAEval-data --output /home/janynne/projects/CausalODS/artifacts/validation/rcaeval-train-cache-batches-v3/batch-020 --cache /home/janynne/mnt/rcaeval-official-v3 --resume --incident-id rcaeval:re2ob_checkoutservice_mem_3 --incident-id rcaeval:re2ob_recommendationservice_disk_3 --incident-id rcaeval:re2ob_emailservice_loss_2 --incident-id rcaeval:re2ob_emailservice_disk_2 --incident-id rcaeval:re2ob_emailservice_cpu_3 --incident-id rcaeval:re2tt_ts-travel-service_socket_1 --incident-id rcaeval:re2tt_ts-travel-service_disk_3"
+	User time (seconds): 2048.25
+	System time (seconds): 26.58
+	Percent of CPU this job got: 100%
+	Elapsed (wall clock) time (h:mm:ss or m:ss): 34:25.47
+	Average shared text size (kbytes): 0
+	Average unshared data size (kbytes): 0
+	Average stack size (kbytes): 0
+	Average total size (kbytes): 0
+	Maximum resident set size (kbytes): 1921928
+	Average resident set size (kbytes): 0
+	Major (requiring I/O) page faults: 0
+	Minor (reclaiming a frame) page faults: 8178936
+	Voluntary context switches: 1637
+	Involuntary context switches: 58061
+	Swaps: 0
+	File system inputs: 129344
+	File system outputs: 1338872
+	Socket messages sent: 0
+	Socket messages received: 0
+	Signals delivered: 0
+	Page size (bytes): 4096
+	Exit status: 0

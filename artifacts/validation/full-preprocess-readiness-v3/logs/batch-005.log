@@ -1,0 +1,53 @@
+
+COMMAND:
+/usr/bin/time -v /home/janynne/projects/CausalODS/correlation-engine/.venv/bin/python -m experiments.rcaeval_official_v3 materialize --root datasets/RCAEval-data --output /home/janynne/projects/CausalODS/artifacts/validation/rcaeval-train-cache-batches-v3/batch-005 --cache /home/janynne/mnt/rcaeval-official-v3 --resume --incident-id rcaeval:re2ss_catalogue_mem_3 --incident-id rcaeval:re2ss_carts_socket_2 --incident-id rcaeval:re2ss_catalogue_mem_2 --incident-id rcaeval:re1tt_ts-train-service_delay_5 --incident-id rcaeval:re2ss_user_disk_1 --incident-id rcaeval:re2ss_orders_loss_2 --incident-id rcaeval:re2ss_payment_mem_2 --incident-id rcaeval:re2ss_orders_socket_3 --incident-id rcaeval:re2ss_user_cpu_3 --incident-id rcaeval:re2ss_orders_socket_2 --incident-id rcaeval:re2ss_payment_cpu_3 --incident-id rcaeval:re2ss_payment_mem_1 --incident-id rcaeval:re2ss_payment_mem_3 --incident-id rcaeval:re2ss_orders_cpu_2 --incident-id rcaeval:re2ss_catalogue_mem_1 --incident-id rcaeval:re2ss_orders_mem_2 --incident-id rcaeval:re2ss_carts_disk_1 --incident-id rcaeval:re2ss_orders_cpu_3 --incident-id rcaeval:re2ss_payment_cpu_1 --incident-id rcaeval:re3ss_orders_f3_1 --incident-id rcaeval:re2ss_user_mem_1 --incident-id rcaeval:re3ss_orders_f3_2 --incident-id rcaeval:re2ss_payment_loss_3 --incident-id rcaeval:re2ss_carts_mem_2 --incident-id rcaeval:re2ss_orders_mem_1
+
+[001/025] RE1 TT re1tt_ts-train-service_delay_5 modalities=metric events=193636 usable=true elapsed=75.5s percent=4.0 eta=1812.2s rss=314892288 peak_rss=314892288 cache_hits=0 cache_misses=1
+[002/025] RE2 SS re2ss_carts_disk_1 modalities=log,metric events=196033 usable=true elapsed=154.6s percent=8.0 eta=1777.6s rss=320581632 peak_rss=320581632 cache_hits=0 cache_misses=2
+[003/025] RE2 SS re2ss_carts_mem_2 modalities=log,metric events=196907 usable=true elapsed=235.3s percent=12.0 eta=1725.6s rss=324132864 peak_rss=324132864 cache_hits=0 cache_misses=3
+[004/025] RE2 SS re2ss_carts_socket_2 modalities=log,metric events=192913 usable=true elapsed=311.6s percent=16.0 eta=1635.7s rss=324132864 peak_rss=324132864 cache_hits=0 cache_misses=4
+[005/025] RE2 SS re2ss_catalogue_mem_1 modalities=log,metric events=195878 usable=true elapsed=389.3s percent=20.0 eta=1557.4s rss=324132864 peak_rss=324132864 cache_hits=0 cache_misses=5
+[006/025] RE2 SS re2ss_catalogue_mem_2 modalities=log,metric events=193038 usable=true elapsed=467.8s percent=24.0 eta=1481.2s rss=324726784 peak_rss=324726784 cache_hits=0 cache_misses=6
+[007/025] RE2 SS re2ss_catalogue_mem_3 modalities=log,metric events=192567 usable=true elapsed=546.6s percent=28.0 eta=1405.5s rss=326799360 peak_rss=326799360 cache_hits=0 cache_misses=7
+[008/025] RE2 SS re2ss_orders_cpu_2 modalities=log,metric events=195785 usable=true elapsed=625.6s percent=32.0 eta=1329.5s rss=326799360 peak_rss=326799360 cache_hits=0 cache_misses=8
+[009/025] RE2 SS re2ss_orders_cpu_3 modalities=log,metric events=196162 usable=true elapsed=703.6s percent=36.0 eta=1250.8s rss=331051008 peak_rss=331051008 cache_hits=0 cache_misses=9
+[010/025] RE2 SS re2ss_orders_loss_2 modalities=log,metric events=193984 usable=true elapsed=783.4s percent=40.0 eta=1175.1s rss=332173312 peak_rss=332173312 cache_hits=0 cache_misses=10
+[011/025] RE2 SS re2ss_orders_mem_1 modalities=log,metric events=197177 usable=true elapsed=862.9s percent=44.0 eta=1098.3s rss=332173312 peak_rss=332173312 cache_hits=0 cache_misses=11
+[012/025] RE2 SS re2ss_orders_mem_2 modalities=log,metric events=195996 usable=true elapsed=939.4s percent=48.0 eta=1017.7s rss=332173312 peak_rss=332173312 cache_hits=0 cache_misses=12
+[013/025] RE2 SS re2ss_orders_socket_2 modalities=log,metric events=194693 usable=true elapsed=1018.1s percent=52.0 eta=939.8s rss=332173312 peak_rss=332173312 cache_hits=0 cache_misses=13
+[014/025] RE2 SS re2ss_orders_socket_3 modalities=log,metric events=194199 usable=true elapsed=1096.1s percent=56.0 eta=861.2s rss=332173312 peak_rss=332173312 cache_hits=0 cache_misses=14
+[015/025] RE2 SS re2ss_payment_cpu_1 modalities=log,metric events=196232 usable=true elapsed=1175.5s percent=60.0 eta=783.7s rss=332173312 peak_rss=332173312 cache_hits=0 cache_misses=15
+[016/025] RE2 SS re2ss_payment_cpu_3 modalities=log,metric events=194812 usable=true elapsed=1252.5s percent=64.0 eta=704.5s rss=332173312 peak_rss=332173312 cache_hits=0 cache_misses=16
+[017/025] RE2 SS re2ss_payment_loss_3 modalities=log,metric events=196755 usable=true elapsed=1334.4s percent=68.0 eta=628.0s rss=332173312 peak_rss=332173312 cache_hits=0 cache_misses=17
+[018/025] RE2 SS re2ss_payment_mem_1 modalities=log,metric events=194917 usable=true elapsed=1414.4s percent=72.0 eta=550.1s rss=332173312 peak_rss=332173312 cache_hits=0 cache_misses=18
+[019/025] RE2 SS re2ss_payment_mem_2 modalities=log,metric events=194163 usable=true elapsed=1490.2s percent=76.0 eta=470.6s rss=332173312 peak_rss=332173312 cache_hits=0 cache_misses=19
+[020/025] RE2 SS re2ss_payment_mem_3 modalities=log,metric events=195108 usable=true elapsed=1567.7s percent=80.0 eta=391.9s rss=332173312 peak_rss=332173312 cache_hits=0 cache_misses=20
+[021/025] RE2 SS re2ss_user_cpu_3 modalities=log,metric events=194213 usable=true elapsed=1645.2s percent=84.0 eta=313.4s rss=332173312 peak_rss=332173312 cache_hits=0 cache_misses=21
+[022/025] RE2 SS re2ss_user_disk_1 modalities=log,metric events=193944 usable=true elapsed=1724.0s percent=88.0 eta=235.1s rss=334958592 peak_rss=334958592 cache_hits=0 cache_misses=22
+[023/025] RE2 SS re2ss_user_mem_1 modalities=log,metric events=196452 usable=true elapsed=1802.4s percent=92.0 eta=156.7s rss=334958592 peak_rss=334958592 cache_hits=0 cache_misses=23
+[024/025] RE3 SS re3ss_orders_f3_1 modalities=log,metric events=196233 usable=true elapsed=1879.1s percent=96.0 eta=78.3s rss=334958592 peak_rss=334958592 cache_hits=0 cache_misses=24
+[025/025] RE3 SS re3ss_orders_f3_2 modalities=log,metric events=196514 usable=true elapsed=1958.8s percent=100.0 eta=0.0s rss=334958592 peak_rss=334958592 cache_hits=0 cache_misses=25
+{"cache_hits":0,"cache_misses":25,"coordinator_peak_rss_bytes":334958592,"elapsed_seconds":1959.1126463710098,"errors":0,"free_disk_after":16147574784,"free_disk_before":16424177664,"global_schema_computations":1,"global_schema_sha256":"1122a8ae5bb1c2907305ebf35bf2a0f8f69937d105624599d4e7f5f27c006c92","heavy_recomputations":25,"manifest_usable_for_benchmark":25,"max_worker_peak_rss_bytes":721412096,"mode":"targeted","peak_rss":334958592,"planned":25,"processed":25,"requested_incidents":["rcaeval:re2ss_catalogue_mem_3","rcaeval:re2ss_carts_socket_2","rcaeval:re2ss_catalogue_mem_2","rcaeval:re1tt_ts-train-service_delay_5","rcaeval:re2ss_user_disk_1","rcaeval:re2ss_orders_loss_2","rcaeval:re2ss_payment_mem_2","rcaeval:re2ss_orders_socket_3","rcaeval:re2ss_user_cpu_3","rcaeval:re2ss_orders_socket_2","rcaeval:re2ss_payment_cpu_3","rcaeval:re2ss_payment_mem_1","rcaeval:re2ss_payment_mem_3","rcaeval:re2ss_orders_cpu_2","rcaeval:re2ss_catalogue_mem_1","rcaeval:re2ss_orders_mem_2","rcaeval:re2ss_carts_disk_1","rcaeval:re2ss_orders_cpu_3","rcaeval:re2ss_payment_cpu_1","rcaeval:re3ss_orders_f3_1","rcaeval:re2ss_user_mem_1","rcaeval:re3ss_orders_f3_2","rcaeval:re2ss_payment_loss_3","rcaeval:re2ss_carts_mem_2","rcaeval:re2ss_orders_mem_1"],"selected_incidents":["rcaeval:re1tt_ts-train-service_delay_5","rcaeval:re2ss_carts_disk_1","rcaeval:re2ss_carts_mem_2","rcaeval:re2ss_carts_socket_2","rcaeval:re2ss_catalogue_mem_1","rcaeval:re2ss_catalogue_mem_2","rcaeval:re2ss_catalogue_mem_3","rcaeval:re2ss_orders_cpu_2","rcaeval:re2ss_orders_cpu_3","rcaeval:re2ss_orders_loss_2","rcaeval:re2ss_orders_mem_1","rcaeval:re2ss_orders_mem_2","rcaeval:re2ss_orders_socket_2","rcaeval:re2ss_orders_socket_3","rcaeval:re2ss_payment_cpu_1","rcaeval:re2ss_payment_cpu_3","rcaeval:re2ss_payment_loss_3","rcaeval:re2ss_payment_mem_1","rcaeval:re2ss_payment_mem_2","rcaeval:re2ss_payment_mem_3","rcaeval:re2ss_user_cpu_3","rcaeval:re2ss_user_disk_1","rcaeval:re2ss_user_mem_1","rcaeval:re3ss_orders_f3_1","rcaeval:re3ss_orders_f3_2"],"unusable":0,"usable_for_benchmark":25,"valid":25,"version":"rcaeval-official-hf-materializer-v3"}
+	Command being timed: "/home/janynne/projects/CausalODS/correlation-engine/.venv/bin/python -m experiments.rcaeval_official_v3 materialize --root datasets/RCAEval-data --output /home/janynne/projects/CausalODS/artifacts/validation/rcaeval-train-cache-batches-v3/batch-005 --cache /home/janynne/mnt/rcaeval-official-v3 --resume --incident-id rcaeval:re2ss_catalogue_mem_3 --incident-id rcaeval:re2ss_carts_socket_2 --incident-id rcaeval:re2ss_catalogue_mem_2 --incident-id rcaeval:re1tt_ts-train-service_delay_5 --incident-id rcaeval:re2ss_user_disk_1 --incident-id rcaeval:re2ss_orders_loss_2 --incident-id rcaeval:re2ss_payment_mem_2 --incident-id rcaeval:re2ss_orders_socket_3 --incident-id rcaeval:re2ss_user_cpu_3 --incident-id rcaeval:re2ss_orders_socket_2 --incident-id rcaeval:re2ss_payment_cpu_3 --incident-id rcaeval:re2ss_payment_mem_1 --incident-id rcaeval:re2ss_payment_mem_3 --incident-id rcaeval:re2ss_orders_cpu_2 --incident-id rcaeval:re2ss_catalogue_mem_1 --incident-id rcaeval:re2ss_orders_mem_2 --incident-id rcaeval:re2ss_carts_disk_1 --incident-id rcaeval:re2ss_orders_cpu_3 --incident-id rcaeval:re2ss_payment_cpu_1 --incident-id rcaeval:re3ss_orders_f3_1 --incident-id rcaeval:re2ss_user_mem_1 --incident-id rcaeval:re3ss_orders_f3_2 --incident-id rcaeval:re2ss_payment_loss_3 --incident-id rcaeval:re2ss_carts_mem_2 --incident-id rcaeval:re2ss_orders_mem_1"
+	User time (seconds): 1959.04
+	System time (seconds): 25.88
+	Percent of CPU this job got: 101%
+	Elapsed (wall clock) time (h:mm:ss or m:ss): 32:41.22
+	Average shared text size (kbytes): 0
+	Average unshared data size (kbytes): 0
+	Average stack size (kbytes): 0
+	Average total size (kbytes): 0
+	Maximum resident set size (kbytes): 704504
+	Average resident set size (kbytes): 0
+	Major (requiring I/O) page faults: 0
+	Minor (reclaiming a frame) page faults: 7277865
+	Voluntary context switches: 3073
+	Involuntary context switches: 62820
+	Swaps: 0
+	File system inputs: 54656
+	File system outputs: 1255568
+	Socket messages sent: 0
+	Socket messages received: 0
+	Signals delivered: 0
+	Page size (bytes): 4096
+	Exit status: 0

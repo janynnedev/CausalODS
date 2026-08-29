@@ -202,11 +202,22 @@ class EventGraphBuilder:
         service_nodes = self._service_nodes(ordered) if self.include_service_nodes else ()
         if profile is not None:
             profile["service_graph_nodes_seconds"] = time.perf_counter() - stage_started
+        compact_scores = bool(getattr(
+            bundle.association_scores,
+            "_causalods_immutable_frozen_boundary", False,
+        ))
         graph_context = IncidentGraphContext(
             bundle.incident_id, bundle.workflow_key, bundle.lifecycle_generation,
-            bundle.association_scores, bundle.association_reasons, bundle.identity_evidence,
+            {} if compact_scores else bundle.association_scores,
+            bundle.association_reasons, bundle.identity_evidence,
             bundle.external_identity_evidence, bundle.provenance, bundle.late_events,
         )
+        if compact_scores:
+            # The experimental frozen boundary is already immutable.  Avoid a
+            # defensive multi-million-entry dict that would duplicate the
+            # reference_pool at the graph's peak allocation phase.
+            object.__setattr__(graph_context, "association_scores",
+                               bundle.association_scores)
         # Materialize the final immutable edge sequence before contract
         # validation, then release the mutable rule indexes.  Keeping both the
         # edge dictionary and every RuleContext index alive through

@@ -70,3 +70,32 @@ def test_runner_failure_report_preserves_preprocess_stderr(tmp_path, capsys):
     assert report == {"status": "FAIL", "stage": "preprocess", "returncode": 1,
                       "stdout": "partial", "stderr": "PREPROCESS_SENTINEL"}
     assert "PREPROCESS_SENTINEL" in capsys.readouterr().out
+
+
+def test_scientific_work_inventory_excludes_worker_specs_and_strange_json(tmp_path):
+    incidents = tmp_path / "incidents"
+    contributions = tmp_path / "baseline" / "contributions"
+    incidents.mkdir(parents=True)
+    contributions.mkdir(parents=True)
+    incident = {"schema_version": "scientific-preprocessing-incident-checkpoint-v1",
+                "status": "COMPLETED"}
+    contribution = {
+        "schema_version": "scientific-preprocessing-baseline-contribution-v1",
+        "status": "COMPLETED",
+    }
+    for name in ("a", "b"):
+        (incidents / f"{name}.json").write_text(json.dumps({**incident, "incident_id": name}))
+        (incidents / f"{name}.worker.json").write_text(json.dumps({"incident_id": name}))
+    (incidents / "strange.json").write_text(json.dumps({"status": "COMPLETED"}))
+    (incidents / "invalid.json").write_text("not-json")
+    (contributions / "x.json").write_text(
+        json.dumps({**contribution, "incident_id": "x"}))
+    (contributions / "x.worker.json").write_text(json.dumps({"incident_id": "x"}))
+    (contributions / "strange.json").write_text(json.dumps({
+        "schema_version": "unrelated", "status": "COMPLETED"}))
+
+    inventory = runner._scientific_work_inventory(tmp_path)
+    assert [item["incident_id"] for item in inventory["checkpoints"]] == ["a", "b"]
+    assert [item["incident_id"] for item in inventory["contributions"]] == ["x"]
+    assert inventory["incident_worker_spec_count"] == 2
+    assert inventory["baseline_worker_spec_count"] == 1

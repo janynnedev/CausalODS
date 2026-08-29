@@ -1,0 +1,30 @@
+
+COMMAND:
+/usr/bin/time -v /home/janynne/projects/CausalODS/correlation-engine/.venv/bin/python -m experiments.rcaeval_official_v3 materialize --root datasets/RCAEval-data --output /home/janynne/projects/CausalODS/artifacts/validation/rcaeval-train-cache-batches-v3/batch-036 --cache /home/janynne/mnt/rcaeval-official-v3 --resume --incident-id rcaeval:re2tt_ts-travel-service_loss_3 --incident-id rcaeval:re2tt_ts-train-service_cpu_1
+
+[001/002] RE2 TT re2tt_ts-train-service_cpu_1 modalities=log,metric,trace events=1856323 usable=true elapsed=790.7s percent=50.0 eta=790.7s rss=350871552 peak_rss=350871552 cache_hits=0 cache_misses=1
+[002/002] RE2 TT re2tt_ts-travel-service_loss_3 modalities=log,metric,trace events=1847496 usable=true elapsed=1572.9s percent=100.0 eta=0.0s rss=353759232 peak_rss=353759232 cache_hits=0 cache_misses=2
+{"cache_hits":0,"cache_misses":2,"coordinator_peak_rss_bytes":353759232,"elapsed_seconds":1572.950299432996,"errors":0,"free_disk_after":6714720256,"free_disk_before":6978117632,"global_schema_computations":1,"global_schema_sha256":"032f8a6e3e700cb0a145d1a8ea6711238f9af7bc7ac8ee3569723f0c8590678d","heavy_recomputations":2,"manifest_usable_for_benchmark":2,"max_worker_peak_rss_bytes":4411187200,"mode":"targeted","peak_rss":353759232,"planned":2,"processed":2,"requested_incidents":["rcaeval:re2tt_ts-travel-service_loss_3","rcaeval:re2tt_ts-train-service_cpu_1"],"selected_incidents":["rcaeval:re2tt_ts-train-service_cpu_1","rcaeval:re2tt_ts-travel-service_loss_3"],"unusable":0,"usable_for_benchmark":2,"valid":2,"version":"rcaeval-official-hf-materializer-v3"}
+	Command being timed: "/home/janynne/projects/CausalODS/correlation-engine/.venv/bin/python -m experiments.rcaeval_official_v3 materialize --root datasets/RCAEval-data --output /home/janynne/projects/CausalODS/artifacts/validation/rcaeval-train-cache-batches-v3/batch-036 --cache /home/janynne/mnt/rcaeval-official-v3 --resume --incident-id rcaeval:re2tt_ts-travel-service_loss_3 --incident-id rcaeval:re2tt_ts-train-service_cpu_1"
+	User time (seconds): 1555.10
+	System time (seconds): 20.49
+	Percent of CPU this job got: 100%
+	Elapsed (wall clock) time (h:mm:ss or m:ss): 26:15.05
+	Average shared text size (kbytes): 0
+	Average unshared data size (kbytes): 0
+	Average stack size (kbytes): 0
+	Average total size (kbytes): 0
+	Maximum resident set size (kbytes): 4307800
+	Average resident set size (kbytes): 0
+	Major (requiring I/O) page faults: 0
+	Minor (reclaiming a frame) page faults: 6707547
+	Voluntary context switches: 628
+	Involuntary context switches: 41148
+	Swaps: 0
+	File system inputs: 114016
+	File system outputs: 1124912
+	Socket messages sent: 0
+	Socket messages received: 0
+	Signals delivered: 0
+	Page size (bytes): 4096
+	Exit status: 0

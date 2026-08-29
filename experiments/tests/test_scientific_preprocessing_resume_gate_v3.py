@@ -13,8 +13,11 @@ import sys
 import time
 import uuid
 
+import pytest
+
 from multimodal_v1.benchmark_v3 import BenchmarkDataset
-from experiments.final_campaigns_v3.core import sha256_value
+from experiments.final_campaigns_v3.core import FrozenDatasetRegistry, sha256_value
+import experiments.final_campaigns_v3.preprocessing as preprocessing
 from experiments.final_campaigns_v3.preprocessing import _incident_scientific_payload
 
 
@@ -447,6 +450,92 @@ def test_baseline_worker_failure_preserves_diagnostic_and_resumes(tmp_path):
         assert resumed.returncode == 0, resumed.stderr
         assert _last_json(resumed.stdout)["status"] == "PASS"
         assert json.loads(state_path.read_text())["status"] == "COMPLETED"
+    finally:
+        fixture.close()
+
+
+def test_heavy_resource_gate_reuses_incident_worker_isolated_and_resumes(tmp_path, monkeypatch):
+    fixture = _fixture(tmp_path); registry_path, configs, spec = next(fixture)
+    baseline_output = registry_path.parent / "outputs" / "reference"
+    resource_output = registry_path.parent / "outputs" / "resource-gate"
+    failed_output = registry_path.parent / "outputs" / "resource-gate-failure"
+    incident_id = "fixture-3"
+    try:
+        prepared = _cli("prepare-baseline", registry_path, configs, spec,
+                        baseline_output, incident_id)
+        assert prepared.returncode == 0, prepared.stderr
+        reference = next((baseline_output / "work").glob("*/baseline/snapshot.json"))
+        registry = FrozenDatasetRegistry.load(registry_path, ROOT)
+        loader = preprocessing.FrozenEvidenceLoader(registry, rcaeval_cache=None)
+        source = loader.sources[incident_id]
+        manifest = json.loads(source.manifest_path.read_text())
+        manifest["normalized_events_sha256"] = "d" * 64
+        source.manifest_path.write_text(json.dumps(manifest))
+        monkeypatch.setattr(preprocessing, "validate_rcaeval_runtime", lambda **_kwargs: {
+            "status": "PASS", "event_count": 6,
+        })
+
+        first = preprocessing.run_heavy_resource_gate(
+            registry=registry, config_dir=configs, model_specification=spec,
+            rcaeval_cache=registry_path.parent / "fake-cache",
+            incident_id=incident_id, reference_baseline=reference,
+            output=resource_output)
+        assert first["status"] == "PASS"
+        assert first["resource_gate_only"] is True
+        assert first["scientific_eligibility"] is False
+        assert first["resource_gate_baseline_is_scientific_binding"] is False
+        assert first["worker_returncode"] == 0 and first["signal"] is None
+        assert first["worker_peak_rss_kb"] > 0 and first["worker_elapsed_seconds"] > 0
+        checkpoint = Path(first["checkpoint"])
+        checkpoint_hash = _sha(checkpoint)
+        scientific_bindings = preprocessing._checkpoint_bindings(
+            base_key="full-scientific-base", incident_id=incident_id,
+            source=preprocessing.FrozenEvidenceLoader(registry, rcaeval_cache=None).sources[incident_id],
+            baseline_sha256=first["resource_gate_baseline_sha256"],
+            split_key="full-scientific-split")
+        assert preprocessing._load_valid_incident_checkpoint(
+            checkpoint, scientific_bindings) is None
+
+        resumed = preprocessing.run_heavy_resource_gate(
+            registry=registry, config_dir=configs, model_specification=spec,
+            rcaeval_cache=registry_path.parent / "fake-cache",
+            incident_id=incident_id, reference_baseline=reference,
+            output=resource_output, resume=True)
+        assert resumed["checkpoint_status"] == "HIT"
+        assert _sha(checkpoint) == checkpoint_hash
+
+        monkeypatch.setenv("CAUSALODS_TEST_FAIL_INCIDENT_WORKER", incident_id)
+        failed = preprocessing.run_heavy_resource_gate(
+            registry=registry, config_dir=configs, model_specification=spec,
+            rcaeval_cache=registry_path.parent / "fake-cache",
+            incident_id=incident_id, reference_baseline=reference,
+            output=failed_output)
+        assert failed["status"] == "FAILED_WORKER"
+        assert failed["worker_returncode"] != 0
+        assert "TEST_INCIDENT_WORKER_FAILURE" in failed["stderr"]
+        monkeypatch.delenv("CAUSALODS_TEST_FAIL_INCIDENT_WORKER")
+        recovered = preprocessing.run_heavy_resource_gate(
+            registry=registry, config_dir=configs, model_specification=spec,
+            rcaeval_cache=registry_path.parent / "fake-cache",
+            incident_id=incident_id, reference_baseline=reference,
+            output=failed_output, resume=True)
+        assert recovered["status"] == "PASS" and recovered["checkpoint_status"] == "MISS"
+
+        with pytest.raises(FileNotFoundError, match="REFERENCE_BASELINE_NOT_FOUND"):
+            preprocessing.run_heavy_resource_gate(
+                registry=registry, config_dir=configs, model_specification=spec,
+                rcaeval_cache=registry_path.parent / "fake-cache",
+                incident_id=incident_id, reference_baseline=reference.parent / "missing.json",
+                output=registry_path.parent / "outputs" / "missing-baseline")
+        monkeypatch.setattr(preprocessing, "validate_rcaeval_runtime", lambda **_kwargs: {
+            "status": "FAIL", "reason": "RCAEVAL_CACHE_ENTRY_NOT_AVAILABLE",
+        })
+        with pytest.raises(RuntimeError, match="HEAVY_RESOURCE_GATE_CACHE_PREFLIGHT_FAIL"):
+            preprocessing.run_heavy_resource_gate(
+                registry=registry, config_dir=configs, model_specification=spec,
+                rcaeval_cache=registry_path.parent / "missing-cache",
+                incident_id=incident_id, reference_baseline=reference,
+                output=registry_path.parent / "outputs" / "missing-cache")
     finally:
         fixture.close()
 

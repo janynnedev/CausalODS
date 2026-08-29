@@ -82,6 +82,10 @@ CATALOG_COLUMNS = (
     "duration_minutes", "normal_timesteps", "faulty_timesteps", "has_logs",
     "n_logs", "has_traces", "n_traces", "has_root_cause_file",
 )
+AGGREGATE_FILES = (
+    "INDEX.json", "capabilities.json", "SOURCE.json",
+    "dataset-schema-report.json", "materialization-report.json", "SHA256SUMS",
+)
 
 
 def classify_incident_integrity(
@@ -149,6 +153,22 @@ def _atomic_json(path: Path, payload: Any) -> None:
         ) as stream:
             temporary = Path(stream.name)
             stream.write(canonical_json(payload))
+            stream.flush()
+            os.fsync(stream.fileno())
+        os.replace(temporary, path)
+    finally:
+        if temporary is not None and temporary.exists():
+            temporary.unlink()
+
+
+def _atomic_bytes(path: Path, payload: bytes) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    temporary = None
+    try:
+        with tempfile.NamedTemporaryFile("wb", dir=path.parent,
+                                         prefix=f".{path.name}.", delete=False) as stream:
+            temporary = Path(stream.name)
+            stream.write(payload)
             stream.flush()
             os.fsync(stream.fileno())
         os.replace(temporary, path)
@@ -930,10 +950,18 @@ class RCAEvalOfficialMaterializerV3:
         )
 
     def materialize(self, descriptors: Iterable[IncidentDescriptor], *, resume: bool,
-                    mode: str = "full") -> Mapping[str, Any]:
+                    mode: str = "full",
+                    requested_incidents: Iterable[str] = (),
+                    registry_path: Path | None = None) -> Mapping[str, Any]:
         descriptors = tuple(descriptors)
+        requested_incidents = tuple(requested_incidents)
         if not descriptors:
             raise ValueError("Nenhum caso selecionado.")
+        _guard_partial_output(
+            self.output, mode=mode,
+            expected_incidents=self.adapter.expected_catalog_cases,
+            registry_path=registry_path,
+        )
         self.output.mkdir(parents=True, exist_ok=True)
         free_before = _disk_free(self.output)
         started = time.monotonic()
@@ -1015,6 +1043,8 @@ class RCAEvalOfficialMaterializerV3:
         _atomic_json(self.output / "SOURCE.json", source)
         report = {
             "version": MATERIALIZER_VERSION, "mode": mode, "planned": total,
+            "requested_incidents": list(requested_incidents),
+            "selected_incidents": [item.incident_id for item in descriptors],
             "processed": self.stats.processed, "valid": self.stats.valid,
             "usable_for_benchmark": self.stats.usable, "unusable": self.stats.unusable,
             "manifest_usable_for_benchmark": sum(
@@ -1499,6 +1529,74 @@ def smoke_descriptors(adapter: RCAEvalOfficialParquetAdapterV3) -> tuple[Inciden
     return tuple(selected)
 
 
+def _registry_rcaeval_contract(registry_path: Path, repository_root: Path) -> dict[str, Any]:
+    payload = json.loads(registry_path.read_text(encoding="utf-8"))
+    matches = [item for item in payload.get("datasets", ())
+               if item.get("dataset_id") == "rcaeval"]
+    if len(matches) != 1:
+        raise ValueError("FROZEN_RCAEVAL_REGISTRY_BINDING_NOT_UNIQUE")
+    item = dict(matches[0])
+    item["resolved_root"] = str((repository_root / item["root"]).resolve())
+    return item
+
+
+def _registry_binds_output(registry_path: Path | None, output: Path) -> bool:
+    if registry_path is None:
+        return False
+    repository_root = Path(__file__).resolve().parents[1]
+    contract = _registry_rcaeval_contract(registry_path.resolve(), repository_root)
+    return Path(contract["resolved_root"]) == output.resolve() and bool(contract.get("frozen"))
+
+
+def _guard_partial_output(output: Path, *, mode: str,
+                          expected_incidents: int,
+                          registry_path: Path | None = None) -> None:
+    """Never let an operational subset replace frozen full aggregates."""
+    if mode == "full":
+        return
+    repository_root = Path(__file__).resolve().parents[1]
+    canonical = (repository_root / "artifacts/scientific-datasets-v3/rcaeval").resolve()
+    if output.resolve() == canonical or _registry_binds_output(registry_path, output):
+        raise RuntimeError(
+            f"PARTIAL_OUTPUT_OVERWRITE_FROZEN_FULL:{output}:mode={mode}"
+        )
+    index_path = output / "INDEX.json"
+    report_path = output / "materialization-report.json"
+    if not index_path.is_file() or not report_path.is_file():
+        return
+    try:
+        index = json.loads(index_path.read_text(encoding="utf-8"))
+        report = json.loads(report_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return
+    if (index.get("count") == expected_incidents
+            and report.get("mode") == "full"
+            and report.get("planned") == expected_incidents
+            and report.get("processed") == expected_incidents):
+        raise RuntimeError(
+            f"PARTIAL_OUTPUT_OVERWRITE_FROZEN_FULL:{output}:mode={mode}"
+        )
+
+
+def targeted_descriptors(
+    adapter: RCAEvalOfficialParquetAdapterV3,
+    requested_incidents: Iterable[str],
+) -> tuple[tuple[str, ...], tuple[IncidentDescriptor, ...]]:
+    """Resolve an operational subset while preserving official catalog order."""
+    normalized = tuple(
+        value if value.startswith("rcaeval:") else f"rcaeval:{value}"
+        for value in requested_incidents
+    )
+    requested = set(normalized)
+    available = {item.incident_id for item in adapter.list_incidents()}
+    unknown = sorted(requested - available)
+    if unknown:
+        raise ValueError(f"UNKNOWN_RCAEVAL_INCIDENT_IDS:{','.join(unknown)}")
+    selected = tuple(item for item in adapter.list_incidents()
+                     if item.incident_id in requested)
+    return normalized, selected
+
+
 def largest_descriptor(adapter: RCAEvalOfficialParquetAdapterV3) -> tuple[IncidentDescriptor, int]:
     values = []
     for descriptor in adapter.list_incidents():
@@ -1506,6 +1604,197 @@ def largest_descriptor(adapter: RCAEvalOfficialParquetAdapterV3) -> tuple[Incide
         values.append((size, descriptor.incident_id, descriptor))
     size, _, descriptor = max(values)
     return descriptor, size
+
+
+def _file_hashes(directory: Path) -> dict[str, str]:
+    return {path.name: sha256_file(path) for path in sorted(directory.glob("*.json"))}
+
+
+def _audit_restore_inputs(output: Path, *, expected_incidents: int,
+                          expected_usable: int) -> dict[str, Any]:
+    manifests = {}
+    for path in sorted((output / "manifests").glob("*.json")):
+        payload = json.loads(path.read_text(encoding="utf-8"))
+        manifest = IncidentManifest.from_dict(payload)
+        if manifest.fingerprint != payload.get("fingerprint"):
+            raise RuntimeError(f"MANIFEST_FINGERPRINT_MISMATCH:{manifest.incident_id}")
+        if manifest.incident_id in manifests:
+            raise RuntimeError(f"DUPLICATE_MANIFEST_INCIDENT:{manifest.incident_id}")
+        manifests[manifest.incident_id] = (manifest, payload)
+    checkpoints = {}
+    required_identity = {
+        "incident_id", "case", "adapter_version", "source_files_sha256",
+        "configuration_sha256", "cache_key", "catalog_row_sha256",
+    }
+    required_checkpoint = {
+        "normalized_events_sha256", "integrity_policy_version", "integrity_status",
+        "usable_for_benchmark", "event_count_by_modality", "total_event_count",
+        "expected_modalities", "observed_modalities",
+    }
+    for path in sorted((output / "checkpoints").glob("*.json")):
+        payload = json.loads(path.read_text(encoding="utf-8"))
+        identity = payload.get("identity") or {}
+        missing = sorted((required_identity - set(identity)) |
+                         (required_checkpoint - set(payload)))
+        if missing:
+            raise RuntimeError(f"CHECKPOINT_METADATA_INCOMPLETE:{path.name}:{','.join(missing)}")
+        incident_id = identity["incident_id"]
+        if incident_id in checkpoints:
+            raise RuntimeError(f"DUPLICATE_CHECKPOINT_INCIDENT:{incident_id}")
+        if identity["case"] != payload.get("catalog", {}).get("case"):
+            raise RuntimeError(f"CHECKPOINT_CASE_MISMATCH:{incident_id}")
+        checkpoints[incident_id] = payload
+    if len(manifests) != expected_incidents or len(checkpoints) != expected_incidents:
+        raise RuntimeError(
+            f"RESTORE_INCIDENT_COUNT_MISMATCH:manifests={len(manifests)}:"
+            f"checkpoints={len(checkpoints)}:expected={expected_incidents}"
+        )
+    if set(manifests) != set(checkpoints):
+        raise RuntimeError("MANIFEST_CHECKPOINT_INCIDENT_SET_MISMATCH")
+    usable = 0
+    integrity = Counter()
+    for incident_id, (manifest, _) in manifests.items():
+        checkpoint = checkpoints[incident_id]
+        identity = checkpoint["identity"]
+        if (manifest.normalized_events_sha256 != checkpoint["normalized_events_sha256"]
+                or dict(manifest.source_files_sha256) != identity["source_files_sha256"]
+                or manifest.usable_for_benchmark != checkpoint["usable_for_benchmark"]):
+            raise RuntimeError(f"MANIFEST_CHECKPOINT_ALIGNMENT_FAIL:{incident_id}")
+        usable += int(manifest.usable_for_benchmark)
+        integrity[checkpoint["integrity_status"]] += 1
+    if usable != expected_usable:
+        raise RuntimeError(f"RESTORE_USABLE_COUNT_MISMATCH:{usable}:{expected_usable}")
+    return {
+        "manifest_count": len(manifests), "checkpoint_count": len(checkpoints),
+        "usable_count": usable, "integrity_counts": dict(sorted(integrity.items())),
+        "manifest_hashes": _file_hashes(output / "manifests"),
+        "checkpoint_hashes": _file_hashes(output / "checkpoints"),
+    }
+
+
+def _git_aggregate_snapshot(*, repository_root: Path, relative_output: Path,
+                            expected_checksum_sha256: str,
+                            expected_incidents: int) -> tuple[str, dict[str, bytes]]:
+    checksum_path = relative_output / "SHA256SUMS"
+    commits = subprocess.check_output(
+        ["git", "rev-list", "--all", "--", str(checksum_path)],
+        cwd=repository_root, text=True,
+    ).splitlines()
+    for commit in commits:
+        try:
+            checksum = subprocess.check_output(
+                ["git", "show", f"{commit}:{checksum_path}"], cwd=repository_root)
+        except subprocess.CalledProcessError:
+            continue
+        if hashlib.sha256(checksum).hexdigest() != expected_checksum_sha256:
+            continue
+        files = {}
+        try:
+            for name in AGGREGATE_FILES:
+                files[name] = subprocess.check_output(
+                    ["git", "show", f"{commit}:{relative_output / name}"],
+                    cwd=repository_root,
+                )
+        except subprocess.CalledProcessError:
+            continue
+        if (json.loads(files["INDEX.json"])["count"] == expected_incidents
+                and json.loads(files["capabilities.json"])["count"] == expected_incidents):
+            return commit, files
+    raise RuntimeError("BYTE_EXACT_AGGREGATE_SNAPSHOT_NOT_FOUND")
+
+
+def _validate_candidate_checksums(*, output: Path, candidate: Path,
+                                  expected_sha256: str) -> int:
+    checksum_path = candidate / "SHA256SUMS"
+    if sha256_file(checksum_path) != expected_sha256:
+        raise RuntimeError("FROZEN_CHECKSUM_MANIFEST_MISMATCH")
+    checked = 0
+    for line in checksum_path.read_text(encoding="utf-8").splitlines():
+        if not line.strip():
+            continue
+        digest, relative = line.split(maxsplit=1)
+        relative = relative.lstrip("* ")
+        path = candidate / relative if relative in AGGREGATE_FILES else output / relative
+        if not path.is_file() or sha256_file(path) != digest:
+            raise RuntimeError(f"CANDIDATE_DECLARED_HASH_MISMATCH:{relative}")
+        checked += 1
+    return checked
+
+
+def restore_aggregate_metadata(*, raw_root: Path, output: Path,
+                               registry_path: Path,
+                               validation_root: Path | None = None) -> dict[str, Any]:
+    """Restore frozen RCAEval aggregates without reading raw data or event cache."""
+    del raw_root  # Accepted for explicit CLI provenance; deliberately never read.
+    repository_root = Path(__file__).resolve().parents[1]
+    output = output.resolve()
+    contract = _registry_rcaeval_contract(registry_path.resolve(), repository_root)
+    if Path(contract["resolved_root"]) != output:
+        raise RuntimeError("RESTORE_OUTPUT_DIVERGES_FROM_FROZEN_REGISTRY")
+    expected_incidents = int(contract["expected_incidents"])
+    expected_usable = int(contract["expected_usable"])
+    expected_checksum = contract["checksum_manifest_sha256"]
+    before = _audit_restore_inputs(
+        output, expected_incidents=expected_incidents,
+        expected_usable=expected_usable,
+    )
+    relative_output = output.relative_to(repository_root)
+    commit, files = _git_aggregate_snapshot(
+        repository_root=repository_root, relative_output=relative_output,
+        expected_checksum_sha256=expected_checksum,
+        expected_incidents=expected_incidents,
+    )
+    validation_root = (validation_root or (
+        repository_root / "artifacts/validation/rcaeval-aggregate-restore-v3"
+    )).resolve()
+    backup = validation_root / "before"
+    candidate = validation_root / "candidate"
+    backup.mkdir(parents=True, exist_ok=True)
+    candidate.mkdir(parents=True, exist_ok=True)
+    backup_hashes = {}
+    for name in AGGREGATE_FILES:
+        source = output / name
+        payload = source.read_bytes()
+        _atomic_bytes(backup / name, payload)
+        backup_hashes[name] = hashlib.sha256(payload).hexdigest()
+        _atomic_bytes(candidate / name, files[name])
+    candidate_index = json.loads((candidate / "INDEX.json").read_text())
+    candidate_capabilities = json.loads((candidate / "capabilities.json").read_text())
+    if candidate_index.get("count") != expected_incidents:
+        raise RuntimeError("CANDIDATE_INDEX_COUNT_MISMATCH")
+    if candidate_capabilities.get("count") != expected_incidents:
+        raise RuntimeError("CANDIDATE_CAPABILITY_COUNT_MISMATCH")
+    checked = _validate_candidate_checksums(
+        output=output, candidate=candidate, expected_sha256=expected_checksum)
+    preview = {
+        "status": "PASS", "phase": "PREVIEW", "snapshot_commit": commit,
+        "incident_count": expected_incidents, "usable_count": before["usable_count"],
+        "integrity_counts": before["integrity_counts"],
+        "candidate_hashes": {name: sha256_file(candidate / name)
+                             for name in AGGREGATE_FILES},
+        "declared_files_checked": checked, "backup_hashes": backup_hashes,
+    }
+    _atomic_json(validation_root / "preview.json", preview)
+    for name in AGGREGATE_FILES:
+        _atomic_bytes(output / name, (candidate / name).read_bytes())
+    after = _audit_restore_inputs(
+        output, expected_incidents=expected_incidents,
+        expected_usable=expected_usable,
+    )
+    if (after["manifest_hashes"] != before["manifest_hashes"]
+            or after["checkpoint_hashes"] != before["checkpoint_hashes"]):
+        raise RuntimeError("RESTORE_MUTATED_INDIVIDUAL_SCIENTIFIC_ARTIFACTS")
+    checked_after = _validate_candidate_checksums(
+        output=output, candidate=output, expected_sha256=expected_checksum)
+    result = {**preview, "phase": "APPLIED", "status": "PASS",
+              "manifest_count": after["manifest_count"],
+              "checkpoint_count": after["checkpoint_count"],
+              "restored_checksum_manifest_sha256": sha256_file(output / "SHA256SUMS"),
+              "declared_files_checked": checked_after,
+              "manifests_unchanged": True, "checkpoints_unchanged": True,
+              "normalized_cache_accessed": False, "raw_accessed": False}
+    _atomic_json(validation_root / "restore-report.json", result)
+    return result
 
 
 def parser() -> argparse.ArgumentParser:
@@ -1521,6 +1810,12 @@ def parser() -> argparse.ArgumentParser:
     materialize.add_argument("--largest-case", action="store_true")
     materialize.add_argument("--reclassify-checkpoints", action="store_true")
     materialize.add_argument("--limit", type=int)
+    materialize.add_argument("--incident-id", action="append", default=[])
+    materialize.add_argument("--registry", type=Path)
+    restore = commands.add_parser("restore-aggregate-metadata")
+    restore.add_argument("--root", type=Path, required=True)
+    restore.add_argument("--output", type=Path, required=True)
+    restore.add_argument("--registry", type=Path, required=True)
     checksum = commands.add_parser("raw-checksums")
     checksum.add_argument("--root", type=Path, required=True)
     worker = commands.add_parser("normalize-file", help=argparse.SUPPRESS)
@@ -1555,6 +1850,11 @@ def main(argv=None) -> int:
                               exclude={"SHA256SUMS"})
         print(canonical_json({"raw_files_hashed": count}))
         return 0
+    if args.command == "restore-aggregate-metadata":
+        result = restore_aggregate_metadata(
+            raw_root=args.root, output=args.output, registry_path=args.registry)
+        print(canonical_json(result))
+        return 0
     adapter = RCAEvalOfficialParquetAdapterV3(
         args.root, cache_dir=args.cache, artifact_dir=args.output, strict=False,
     )
@@ -1569,7 +1869,17 @@ def main(argv=None) -> int:
         return 0 if result["valid"] else 2
     descriptors = adapter.list_incidents()
     mode = "full"
-    if args.smoke:
+    requested_incidents: tuple[str, ...] = ()
+    if args.incident_id:
+        if args.smoke or args.largest_case or args.limit is not None:
+            raise ValueError(
+                "--incident-id não pode ser combinado com --smoke, "
+                "--largest-case ou --limit."
+            )
+        requested_incidents, descriptors = targeted_descriptors(
+            adapter, args.incident_id)
+        mode = "targeted"
+    elif args.smoke:
         descriptors = smoke_descriptors(adapter)
         mode = "smoke"
     elif args.largest_case:
@@ -1584,6 +1894,8 @@ def main(argv=None) -> int:
         mode = f"{mode}-limit-{args.limit}"
     result = RCAEvalOfficialMaterializerV3(adapter, output).materialize(
         descriptors, resume=args.resume, mode=mode,
+        requested_incidents=requested_incidents,
+        registry_path=args.registry,
     )
     print(canonical_json(result))
     return 0

@@ -1,0 +1,40 @@
+
+COMMAND:
+/usr/bin/time -v /home/janynne/projects/CausalODS/correlation-engine/.venv/bin/python -m experiments.rcaeval_official_v3 materialize --root datasets/RCAEval-data --output /home/janynne/projects/CausalODS/artifacts/validation/rcaeval-train-cache-batches-v3/batch-010 --cache /home/janynne/mnt/rcaeval-official-v3 --resume --incident-id rcaeval:re3ob_adservice_f5_2 --incident-id rcaeval:re3ob_emailservice_f1_1 --incident-id rcaeval:re3ob_emailservice_f4_3 --incident-id rcaeval:re3ob_emailservice_f4_1 --incident-id rcaeval:re3ob_adservice_f3_3 --incident-id rcaeval:re3ob_emailservice_f3_2 --incident-id rcaeval:re3ob_adservice_f4_2 --incident-id rcaeval:re3ob_adservice_f4_1 --incident-id rcaeval:re3ob_adservice_f4_3 --incident-id rcaeval:re2ob_productcatalogservice_loss_1 --incident-id rcaeval:re2ob_currencyservice_loss_1 --incident-id rcaeval:re2ob_checkoutservice_mem_2
+
+[001/012] RE2 OB re2ob_checkoutservice_mem_2 modalities=log,metric,trace events=524123 usable=true elapsed=225.0s percent=8.3 eta=2474.6s rss=332197888 peak_rss=332197888 cache_hits=0 cache_misses=1
+[002/012] RE2 OB re2ob_currencyservice_loss_1 modalities=log,metric,trace events=523456 usable=true elapsed=447.6s percent=16.7 eta=2238.1s rss=332197888 peak_rss=332197888 cache_hits=0 cache_misses=2
+[003/012] RE2 OB re2ob_productcatalogservice_loss_1 modalities=log,metric,trace events=475326 usable=true elapsed=647.7s percent=25.0 eta=1943.2s rss=332431360 peak_rss=332431360 cache_hits=0 cache_misses=3
+[004/012] RE3 OB re3ob_adservice_f3_3 modalities=log,metric,trace events=335156 usable=true elapsed=792.3s percent=33.3 eta=1584.5s rss=332431360 peak_rss=332431360 cache_hits=0 cache_misses=4
+[005/012] RE3 OB re3ob_adservice_f4_1 modalities=log,metric,trace events=341549 usable=true elapsed=937.0s percent=41.7 eta=1311.8s rss=332431360 peak_rss=332431360 cache_hits=0 cache_misses=5
+[006/012] RE3 OB re3ob_adservice_f4_2 modalities=log,metric,trace events=340352 usable=true elapsed=1083.3s percent=50.0 eta=1083.3s rss=333574144 peak_rss=333574144 cache_hits=0 cache_misses=6
+[007/012] RE3 OB re3ob_adservice_f4_3 modalities=log,metric,trace events=341726 usable=true elapsed=1228.9s percent=58.3 eta=877.8s rss=333574144 peak_rss=333574144 cache_hits=0 cache_misses=7
+[008/012] RE3 OB re3ob_adservice_f5_2 modalities=log,metric,trace events=330431 usable=true elapsed=1371.8s percent=66.7 eta=685.9s rss=334430208 peak_rss=334430208 cache_hits=0 cache_misses=8
+[009/012] RE3 OB re3ob_emailservice_f1_1 modalities=log,metric,trace events=330531 usable=true elapsed=1510.8s percent=75.0 eta=503.6s rss=336302080 peak_rss=336302080 cache_hits=0 cache_misses=9
+[010/012] RE3 OB re3ob_emailservice_f3_2 modalities=log,metric,trace events=335767 usable=true elapsed=1655.9s percent=83.3 eta=331.2s rss=336302080 peak_rss=336302080 cache_hits=0 cache_misses=10
+[011/012] RE3 OB re3ob_emailservice_f4_1 modalities=log,metric,trace events=333833 usable=true elapsed=1798.3s percent=91.7 eta=163.5s rss=336302080 peak_rss=336302080 cache_hits=0 cache_misses=11
+[012/012] RE3 OB re3ob_emailservice_f4_3 modalities=log,metric,trace events=330988 usable=true elapsed=1940.6s percent=100.0 eta=0.0s rss=336302080 peak_rss=336302080 cache_hits=0 cache_misses=12
+{"cache_hits":0,"cache_misses":12,"coordinator_peak_rss_bytes":336302080,"elapsed_seconds":1940.8259285559761,"errors":0,"free_disk_after":14819586048,"free_disk_before":15112306688,"global_schema_computations":1,"global_schema_sha256":"6b44a8ed8d04d2ac2b90cc6bc172d430f1a043fb2ef035141ee276e1ae404801","heavy_recomputations":12,"manifest_usable_for_benchmark":12,"max_worker_peak_rss_bytes":1592086528,"mode":"targeted","peak_rss":336302080,"planned":12,"processed":12,"requested_incidents":["rcaeval:re3ob_adservice_f5_2","rcaeval:re3ob_emailservice_f1_1","rcaeval:re3ob_emailservice_f4_3","rcaeval:re3ob_emailservice_f4_1","rcaeval:re3ob_adservice_f3_3","rcaeval:re3ob_emailservice_f3_2","rcaeval:re3ob_adservice_f4_2","rcaeval:re3ob_adservice_f4_1","rcaeval:re3ob_adservice_f4_3","rcaeval:re2ob_productcatalogservice_loss_1","rcaeval:re2ob_currencyservice_loss_1","rcaeval:re2ob_checkoutservice_mem_2"],"selected_incidents":["rcaeval:re2ob_checkoutservice_mem_2","rcaeval:re2ob_currencyservice_loss_1","rcaeval:re2ob_productcatalogservice_loss_1","rcaeval:re3ob_adservice_f3_3","rcaeval:re3ob_adservice_f4_1","rcaeval:re3ob_adservice_f4_2","rcaeval:re3ob_adservice_f4_3","rcaeval:re3ob_adservice_f5_2","rcaeval:re3ob_emailservice_f1_1","rcaeval:re3ob_emailservice_f3_2","rcaeval:re3ob_emailservice_f4_1","rcaeval:re3ob_emailservice_f4_3"],"unusable":0,"usable_for_benchmark":12,"valid":12,"version":"rcaeval-official-hf-materializer-v3"}
+	Command being timed: "/home/janynne/projects/CausalODS/correlation-engine/.venv/bin/python -m experiments.rcaeval_official_v3 materialize --root datasets/RCAEval-data --output /home/janynne/projects/CausalODS/artifacts/validation/rcaeval-train-cache-batches-v3/batch-010 --cache /home/janynne/mnt/rcaeval-official-v3 --resume --incident-id rcaeval:re3ob_adservice_f5_2 --incident-id rcaeval:re3ob_emailservice_f1_1 --incident-id rcaeval:re3ob_emailservice_f4_3 --incident-id rcaeval:re3ob_emailservice_f4_1 --incident-id rcaeval:re3ob_adservice_f3_3 --incident-id rcaeval:re3ob_emailservice_f3_2 --incident-id rcaeval:re3ob_adservice_f4_2 --incident-id rcaeval:re3ob_adservice_f4_1 --incident-id rcaeval:re3ob_adservice_f4_3 --incident-id rcaeval:re2ob_productcatalogservice_loss_1 --incident-id rcaeval:re2ob_currencyservice_loss_1 --incident-id rcaeval:re2ob_checkoutservice_mem_2"
+	User time (seconds): 1933.56
+	System time (seconds): 26.09
+	Percent of CPU this job got: 100%
+	Elapsed (wall clock) time (h:mm:ss or m:ss): 32:23.01
+	Average shared text size (kbytes): 0
+	Average unshared data size (kbytes): 0
+	Average stack size (kbytes): 0
+	Average total size (kbytes): 0
+	Maximum resident set size (kbytes): 1554772
+	Average resident set size (kbytes): 0
+	Major (requiring I/O) page faults: 0
+	Minor (reclaiming a frame) page faults: 7736396
+	Voluntary context switches: 2348
+	Involuntary context switches: 59358
+	Swaps: 0
+	File system inputs: 131200
+	File system outputs: 1222040
+	Socket messages sent: 0
+	Socket messages received: 0
+	Signals delivered: 0
+	Page size (bytes): 4096
+	Exit status: 0

@@ -1,0 +1,31 @@
+
+COMMAND:
+/usr/bin/time -v /home/janynne/projects/CausalODS/correlation-engine/.venv/bin/python -m experiments.rcaeval_official_v3 materialize --root datasets/RCAEval-data --output /home/janynne/projects/CausalODS/artifacts/validation/rcaeval-train-cache-batches-v3/batch-027 --cache /home/janynne/mnt/rcaeval-official-v3 --resume --incident-id rcaeval:re2tt_ts-route-service_delay_2 --incident-id rcaeval:re2tt_ts-auth-service_disk_3 --incident-id rcaeval:re2tt_ts-route-service_cpu_1
+
+[001/003] RE2 TT re2tt_ts-auth-service_disk_3 modalities=log,metric,trace events=1536842 usable=true elapsed=647.4s percent=33.3 eta=1294.8s rss=345239552 peak_rss=345239552 cache_hits=0 cache_misses=1
+[002/003] RE2 TT re2tt_ts-route-service_cpu_1 modalities=log,metric,trace events=1538626 usable=true elapsed=1291.3s percent=66.7 eta=645.7s rss=345722880 peak_rss=345722880 cache_hits=0 cache_misses=2
+[003/003] RE2 TT re2tt_ts-route-service_delay_2 modalities=log,metric,trace events=1502945 usable=true elapsed=1920.2s percent=100.0 eta=0.0s rss=346746880 peak_rss=346746880 cache_hits=0 cache_misses=3
+{"cache_hits":0,"cache_misses":3,"coordinator_peak_rss_bytes":346746880,"elapsed_seconds":1920.2915606749884,"errors":0,"free_disk_after":9193439232,"free_disk_before":9503817728,"global_schema_computations":1,"global_schema_sha256":"565fb443e1e02bc1ef34dbb98e3b5814edf583fabe6b59dbb688a15d7b6dd6d0","heavy_recomputations":3,"manifest_usable_for_benchmark":3,"max_worker_peak_rss_bytes":3277262848,"mode":"targeted","peak_rss":346746880,"planned":3,"processed":3,"requested_incidents":["rcaeval:re2tt_ts-route-service_delay_2","rcaeval:re2tt_ts-auth-service_disk_3","rcaeval:re2tt_ts-route-service_cpu_1"],"selected_incidents":["rcaeval:re2tt_ts-auth-service_disk_3","rcaeval:re2tt_ts-route-service_cpu_1","rcaeval:re2tt_ts-route-service_delay_2"],"unusable":0,"usable_for_benchmark":3,"valid":3,"version":"rcaeval-official-hf-materializer-v3"}
+	Command being timed: "/home/janynne/projects/CausalODS/correlation-engine/.venv/bin/python -m experiments.rcaeval_official_v3 materialize --root datasets/RCAEval-data --output /home/janynne/projects/CausalODS/artifacts/validation/rcaeval-train-cache-batches-v3/batch-027 --cache /home/janynne/mnt/rcaeval-official-v3 --resume --incident-id rcaeval:re2tt_ts-route-service_delay_2 --incident-id rcaeval:re2tt_ts-auth-service_disk_3 --incident-id rcaeval:re2tt_ts-route-service_cpu_1"
+	User time (seconds): 1901.90
+	System time (seconds): 23.69
+	Percent of CPU this job got: 100%
+	Elapsed (wall clock) time (h:mm:ss or m:ss): 32:02.43
+	Average shared text size (kbytes): 0
+	Average unshared data size (kbytes): 0
+	Average stack size (kbytes): 0
+	Average total size (kbytes): 0
+	Maximum resident set size (kbytes): 3200452
+	Average resident set size (kbytes): 0
+	Major (requiring I/O) page faults: 0
+	Minor (reclaiming a frame) page faults: 7604520
+	Voluntary context switches: 790
+	Involuntary context switches: 50354
+	Swaps: 0
+	File system inputs: 130632
+	File system outputs: 1361384
+	Socket messages sent: 0
+	Socket messages received: 0
+	Signals delivered: 0
+	Page size (bytes): 4096
+	Exit status: 0

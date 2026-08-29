@@ -86,6 +86,15 @@ def _parser() -> argparse.ArgumentParser:
     runtime.add_argument("--registry", type=Path, required=True)
     runtime.add_argument("--rcaeval-cache", type=Path, required=True)
     runtime.add_argument("--incident-id", required=True)
+    heavy = commands.add_parser("heavy-resource-gate")
+    heavy.add_argument("--registry", type=Path, required=True)
+    heavy.add_argument("--config-dir", type=Path, required=True)
+    heavy.add_argument("--model-specification", type=Path, required=True)
+    heavy.add_argument("--rcaeval-cache", type=Path, required=True)
+    heavy.add_argument("--incident-id", required=True)
+    heavy.add_argument("--reference-baseline", type=Path, required=True)
+    heavy.add_argument("--output", type=Path, required=True)
+    heavy.add_argument("--resume", action="store_true")
     worker = commands.add_parser("incident-worker")
     worker.add_argument("--spec", type=Path, required=True)
     baseline_worker = commands.add_parser("baseline-contribution-worker")
@@ -187,6 +196,17 @@ def main(argv=None) -> int:
         except Exception as exc:
             result = {"status": "FAIL", "incident_id": args.incident_id,
                       "reason": type(exc).__name__, "error": str(exc)}
+        print(canonical_json(result))
+        return 0 if result.get("status") == "PASS" else 1
+    if args.command == "heavy-resource-gate":
+        from .preprocessing import run_heavy_resource_gate
+        registry = FrozenDatasetRegistry.load(args.registry, REPOSITORY_ROOT)
+        result = run_heavy_resource_gate(
+            registry=registry, config_dir=args.config_dir,
+            model_specification=args.model_specification,
+            rcaeval_cache=args.rcaeval_cache, incident_id=args.incident_id,
+            reference_baseline=args.reference_baseline,
+            output=args.output, resume=args.resume)
         print(canonical_json(result))
         return 0 if result.get("status") == "PASS" else 1
     if args.command == "incident-worker":

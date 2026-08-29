@@ -6,18 +6,27 @@ import json
 from pathlib import Path
 
 import pandas as pd
+import pytest
+import shutil
+import uuid
+
+import experiments.rcaeval_official_v3 as official
 
 from experiments.multimodal_v3.core import (
     DatasetCapabilityResolverV3, DatasetCapabilityV3, ExperimentConfigV3,
     ExperimentPlannerV3,
 )
 from experiments.rcaeval_official_v3 import (
-    INTEGRITY_POLICY_VERSION,
+    CACHE_VERSION, INTEGRITY_POLICY_VERSION, MATERIALIZER_VERSION,
     RCAEvalOfficialMaterializerV3,
     RCAEvalOfficialParquetAdapterV3,
     SUITE_MODALITIES,
     classify_incident_integrity,
+    _guard_partial_output,
+    parser,
     reclassify_checkpoints,
+    restore_aggregate_metadata,
+    targeted_descriptors,
 )
 from multimodal_v1.public_datasets_v3 import (
     IncidentDescriptor, IncidentManifest, SchemaClassification, SchemaFileReport,
@@ -210,6 +219,183 @@ def test_materialization_schema_once_resume_and_capability_resolver_are_lightwei
     second = resumed.materialize(resumed_adapter.list_incidents(), resume=True, mode="test-resume")
     assert second["cache_hits"] == 3
     assert second["heavy_recomputations"] == 0
+
+
+def test_targeted_selection_is_exact_ordered_and_resume_safe(tmp_path):
+    parsed = parser().parse_args([
+        "materialize", "--root", str(tmp_path), "--output", str(tmp_path / "out"),
+        "--cache", str(tmp_path / "cache-cli"), "--incident-id", "case-b",
+        "--incident-id", "rcaeval:case-a", "--resume",
+    ])
+    assert parsed.incident_id == ["case-b", "rcaeval:case-a"] and parsed.resume
+    root = _dataset(tmp_path)
+    adapter = _adapter(tmp_path, root)
+    official = adapter.list_incidents()
+    reversed_request = (official[2].case, official[0].incident_id)
+    requested, selected = targeted_descriptors(adapter, reversed_request)
+    assert requested == (f"rcaeval:{official[2].case}", official[0].incident_id)
+    assert selected == (official[0], official[2])
+    assert targeted_descriptors(adapter, reversed(reversed_request))[1] == selected
+
+    output = tmp_path / "targeted-artifacts"
+    report = RCAEvalOfficialMaterializerV3(adapter, output).materialize(
+        selected, resume=False, mode="targeted", requested_incidents=requested)
+    assert report["requested_incidents"] == list(requested)
+    assert report["selected_incidents"] == [item.incident_id for item in selected]
+    assert report["processed"] == report["valid"] == 2
+    assert report["cache_misses"] == report["heavy_recomputations"] == 2
+
+    resumed_adapter = _adapter(tmp_path, root)
+    resumed = RCAEvalOfficialMaterializerV3(resumed_adapter, output).materialize(
+        selected, resume=True, mode="targeted", requested_incidents=requested)
+    assert resumed["processed"] == resumed["valid"] == 2
+    assert resumed["cache_hits"] == 2
+    assert resumed["cache_misses"] == resumed["heavy_recomputations"] == 0
+
+
+def test_targeted_unknown_incident_fails_before_materialization(tmp_path, monkeypatch):
+    adapter = _adapter(tmp_path, _dataset(tmp_path))
+    called = False
+
+    def forbidden(*_args, **_kwargs):
+        nonlocal called
+        called = True
+        raise AssertionError("materialization must not start")
+
+    monkeypatch.setattr(RCAEvalOfficialMaterializerV3, "materialize", forbidden)
+    with pytest.raises(ValueError, match="UNKNOWN_RCAEVAL_INCIDENT_IDS"):
+        targeted_descriptors(adapter, ("does-not-exist",))
+    assert called is False
+
+
+def test_targeted_cache_entry_is_byte_identical_to_normal_mode(tmp_path):
+    root = _dataset(tmp_path)
+    targeted_adapter = _adapter(tmp_path, root)
+    descriptor = targeted_adapter.list_incidents()[0]
+    targeted_output = tmp_path / "targeted-output"
+    RCAEvalOfficialMaterializerV3(targeted_adapter, targeted_output).materialize(
+        (descriptor,), resume=False, mode="targeted",
+        requested_incidents=(descriptor.incident_id,))
+    checkpoint = json.loads(next((targeted_output / "checkpoints").glob("*.json")).read_text())
+    key = checkpoint["identity"]["cache_key"]
+    cache = targeted_adapter.compressed_cache
+    targeted_parquet = cache.target(key).read_bytes()
+    targeted_metadata = cache.metadata_target(key).read_bytes()
+
+    cache.target(key).unlink()
+    cache.metadata_target(key).unlink()
+    normal_adapter = _adapter(tmp_path, root)
+    RCAEvalOfficialMaterializerV3(normal_adapter, tmp_path / "normal-output").materialize(
+        normal_adapter.list_incidents(), resume=False, mode="full")
+    assert normal_adapter.compressed_cache.target(key).read_bytes() == targeted_parquet
+    assert normal_adapter.compressed_cache.metadata_target(key).read_bytes() == targeted_metadata
+    metadata = json.loads(targeted_metadata)
+    assert metadata["cache_version"] == CACHE_VERSION
+    assert MATERIALIZER_VERSION == "rcaeval-official-hf-materializer-v3"
+
+
+def test_partial_modes_cannot_overwrite_existing_full_output(tmp_path):
+    output = tmp_path / "official-full"
+    output.mkdir()
+    (output / "INDEX.json").write_text(json.dumps({"count": 735}))
+    (output / "materialization-report.json").write_text(json.dumps({
+        "mode": "full", "planned": 735, "processed": 735, "valid": 735,
+    }))
+    for mode in ("smoke", "targeted", "largest-case", "full-limit-2"):
+        with pytest.raises(RuntimeError, match="PARTIAL_OUTPUT_OVERWRITE_FROZEN_FULL"):
+            _guard_partial_output(output, mode=mode, expected_incidents=735)
+    _guard_partial_output(output, mode="full", expected_incidents=735)
+
+
+def test_metadata_only_restore_is_transactional_and_preserves_individual_artifacts(monkeypatch):
+    repository_root = ROOT = Path(__file__).resolve().parents[2]
+    base = repository_root / ".pytest-aggregate-restore" / uuid.uuid4().hex
+    try:
+        base.mkdir(parents=True)
+        root = _dataset(base)
+        output = base / "official"
+        adapter = RCAEvalOfficialParquetAdapterV3(
+            root, cache_dir=base / "cache", artifact_dir=output,
+            expected_catalog_cases=3)
+        RCAEvalOfficialMaterializerV3(adapter, output).materialize(
+            adapter.list_incidents(), resume=False, mode="full")
+        frozen = {name: (output / name).read_bytes() for name in official.AGGREGATE_FILES}
+        checksum = sha256_file(output / "SHA256SUMS")
+        manifests_before = {p.name: p.read_bytes() for p in (output / "manifests").glob("*.json")}
+        checkpoints_before = {p.name: p.read_bytes() for p in (output / "checkpoints").glob("*.json")}
+        registry = base / "registry.json"
+        registry.write_text(json.dumps({"datasets": [{
+            "dataset_id": "rcaeval", "kind": "rcaeval", "root": str(output.relative_to(repository_root)),
+            "frozen": True, "expected_incidents": 3, "expected_usable": 3,
+            "checksum_manifest": "SHA256SUMS", "checksum_manifest_sha256": checksum,
+            "index": "INDEX.json", "capabilities": "capabilities.json",
+            "materialization_report": "materialization-report.json",
+        }]}))
+        (output / "INDEX.json").write_text(json.dumps({"count": 1}))
+        (output / "capabilities.json").write_text(json.dumps({"count": 1}))
+        (output / "materialization-report.json").write_text(json.dumps({
+            "mode": "smoke", "planned": 1, "processed": 1}))
+
+        monkeypatch.setattr(official, "_git_aggregate_snapshot",
+                            lambda **_kwargs: ("fixture-snapshot", frozen))
+        result = restore_aggregate_metadata(
+            raw_root=base / "RAW_MUST_NOT_BE_READ", output=output,
+            registry_path=registry, validation_root=base / "validation")
+        assert result["status"] == "PASS" and result["phase"] == "APPLIED"
+        assert result["raw_accessed"] is result["normalized_cache_accessed"] is False
+        assert sha256_file(output / "SHA256SUMS") == checksum
+        assert {p.name: p.read_bytes() for p in (output / "manifests").glob("*.json")} == manifests_before
+        assert {p.name: p.read_bytes() for p in (output / "checkpoints").glob("*.json")} == checkpoints_before
+        assert all((output / name).read_bytes() == payload for name, payload in frozen.items())
+    finally:
+        shutil.rmtree(base, ignore_errors=True)
+
+
+def test_metadata_restore_candidate_failure_leaves_official_aggregates_unchanged(monkeypatch):
+    repository_root = Path(__file__).resolve().parents[2]
+    base = repository_root / ".pytest-aggregate-restore" / uuid.uuid4().hex
+    try:
+        base.mkdir(parents=True)
+        root = _dataset(base)
+        output = base / "official"
+        adapter = RCAEvalOfficialParquetAdapterV3(
+            root, cache_dir=base / "cache", artifact_dir=output,
+            expected_catalog_cases=3)
+        RCAEvalOfficialMaterializerV3(adapter, output).materialize(
+            adapter.list_incidents(), resume=False, mode="full")
+        before = {name: (output / name).read_bytes() for name in official.AGGREGATE_FILES}
+        registry = base / "registry.json"
+        registry.write_text(json.dumps({"datasets": [{
+            "dataset_id": "rcaeval", "kind": "rcaeval", "root": str(output.relative_to(repository_root)),
+            "frozen": True, "expected_incidents": 3, "expected_usable": 3,
+            "checksum_manifest": "SHA256SUMS", "checksum_manifest_sha256": "0" * 64,
+            "index": "INDEX.json", "capabilities": "capabilities.json",
+            "materialization_report": "materialization-report.json",
+        }]}))
+        monkeypatch.setattr(official, "_git_aggregate_snapshot",
+                            lambda **_kwargs: ("bad-snapshot", before))
+        with pytest.raises(RuntimeError, match="FROZEN_CHECKSUM_MANIFEST_MISMATCH"):
+            restore_aggregate_metadata(
+                raw_root=base / "RAW_MUST_NOT_BE_READ", output=output,
+                registry_path=registry, validation_root=base / "validation")
+        assert {name: (output / name).read_bytes() for name in official.AGGREGATE_FILES} == before
+    finally:
+        shutil.rmtree(base, ignore_errors=True)
+
+
+def test_partial_guard_rejects_registry_bound_frozen_root_even_when_partial(tmp_path):
+    output = tmp_path / "corrupted-official"
+    output.mkdir()
+    (output / "INDEX.json").write_text(json.dumps({"count": 9}))
+    (output / "materialization-report.json").write_text(json.dumps({
+        "mode": "smoke", "planned": 9, "processed": 9}))
+    registry = tmp_path / "registry.json"
+    registry.write_text(json.dumps({"datasets": [{
+        "dataset_id": "rcaeval", "root": str(output), "frozen": True,
+    }]}))
+    with pytest.raises(RuntimeError, match="PARTIAL_OUTPUT_OVERWRITE_FROZEN_FULL"):
+        _guard_partial_output(output, mode="targeted", expected_incidents=735,
+                              registry_path=registry)
 
 
 def test_partial_policy_propagates_manifest_capability_index_and_planner(tmp_path):

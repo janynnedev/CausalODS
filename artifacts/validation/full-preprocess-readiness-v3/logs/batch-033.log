@@ -1,0 +1,30 @@
+
+COMMAND:
+/usr/bin/time -v /home/janynne/projects/CausalODS/correlation-engine/.venv/bin/python -m experiments.rcaeval_official_v3 materialize --root datasets/RCAEval-data --output /home/janynne/projects/CausalODS/artifacts/validation/rcaeval-train-cache-batches-v3/batch-033 --cache /home/janynne/mnt/rcaeval-official-v3 --resume --incident-id rcaeval:re2tt_ts-travel-service_loss_1 --incident-id rcaeval:re2tt_ts-travel-service_delay_3
+
+[001/002] RE2 TT re2tt_ts-travel-service_delay_3 modalities=log,metric,trace events=1735965 usable=true elapsed=738.9s percent=50.0 eta=738.9s rss=350134272 peak_rss=350134272 cache_hits=0 cache_misses=1
+[002/002] RE2 TT re2tt_ts-travel-service_loss_1 modalities=log,metric,trace events=1702653 usable=true elapsed=1451.8s percent=100.0 eta=0.0s rss=350134272 peak_rss=350134272 cache_hits=0 cache_misses=2
+{"cache_hits":0,"cache_misses":2,"coordinator_peak_rss_bytes":350134272,"elapsed_seconds":1451.914662028983,"errors":0,"free_disk_after":7445630976,"free_disk_before":7677530112,"global_schema_computations":1,"global_schema_sha256":"210ec8aa46656a99711ca04ef6801f60d4020a0f29aa588ac2937e053dabc22b","heavy_recomputations":2,"manifest_usable_for_benchmark":2,"max_worker_peak_rss_bytes":4040826880,"mode":"targeted","peak_rss":350134272,"planned":2,"processed":2,"requested_incidents":["rcaeval:re2tt_ts-travel-service_loss_1","rcaeval:re2tt_ts-travel-service_delay_3"],"selected_incidents":["rcaeval:re2tt_ts-travel-service_delay_3","rcaeval:re2tt_ts-travel-service_loss_1"],"unusable":0,"usable_for_benchmark":2,"valid":2,"version":"rcaeval-official-hf-materializer-v3"}
+	Command being timed: "/home/janynne/projects/CausalODS/correlation-engine/.venv/bin/python -m experiments.rcaeval_official_v3 materialize --root datasets/RCAEval-data --output /home/janynne/projects/CausalODS/artifacts/validation/rcaeval-train-cache-batches-v3/batch-033 --cache /home/janynne/mnt/rcaeval-official-v3 --resume --incident-id rcaeval:re2tt_ts-travel-service_loss_1 --incident-id rcaeval:re2tt_ts-travel-service_delay_3"
+	User time (seconds): 1437.26
+	System time (seconds): 18.52
+	Percent of CPU this job got: 100%
+	Elapsed (wall clock) time (h:mm:ss or m:ss): 24:14.05
+	Average shared text size (kbytes): 0
+	Average unshared data size (kbytes): 0
+	Average stack size (kbytes): 0
+	Average total size (kbytes): 0
+	Maximum resident set size (kbytes): 3946120
+	Average resident set size (kbytes): 0
+	Major (requiring I/O) page faults: 0
+	Minor (reclaiming a frame) page faults: 6089607
+	Voluntary context switches: 542
+	Involuntary context switches: 37997
+	Swaps: 0
+	File system inputs: 103728
+	File system outputs: 1036872
+	Socket messages sent: 0
+	Socket messages received: 0
+	Signals delivered: 0
+	Page size (bytes): 4096
+	Exit status: 0

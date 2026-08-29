@@ -33,6 +33,38 @@ def _worker_peak(payloads) -> int:
             values.append(worker["peak_rss_kb"])
     return max(values, default=0)
 
+def _scientific_payloads(directory: Path, *, schema_version: str) -> list[dict]:
+    """Read completed scientific artifacts, ignoring specs and unrelated JSON."""
+    payloads = []
+    for path in sorted(directory.glob("*.json")):
+        try:
+            payload = json.loads(path.read_text())
+        except (OSError, json.JSONDecodeError):
+            continue
+        if (isinstance(payload, dict)
+                and payload.get("schema_version") == schema_version
+                and payload.get("status") == "COMPLETED"):
+            payloads.append(payload)
+    return payloads
+
+def _scientific_work_inventory(work: Path) -> dict:
+    incidents = work / "incidents"
+    contributions = work / "baseline" / "contributions"
+    checkpoints = _scientific_payloads(
+        incidents,
+        schema_version="scientific-preprocessing-incident-checkpoint-v1",
+    )
+    baseline = _scientific_payloads(
+        contributions,
+        schema_version="scientific-preprocessing-baseline-contribution-v1",
+    )
+    return {
+        "checkpoints": checkpoints,
+        "contributions": baseline,
+        "incident_worker_spec_count": len(tuple(incidents.glob("*.worker.json"))),
+        "baseline_worker_spec_count": len(tuple(contributions.glob("*.worker.json"))),
+    }
+
 def _last_json(text: str) -> dict:
     for line in reversed(text.splitlines()):
         try:
@@ -101,12 +133,15 @@ def main() -> int:
     except RuntimeError:
         return _fail_report(args.output, stage="preprocess-output-parse", completed=run)
     work = args.output / "work" / binding["base_key"]
-    checkpoints = [json.loads(path.read_text()) for path in sorted((work / "incidents").glob("*.json"))]
-    contributions = [json.loads(path.read_text()) for path in sorted((work / "baseline/contributions").glob("*.json"))]
+    work_inventory = _scientific_work_inventory(work)
+    checkpoints = work_inventory["checkpoints"]
+    contributions = work_inventory["contributions"]
     snapshot_path = work / "baseline/snapshot.json"
     baseline_snapshot = json.loads(snapshot_path.read_text()) if snapshot_path.is_file() else {}
     expected_ids = {item["incident_id"] for item in selection["selected"]}
     actual_ids = {item.get("incident_id") for item in checkpoints}
+    expected_train_ids = set(baseline_snapshot.get("training_incident_ids", ()))
+    actual_contribution_ids = {item.get("incident_id") for item in contributions}
     from experiments.final_campaigns_v3.preprocessing import _incident_scientific_payload
     from experiments.final_campaigns_v3.core import sha256_value
     valid_checkpoints = all(item.get("status") == "COMPLETED" and
@@ -115,7 +150,8 @@ def main() -> int:
     official_after = _snapshot(selection)
     immutable = official_before == official_after
     baseline_valid = (len(contributions) == binding["train_count"] and
-                      all(item.get("status") == "COMPLETED" for item in contributions) and
+                      len(expected_train_ids) == binding["train_count"] and
+                      actual_contribution_ids == expected_train_ids and
                       baseline_snapshot.get("status") == "COMPLETED")
     passed = (run.returncode == 0 and result.get("status") == "PASS" and
               len(checkpoints) == 16 and actual_ids == expected_ids and valid_checkpoints and
@@ -125,7 +161,12 @@ def main() -> int:
         "split_key": binding["split_key"], "train_count": binding["train_count"],
         "validation_count": binding["validation_count"], "test_count": binding["test_count"],
         "total_incidents": 16, "checkpoint_count": len(checkpoints),
+        "scientific_checkpoint_count": len(checkpoints),
+        "scientific_checkpoint_incident_ids": sorted(actual_ids),
         "baseline_contribution_count": len(contributions),
+        "baseline_contribution_incident_ids": sorted(actual_contribution_ids),
+        "incident_worker_spec_count": work_inventory["incident_worker_spec_count"],
+        "baseline_worker_spec_count": work_inventory["baseline_worker_spec_count"],
         "worker_peak_rss_kb_max": _worker_peak([*contributions, baseline_snapshot, *checkpoints]),
         "preprocess": result, "preprocess_returncode": run.returncode,
         "official_rcaeval_immutability": "PASS" if immutable else "FAIL",

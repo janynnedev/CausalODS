@@ -26,7 +26,7 @@ from dataclasses import dataclass, fields, replace
 from datetime import datetime
 from itertools import combinations
 from pathlib import Path
-from typing import Any, Callable, Iterable, Mapping
+from typing import Any, Callable, Iterable, Iterator, Mapping, Sequence
 
 from experiments.multimodal_v3.core import canonical_json, file_sha256, sha256_value
 from experiments.rcaeval_official_v3 import CompressedNormalizedEventCache
@@ -54,6 +54,7 @@ from .core import (
 
 PREPROCESSING_VERSION = "scientific-input-preprocessing-v3"
 WORKER_DIAGNOSTIC_TAIL_BYTES = 8192
+HEAVY_RESOURCE_GATE_VERSION = "heavy-resource-gate-v1"
 CATALOG_VERSION = "scientific-benchmark-catalog-v3"
 VIEW_GROUPS = {
     "FULL": None,
@@ -586,20 +587,54 @@ def _incident_worker_payload(
     if os.environ.get("CAUSALODS_TEST_FAIL_INCIDENT_WORKER") == incident_id:
         raise RuntimeError(f"TEST_INCIDENT_WORKER_FAILURE:{incident_id}")
     started = time.perf_counter()
+    phase_started = started
+    phase_telemetry = []
+
+    def record_phase(name: str) -> None:
+        nonlocal phase_started
+        now = time.perf_counter()
+        current_rss_kb = None
+        try:
+            for line in Path("/proc/self/status").read_text().splitlines():
+                if line.startswith("VmRSS:"):
+                    current_rss_kb = int(line.split()[1])
+                    break
+        except (OSError, ValueError, IndexError):  # pragma: no cover - non-Linux host
+            pass
+        phase_telemetry.append({
+            "phase": name,
+            "elapsed_seconds": now - phase_started,
+            "rss_kb": current_rss_kb,
+            "peak_rss_kb": resource.getrusage(resource.RUSAGE_SELF).ru_maxrss,
+        })
+        phase_started = now
+
     baseline = _baseline_from_json(baseline_json)
     loader = FrozenEvidenceLoader(registry, rcaeval_cache=rcaeval_cache)
     source = loader.sources[incident_id]
     events = loader.events(source)
+    record_phase("cache")
     event_fingerprints = loader.event_fingerprints_aligned(events)
+    record_phase("fingerprints")
     bundle, _ = FrozenEvidenceLoader._bundle(source, events)
+    record_phase("bundle")
     graph = EventGraphBuilder().build(bundle)
+    # IncidentGraphContext defensively copies arbitrary public mappings.  The
+    # private frozen boundary is already immutable and is also retained by the
+    # bundle, so discard that duplicate operational index after validation.
+    if isinstance(bundle.association_scores, _FrozenBoundaryScores):
+        object.__setattr__(graph.context, "association_scores",
+                           bundle.association_scores)
+        gc.collect()
     if event_fingerprints is not None:
         if any(node.event is not event for node, event in zip(graph.nodes, events)):
             event_fingerprints = {
                 EventReference(event.event_id, event.source_reference): fingerprint.hex()
                 for event, fingerprint in zip(events, event_fingerprints)
             }
-        graph._bind_event_fingerprints(event_fingerprints)
+        _bind_event_fingerprints(graph, event_fingerprints)
+        del event_fingerprints
+    record_phase("graph")
     extractor = RCAFeatureExtractorV3()
     full_view = FeatureRegistryV3().select()
     rows = []
@@ -615,6 +650,7 @@ def _incident_worker_payload(
         )
         positives += 1 if target_row.is_root_cause else 0
         rows.append(DatasetRowV3(split, _full_view_vector(vector, full_view), target_row))
+    record_phase("features")
     if not positives:
         raise ValueError(f"GROUND_TRUTH_SERVICE_ABSENT_FROM_EVIDENCE:{incident_id}")
     rows_payload = [row.to_dict() for row in sorted(
@@ -640,6 +676,15 @@ def _incident_worker_payload(
             "pid": os.getpid(),
             "elapsed_seconds": time.perf_counter() - started,
             "peak_rss_kb": resource.getrusage(resource.RUSAGE_SELF).ru_maxrss,
+            "phase_telemetry": phase_telemetry,
+            "after_cache_load_rss_kb": phase_telemetry[0]["rss_kb"],
+            "after_event_fingerprints_rss_kb": phase_telemetry[1]["rss_kb"],
+            "after_bundle_rss_kb": phase_telemetry[2]["rss_kb"],
+            "after_graph_rss_kb": phase_telemetry[3]["rss_kb"],
+            "after_feature_extraction_rss_kb": phase_telemetry[4]["rss_kb"],
+            "phase_elapsed_seconds": {
+                row["phase"]: row["elapsed_seconds"] for row in phase_telemetry
+            },
         },
     }
     payload["scientific_payload_sha256"] = sha256_value(_incident_scientific_payload(payload))
@@ -983,7 +1028,7 @@ def _materialize_base_dataset_memory_bounded(
                         EventReference(event.event_id, event.source_reference): fingerprint.hex()
                         for event, fingerprint in zip(events, event_fingerprints)
                     }
-                graph._bind_event_fingerprints(event_fingerprints)
+                _bind_event_fingerprints(graph, event_fingerprints)
             graph_fingerprints[incident_id] = graph.graph_fingerprint
             topology_fingerprints[incident_id] = sha256_value(None)
             relation_versions_by_incident[incident_id] = {}
@@ -1194,6 +1239,75 @@ class IncidentSource:
     manifest_sha256: str
     root_cause_service: str | None
     available_modalities: tuple[str, ...]
+
+
+class _FrozenBoundaryScores(Mapping[EventReference, float]):
+    """Implicit all-one scores for the authoritative frozen case boundary."""
+
+    _causalods_immutable_frozen_boundary = True
+
+    def __init__(self, events: tuple[UnifiedEvent, ...]):
+        self._events = events
+
+    def __len__(self) -> int:
+        return len(self._events)
+
+    def __iter__(self) -> Iterator[EventReference]:
+        return (EventReference(event.event_id, event.source_reference)
+                for event in self._events)
+
+    def __getitem__(self, reference: EventReference) -> float:
+        if not isinstance(reference, EventReference):
+            raise KeyError(reference)
+        # This private mapping is consumed only through its own keys.  Avoid an
+        # additional multi-million-entry membership index solely to rediscover
+        # that every authoritative-boundary score is exactly one.
+        return 1.0
+
+
+class _FrozenBoundaryAssociations(Sequence[EventAssociation]):
+    def __init__(self, events: tuple[UnifiedEvent, ...]):
+        self._events = events
+
+    def __len__(self) -> int:
+        return len(self._events)
+
+    def __getitem__(self, index):
+        if isinstance(index, slice):
+            return tuple(self[position] for position in range(*index.indices(len(self))))
+        event = self._events[index]
+        return EventAssociation(
+            EventReference(event.event_id, event.source_reference), 1.0,
+            ("frozen_incident_boundary",),
+        )
+
+
+class _FrozenBoundaryProvenance(Sequence[ProvenanceRecord]):
+    def __init__(self, events: tuple[UnifiedEvent, ...]):
+        self._events = events
+
+    def __len__(self) -> int:
+        return len(self._events)
+
+    def __getitem__(self, index):
+        if isinstance(index, slice):
+            return tuple(self[position] for position in range(*index.indices(len(self))))
+        event = self._events[index]
+        return ProvenanceRecord(
+            EventReference(event.event_id, event.source_reference),
+            event.source_dataset,
+        )
+
+
+def _bind_event_fingerprints(graph, values) -> None:
+    """Transfer the loader-owned aligned byte list without a list→tuple peak."""
+    if (isinstance(values, list) and len(values) == len(graph.nodes)
+            and all(isinstance(value, bytes) and len(value) == 32
+                    for value in values)):
+        object.__setattr__(graph, "_event_fingerprints", values)
+        object.__setattr__(graph, "_graph_fingerprint_cache", None)
+        return
+    graph._bind_event_fingerprints(values)
 
 
 class FrozenEvidenceLoader:
@@ -1416,10 +1530,12 @@ class FrozenEvidenceLoader:
         return values
 
     def event_fingerprints_aligned(self, events: tuple[UnifiedEvent, ...],
-                                   ) -> tuple[bytes, ...] | None:
+                                   ) -> Sequence[bytes] | None:
         if len(self._last_event_fingerprints) != len(events):
             return None
-        values = tuple(self._last_event_fingerprints)
+        # Transfer exclusive ownership.  The graph treats this private aligned
+        # sequence as immutable and avoids a simultaneous list + tuple copy.
+        values = self._last_event_fingerprints
         self._last_event_fingerprints = []
         return values
 
@@ -1437,7 +1553,7 @@ class FrozenEvidenceLoader:
                     EventReference(event.event_id, event.source_reference): fingerprint.hex()
                     for event, fingerprint in zip(events, event_fingerprints)
                 }
-            graph._bind_event_fingerprints(event_fingerprints)
+            _bind_event_fingerprints(graph, event_fingerprints)
         return FeatureInputV3(bundle, graph)
 
     @staticmethod
@@ -1456,7 +1572,7 @@ class FrozenEvidenceLoader:
                     EventReference(event.event_id, event.source_reference): fingerprint.hex()
                     for event, fingerprint in zip(events, event_fingerprints)
                 }
-            graph._bind_event_fingerprints(event_fingerprints)
+            _bind_event_fingerprints(graph, event_fingerprints)
         return FeatureInputV3(bundle, graph), {
             "bundle_aggregation_seconds": bundle_seconds,
             "boundary_mode": boundary_mode,
@@ -1488,11 +1604,9 @@ class FrozenEvidenceLoader:
         else:
             # Public datasets define an authoritative case boundary even when no
             # cross-modality correlation identity exists in their telemetry.
-            references = tuple(EventReference(item.event_id, item.source_reference) for item in events)
             start, end = min(item.event_timestamp for item in events), max(
                 item.event_timestamp for item in events)
-            reasons = tuple(EventAssociation(ref, 1.0, ("frozen_incident_boundary",))
-                            for ref in references)
+            scores = _FrozenBoundaryScores(events)
             bundle = IncidentEvidenceBundle(
                 source.incident_id, f"frozen:{source.incident_id}", AnalysisWindow(start, end),
                 events, assembler.aggregator.aggregate(events),
@@ -1502,10 +1616,13 @@ class FrozenEvidenceLoader:
                              key=lambda item: ((item[0] or ""), item[1]))),
                 tuple(sorted(set(item.value for item in SignalType)
                              - {item.signal_type.value for item in events})),
-                (), reasons, {ref: 1.0 for ref in references},
-                tuple(ProvenanceRecord(ref, event.source_dataset)
-                      for ref, event in zip(references, events)), closed=True,
+                (), _FrozenBoundaryAssociations(events), {},
+                _FrozenBoundaryProvenance(events), closed=True,
             )
+            # IncidentEvidenceBundle freezes arbitrary public mappings by
+            # copying them.  Install the private immutable representation only
+            # after construction so no per-event score dictionary is created.
+            object.__setattr__(bundle, "association_scores", scores)
             boundary_mode = "authoritative-frozen-boundary"
         return bundle, boundary_mode
 
@@ -1658,6 +1775,154 @@ def validate_rcaeval_runtime(*, registry: FrozenDatasetRegistry,
             "parquet_schema": list(schema_names), "dependencies": dependencies,
             "sample_rows_validated": len(sample_rows),
             "official_files_unchanged": True}
+
+
+def run_heavy_resource_gate(*, registry: FrozenDatasetRegistry,
+                            config_dir: str | Path,
+                            model_specification: str | Path,
+                            rcaeval_cache: str | Path,
+                            incident_id: str,
+                            reference_baseline: str | Path,
+                            output: str | Path,
+                            resume: bool = False) -> dict[str, Any]:
+    """Run the official incident worker as a non-scientific resource probe."""
+    output = Path(output).resolve()
+    reference_baseline = Path(reference_baseline).resolve()
+    forbidden = (
+        registry.repository_root / "artifacts/final-experiments-v3",
+        registry.repository_root / "artifacts/scientific-datasets-v3",
+        registry.repository_root / "artifacts/validation/rcaeval-stratified-gate-v3/run",
+    )
+    if any(output == root.resolve() or root.resolve() in output.parents for root in forbidden):
+        raise ValueError(f"RESOURCE_GATE_OUTPUT_NOT_ISOLATED:{output}")
+    if not reference_baseline.is_file():
+        raise FileNotFoundError(f"REFERENCE_BASELINE_NOT_FOUND:{reference_baseline}")
+    spec_hash = model_specification_hash(model_specification)
+    config = load_campaign_config(Path(config_dir) / "h1a.json")
+    if config["model_hash"] != spec_hash:
+        raise RuntimeError("MODEL_SPECIFICATION_CONFIG_BINDING_FAIL")
+    baseline_raw = _read_json(reference_baseline)
+    try:
+        baseline_bindings = _baseline_snapshot_bindings(
+            base_key=baseline_raw["base_key"],
+            split_key=baseline_raw["split_sha256"],
+            train_incident_ids=baseline_raw["training_incident_ids"],
+        )
+    except (KeyError, TypeError) as exc:
+        raise RuntimeError("REFERENCE_BASELINE_INVALID") from exc
+    baseline_payload = _load_valid_baseline_snapshot(
+        reference_baseline, baseline_bindings)
+    if baseline_payload is None:
+        raise RuntimeError("REFERENCE_BASELINE_INVALID")
+    runtime = validate_rcaeval_runtime(
+        registry=registry, rcaeval_cache=rcaeval_cache,
+        incident_id=incident_id)
+    if runtime.get("status") != "PASS":
+        raise RuntimeError(
+            f"HEAVY_RESOURCE_GATE_CACHE_PREFLIGHT_FAIL:{canonical_json(runtime)}")
+    loader = FrozenEvidenceLoader(registry, rcaeval_cache=rcaeval_cache)
+    source = loader.sources.get(incident_id)
+    if source is None:
+        raise ValueError(f"INCIDENT_NOT_FOUND:{incident_id}")
+    manifest = _read_json(source.manifest_path)
+    normalized_events_sha256 = manifest.get("normalized_events_sha256")
+    if not normalized_events_sha256:
+        raise RuntimeError(f"NORMALIZED_EVENTS_SHA256_MISSING:{incident_id}")
+    baseline_sha256 = baseline_payload["baseline_sha256"]
+    identity = {
+        "incident_id": incident_id,
+        "manifest_sha256": source.manifest_sha256,
+        "normalized_events_sha256": normalized_events_sha256,
+        "reference_baseline_sha256": baseline_sha256,
+        "feature_registry_fingerprint": FeatureRegistryV3().fingerprint,
+        "preprocessing_implementation_version": PREPROCESSING_VERSION,
+        "resource_gate_version": HEAVY_RESOURCE_GATE_VERSION,
+    }
+    resource_gate_key = sha256_value(identity)
+    worker_base_key = f"{HEAVY_RESOURCE_GATE_VERSION}:base:{resource_gate_key}"
+    worker_split_key = f"{HEAVY_RESOURCE_GATE_VERSION}:split:{resource_gate_key}"
+    checkpoint = output / "checkpoint.json"
+    report_path = output / "resource-gate-report.json"
+    bindings = _checkpoint_bindings(
+        base_key=worker_base_key, incident_id=incident_id, source=source,
+        baseline_sha256=baseline_sha256, split_key=worker_split_key)
+    before = registry.immutability_snapshot()
+    cached = _load_valid_incident_checkpoint(checkpoint, bindings) if resume else None
+    started = time.perf_counter()
+    if cached is None:
+        payload = _run_incident_worker(
+            registry=registry, rcaeval_cache=rcaeval_cache,
+            incident_id=incident_id, split="test", base_key=worker_base_key,
+            split_key=worker_split_key,
+            baseline_json=baseline_payload["baseline_json"], output=checkpoint)
+        checkpoint_status = "MISS"
+    else:
+        payload = cached
+        checkpoint_status = "HIT"
+    elapsed = time.perf_counter() - started
+    if payload.get("status") == "FAILED_WORKER":
+        result = {
+            **payload, "resource_gate_only": True, "scientific_eligibility": False,
+            "resource_gate_key": resource_gate_key,
+            "resource_gate_baseline_source": str(reference_baseline),
+            "resource_gate_baseline_sha256": baseline_sha256,
+            "resource_gate_baseline_is_scientific_binding": False,
+        }
+        _atomic_json(report_path, result)
+        return result
+    validated = _load_valid_incident_checkpoint(checkpoint, bindings)
+    if validated is None:
+        raise RuntimeError("RESOURCE_GATE_CHECKPOINT_INVALID")
+    if registry.immutability_snapshot() != before:
+        raise RuntimeError("RESOURCE_GATE_MUTATED_FROZEN_DATASET")
+    worker = payload.get("worker") or {}
+    phase_rows = worker.get("phase_telemetry") or []
+    phase_rss = {row["phase"]: row.get("rss_kb") for row in phase_rows}
+    phase_elapsed = {row["phase"]: row.get("elapsed_seconds") for row in phase_rows}
+    result = {
+        "status": "PASS", "resource_gate_only": True,
+        "scientific_eligibility": False,
+        "resource_gate_version": HEAVY_RESOURCE_GATE_VERSION,
+        "resource_gate_key": resource_gate_key,
+        "resource_gate_baseline_source": str(reference_baseline),
+        "resource_gate_baseline_sha256": baseline_sha256,
+        "resource_gate_baseline_is_scientific_binding": False,
+        "incident_id": incident_id,
+        "manifest_sha256": source.manifest_sha256,
+        "normalized_events_sha256": normalized_events_sha256,
+        "event_count": runtime.get("event_count"),
+        "cache_runtime_preflight": "PASS",
+        "checkpoint_status": checkpoint_status,
+        "checkpoint": str(checkpoint),
+        "checkpoint_sha256": file_sha256(checkpoint),
+        "scientific_payload_internal_consistency": "PASS",
+        "worker_returncode": worker.get("returncode", 0),
+        "signal": None,
+        "oom": False,
+        "swap_requirement_introduced_by_code": False,
+        "worker_peak_rss_kb": worker.get("peak_rss_kb", 0),
+        "worker_elapsed_seconds": worker.get("elapsed_seconds", 0),
+        "phase_rss_kb": {
+            "cache_loaded": phase_rss.get("cache"),
+            "fingerprints_ready": phase_rss.get("fingerprints"),
+            "bundle_ready": phase_rss.get("bundle"),
+            "graph_ready": phase_rss.get("graph"),
+            "features_done": phase_rss.get("features"),
+        },
+        "phase_elapsed_seconds": {
+            "cache_load": phase_elapsed.get("cache"),
+            "fingerprints": phase_elapsed.get("fingerprints"),
+            "bundle": phase_elapsed.get("bundle"),
+            "graph": phase_elapsed.get("graph"),
+            "features": phase_elapsed.get("features"),
+        },
+        "elapsed_seconds": elapsed,
+        "host_children_max_rss_kb": resource.getrusage(resource.RUSAGE_CHILDREN).ru_maxrss,
+        "frozen_dataset_immutability": "PASS",
+        "preprocessing_version": PREPROCESSING_VERSION,
+    }
+    _atomic_json(report_path, result)
+    return result
 
 
 def _supervise(dataset: RCAFeatureDatasetV3,

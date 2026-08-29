@@ -179,6 +179,36 @@ def test_indexed_identity_free_boundary_matches_public_assembler_exactly():
     assert indexed == replace(public[0], incident_id=source.incident_id)
 
 
+def test_compact_authoritative_boundary_preserves_graph_and_features_exactly():
+    values = (
+        event(1, seconds=0, service="source"),
+        event(2, seconds=1_000, service="target", severity="ERROR"),
+    )
+    source = IncidentSource(
+        "fixture:compact", "fixture", "fixture", Path("manifest.json"),
+        "a" * 64, "target", ("log",),
+    )
+    compact, mode = FrozenEvidenceLoader._bundle(source, values)
+    assert mode == "authoritative-frozen-boundary"
+    materialized = replace(
+        compact,
+        association_reasons=tuple(compact.association_reasons),
+        association_scores=dict(compact.association_scores),
+        provenance=tuple(compact.provenance),
+    )
+    assert tuple(compact.association_reasons) == materialized.association_reasons
+    assert dict(compact.association_scores) == dict(materialized.association_scores)
+    assert tuple(compact.provenance) == materialized.provenance
+
+    compact_graph = EventGraphBuilder().build(compact)
+    materialized_graph = EventGraphBuilder().build(materialized)
+    assert compact_graph.to_json() == materialized_graph.to_json()
+    assert compact_graph.graph_fingerprint == materialized_graph.graph_fingerprint
+    extractor = RCAFeatureExtractorV3()
+    assert extractor.extract(compact, compact_graph) == extractor.extract(
+        materialized, materialized_graph)
+
+
 def test_optimized_parquet_loader_is_identical_to_frozen_cache_loader(tmp_path):
     cache = CompressedNormalizedEventCache(tmp_path)
     values = (event(1), event(2, seconds=1, severity="ERROR"))
