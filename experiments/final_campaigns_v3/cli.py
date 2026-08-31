@@ -210,6 +210,18 @@ def _parser() -> argparse.ArgumentParser:
     diagnostic.add_argument("--output", type=Path)
     audit = commands.add_parser("audit-preprocess-resume")
     audit.add_argument("--output", type=Path, required=True)
+    h3_inputs = commands.add_parser("materialize-h3-inputs")
+    h3_inputs.add_argument("--config", type=Path, required=True)
+    h3_inputs.add_argument("--registry", type=Path, required=True)
+    h3_inputs.add_argument("--output", type=Path, required=True)
+    h3_inputs.add_argument("--rcaeval-cache", type=Path)
+    h3_inputs.add_argument("--validate-only", action="store_true")
+    h3_inputs.add_argument("--artifact-index", type=Path, default=Path(
+        "artifacts/final-experiments-v3/trained-artifacts-tranche-a-180/INDEX.json"))
+    h3_inputs.add_argument("--benchmark-catalog", type=Path, default=Path(
+        "artifacts/final-experiments-v3/scientific-inputs-tranche-a-180/benchmark-catalog.json"))
+    h3_inputs.add_argument("--sample-manifest", type=Path, default=Path(
+        "artifacts/final-experiments-v3/preflight/h3-sample-manifest.json"))
     for command in ("dry-run", "run", "resume"):
         item = commands.add_parser(command)
         item.add_argument("--config", type=Path, required=True)
@@ -283,6 +295,21 @@ def _write_pre_execution(store: CampaignStoreV3, payload, registry, config, runs
 
 def main(argv=None) -> int:
     args = _parser().parse_args(argv)
+    if args.command == "materialize-h3-inputs":
+        from .h3_materializer import materialize_h3_inputs
+        result = materialize_h3_inputs(
+            config_path=args.config.resolve(), registry_path=args.registry.resolve(),
+            output=args.output.resolve(), repository_root=REPOSITORY_ROOT,
+            artifact_index_path=args.artifact_index.resolve(),
+            benchmark_catalog_path=args.benchmark_catalog.resolve(),
+            sample_manifest_path=args.sample_manifest.resolve(),
+            rcaeval_cache=args.rcaeval_cache, validate_only=args.validate_only)
+        print(canonical_json({
+            "status": "PASS", "incident_count": result["incident_count"],
+            "scientific_bundle_fingerprint": result["scientific_bundle_fingerprint"],
+            "index": str(args.output.resolve() / "INDEX.json"),
+        }))
+        return 0
     if args.command == "validate-rcaeval-runtime":
         from .preprocessing import validate_rcaeval_runtime
         registry = FrozenDatasetRegistry.load(args.registry, REPOSITORY_ROOT)

@@ -80,6 +80,13 @@ def load_h3_inputs(*, config, repository_root):
     index = _read(path)
     if index.get("schema_version") != "scientific-rca-bundle-index-v3":
         raise ValueError("H3 scientific RCA bundle index inválido.")
+    from experiments.multimodal_v3.core import ExperimentPlannerV3
+    planner = ExperimentPlannerV3(config)
+    expected = tuple(sorted(planner._h3_sample(tuple(config.datasets),
+                                               seed=min(config.seeds))))
+    indexed = tuple(item.get("incident_id") for item in index.get("incidents", ()))
+    if len(expected) != 40 or indexed != expected:
+        raise ValueError("H3 scientific RCA bundle diverge da amostra congelada.")
     rca_results, raw_telemetry = {}, {}
     for item in index.get("incidents", ()):
         rca_path = _inside(Path(repository_root).resolve(), item["rca_result_path"])
@@ -92,8 +99,11 @@ def load_h3_inputs(*, config, repository_root):
         if sha256_value(rca.to_dict()) != item["rca_result_contract_sha256"]:
             raise ValueError("H3 RCAResult contract hash mismatch.")
         rca_results[item["incident_id"]] = rca
-        raw_telemetry[item["incident_id"]] = tuple(_read(raw_path))
-    if len(rca_results) < 40:
+        raw_payload = _read(raw_path)
+        if not isinstance(raw_payload, list):
+            raise ValueError("H3 raw telemetry deve ser uma lista JSON.")
+        raw_telemetry[item["incident_id"]] = tuple(raw_payload)
+    if len(rca_results) != 40 or len(raw_telemetry) != 40:
         raise RuntimeError("H3_SCIENTIFIC_RCA_RESULTS_NOT_AVAILABLE")
     return {"rca_results": rca_results, "raw_telemetry": raw_telemetry}
 
