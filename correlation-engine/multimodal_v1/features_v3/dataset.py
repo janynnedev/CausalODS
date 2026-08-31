@@ -4,13 +4,13 @@ import hashlib
 import json
 import math
 import random
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import Enum
 from types import MappingProxyType
 from typing import Iterable, Mapping
 
 from multimodal_v1.evidence.contracts import IncidentEvidenceBundle
-from multimodal_v1.canonical import canonical_json_value, deep_freeze_json
+from multimodal_v1.canonical import canonical_json_value, canonical_sha256, deep_freeze_json
 from multimodal_v1.event_graph.contracts import EventEvidenceGraph, PruningResult
 from multimodal_v1.features_v3.baselines import BaselineSnapshotV3, TrainingBaselineEstimatorV3
 from multimodal_v1.features_v3.contracts import FeatureGroup, RCAFeatureVectorViewV3
@@ -25,6 +25,15 @@ def _json(value: object) -> str:
 
 def _sha(value: object) -> str:
     return hashlib.sha256(_json(value).encode()).hexdigest()
+
+
+def baseline_binding_sha256(provenance: Mapping[str, object],
+                            splits: Mapping[str, Iterable[str]]) -> str:
+    values = {key: value for key, value in provenance.items()
+              if key != "baseline_binding_sha256"}
+    return canonical_sha256({"policy": "frozen-parent-train", "provenance": values,
+                             "splits": {name: sorted(splits[name])
+                                        for name in ("train", "validation", "test")}})
 
 
 class LabelStatus(str, Enum):
@@ -123,7 +132,7 @@ class DatasetManifestV3:
     feature_names: tuple[str, ...]
     column_count: int
     base_schema_version: str
-    baseline_json: str
+    baseline_json: str | None
     baseline_sha256: str
     seed: int
     split_algorithm: str
@@ -136,6 +145,10 @@ class DatasetManifestV3:
     ablation_id: str
     policy_provenance: "PolicyProvenanceV3"
     rows_sha256: str
+    baseline_binding_policy: str = "split-train-exact"
+    baseline_binding_provenance: Mapping[str, object] = field(default_factory=dict)
+    baseline_reference: Mapping[str, object] = field(default_factory=dict)
+    baseline_parent_training_incident_ids: tuple[str, ...] = ()
 
     def to_dict(self) -> dict[str, object]:
         return {
@@ -156,6 +169,12 @@ class DatasetManifestV3:
             "ablation_id": self.ablation_id,
             "policy_provenance": self.policy_provenance.to_dict(),
             "rows_sha256": self.rows_sha256,
+            "baseline_binding_policy": self.baseline_binding_policy,
+            "baseline_binding_provenance": canonical_json_value(
+                self.baseline_binding_provenance),
+            "baseline_reference": canonical_json_value(self.baseline_reference),
+            "baseline_parent_training_incident_ids": list(
+                self.baseline_parent_training_incident_ids),
         }
 
 
@@ -291,18 +310,22 @@ class PolicyProvenanceV3:
 class RCAFeatureDatasetV3:
     rows: tuple[DatasetRowV3, ...]
     feature_view: FeatureViewV3
-    baselines: BaselineSnapshotV3
+    baselines: BaselineSnapshotV3 | None
     split_incident_ids: Mapping[str, tuple[str, ...]]
     seed: int
     split_fractions: Mapping[str, float]
     policy_provenance: PolicyProvenanceV3 = None
     supervised: bool = False
+    baseline_binding_policy: str = "split-train-exact"
+    baseline_binding_provenance: Mapping[str, object] = field(default_factory=dict)
+    baseline_reference: Mapping[str, object] = field(default_factory=dict)
+    baseline_parent_training_incident_ids: tuple[str, ...] = ()
 
     def __post_init__(self) -> None:
         if not isinstance(self.feature_view, FeatureViewV3):
             raise TypeError("feature_view deve ser FeatureViewV3.")
-        if not isinstance(self.baselines, BaselineSnapshotV3):
-            raise TypeError("baselines deve ser BaselineSnapshotV3.")
+        if self.baselines is not None and not isinstance(self.baselines, BaselineSnapshotV3):
+            raise TypeError("baselines deve ser BaselineSnapshotV3 ou None.")
         if isinstance(self.seed, bool) or not isinstance(self.seed, int):
             raise TypeError("seed deve ser inteiro não booleano.")
         if not isinstance(self.supervised, bool):
@@ -315,8 +338,77 @@ class RCAFeatureDatasetV3:
             raise ValueError("IDs dos splits devem ser strings não vazias.")
         if len(flattened) != len(set(flattened)):
             raise ValueError("Splits devem ser disjuntos.")
-        if tuple(sorted(self.baselines.training_incident_ids)) != tuple(sorted(splits["train"])):
-            raise ValueError("Baseline deve corresponder exatamente ao split train.")
+        baseline_ids = set(self.baselines.training_incident_ids if self.baselines is not None
+                           else self.baseline_parent_training_incident_ids)
+        provenance = dict(self.baseline_binding_provenance)
+        if self.baseline_binding_policy == "split-train-exact":
+            if self.baselines is None or self.baseline_reference \
+                    or self.baseline_parent_training_incident_ids:
+                raise ValueError("split-train-exact requer baseline embutido legado.")
+            if tuple(sorted(baseline_ids)) != tuple(sorted(splits["train"])):
+                raise ValueError("Baseline deve corresponder exatamente ao split train.")
+            if provenance:
+                raise ValueError("split-train-exact não aceita proveniência de baseline pai.")
+        elif self.baseline_binding_policy == "frozen-parent-train":
+            required = {
+                "official_parent_baseline_sha256", "parent_base_key", "parent_split_sha256",
+                "scientific_tranche_id", "scientific_tranche_sha256",
+                "parent_training_incident_ids_sha256", "parent_training_incident_count",
+                "baseline_binding_sha256",
+            }
+            if set(provenance) != required:
+                raise ValueError("frozen-parent-train requer proveniência explícita completa.")
+            if not set(splits["train"]) <= baseline_ids:
+                raise ValueError("Tranche train deve ser subconjunto do baseline pai.")
+            if set(splits["validation"]) & baseline_ids:
+                raise ValueError("Tranche validation não pode integrar o baseline pai.")
+            if set(splits["test"]) & baseline_ids:
+                raise ValueError("Tranche test não pode integrar o baseline pai.")
+            reference_required = {
+                "schema_version", "path", "baseline_sha256", "parent_base_key",
+                "parent_split_sha256", "parent_training_incident_ids_sha256",
+                "parent_training_incident_count", "preprocessing_version",
+            }
+            reference = dict(self.baseline_reference)
+            if set(reference) != reference_required or reference.get(
+                    "schema_version") != "frozen-parent-baseline-reference-v1":
+                raise ValueError("Referência frozen-parent-train incompleta.")
+            if not isinstance(reference.get("path"), str) or not reference["path"].strip() \
+                    or reference["path"].startswith("/") or ".." in reference["path"].split("/"):
+                raise ValueError("Caminho da referência de baseline deve ser relativo e seguro.")
+            if reference["baseline_sha256"] != provenance["official_parent_baseline_sha256"]:
+                raise ValueError("SHA-256 da referência diverge da proveniência.")
+            if reference["parent_base_key"] != provenance["parent_base_key"] \
+                    or reference["parent_split_sha256"] != provenance["parent_split_sha256"]:
+                raise ValueError("Binding pai da referência diverge da proveniência.")
+            if reference["parent_training_incident_ids_sha256"] != provenance[
+                    "parent_training_incident_ids_sha256"] or reference[
+                        "parent_training_incident_count"] != provenance[
+                            "parent_training_incident_count"]:
+                raise ValueError("Identidade de treino da referência diverge da proveniência.")
+            if self.baselines is not None and provenance[
+                    "official_parent_baseline_sha256"] != canonical_sha256(
+                        json.loads(self.baselines.to_json())):
+                raise ValueError("SHA-256 do baseline pai diverge do baseline serializado.")
+            if provenance["parent_training_incident_ids_sha256"] != _sha(sorted(baseline_ids)):
+                raise ValueError("Binding dos IDs de treino do baseline pai diverge.")
+            if provenance["parent_training_incident_count"] != len(baseline_ids):
+                raise ValueError("Contagem de treino do baseline pai diverge.")
+            if provenance["baseline_binding_sha256"] != baseline_binding_sha256(
+                    provenance, splits):
+                raise ValueError("Binding canônico frozen-parent-train diverge.")
+            for name in ("official_parent_baseline_sha256", "parent_base_key",
+                         "parent_split_sha256", "scientific_tranche_sha256",
+                         "parent_training_incident_ids_sha256", "baseline_binding_sha256"):
+                value = provenance[name]
+                if not isinstance(value, str) or len(value) != 64 or any(
+                    character not in "0123456789abcdef" for character in value):
+                    raise ValueError(f"{name} deve ser SHA-256 hexadecimal.")
+            if not isinstance(provenance["scientific_tranche_id"], str) or not provenance[
+                    "scientific_tranche_id"].strip():
+                raise ValueError("scientific_tranche_id inválido.")
+        else:
+            raise ValueError("baseline_binding_policy inválida.")
         split_by_id = {incident: split for split, ids in splits.items() for incident in ids}
         keys = [(row.vector.incident_id, row.vector.service_name) for row in self.rows]
         if len(keys) != len(set(keys)):
@@ -352,6 +444,19 @@ class RCAFeatureDatasetV3:
         if not math.isclose(sum(fractions.values()), 1.0, rel_tol=1e-12, abs_tol=1e-12):
             raise ValueError("split_fractions deve somar 1 dentro de tolerância 1e-12.")
         object.__setattr__(self, "split_fractions", MappingProxyType(fractions))
+        if self.baseline_binding_policy == "frozen-parent-train":
+            total = len(flattened)
+            expected_fractions = {name: len(splits[name]) / total for name in splits}
+            if any(not math.isclose(fractions[name], expected_fractions[name],
+                                    rel_tol=1e-12, abs_tol=1e-12) for name in splits):
+                raise ValueError("Frações da tranche devem corresponder aos splits reais.")
+        object.__setattr__(self, "baseline_binding_provenance",
+                           deep_freeze_json(provenance))
+        object.__setattr__(self, "baseline_reference",
+                           deep_freeze_json(dict(self.baseline_reference)))
+        object.__setattr__(self, "baseline_parent_training_incident_ids",
+                           tuple(sorted(baseline_ids)) if self.baseline_binding_policy ==
+                           "frozen-parent-train" else ())
         if not isinstance(self.policy_provenance, PolicyProvenanceV3):
             raise TypeError("policy_provenance deve ser PolicyProvenanceV3.")
         incidents = set(flattened)
@@ -383,7 +488,12 @@ class RCAFeatureDatasetV3:
 
     @property
     def manifest(self) -> DatasetManifestV3:
-        baseline_json = self.baselines.to_json()
+        baseline_json = (None if self.baseline_binding_policy == "frozen-parent-train"
+                         else self.baselines.to_json())
+        baseline_sha256 = (self.baseline_binding_provenance[
+                               "official_parent_baseline_sha256"]
+                           if self.baseline_binding_policy == "frozen-parent-train"
+                           else _sha(json.loads(baseline_json)))
         canonical_registry = FeatureRegistryV3().to_json()
         feature_view_json = self.feature_view.to_json()
         distribution = {"positive": 0, "negative": 0, "unknown": 0, "excluded": 0, "unlabeled": 0}
@@ -399,11 +509,14 @@ class RCAFeatureDatasetV3:
             _sha(json.loads(canonical_registry)), self.feature_view.fingerprint,
             feature_view_json, _sha(json.loads(feature_view_json)), self.feature_view.names,
             len(self.feature_view.names), "rca-features-v3",
-            baseline_json, _sha(json.loads(baseline_json)), self.seed,
+            baseline_json, baseline_sha256, self.seed,
             "sorted-unique-seeded-shuffle-v1", self.split_fractions,
             self.split_incident_ids, self.split_sha256, len({row.vector.incident_id for row in self.rows}),
             len(self.rows), distribution, self.feature_view.ablation_id,
             self.policy_provenance, self.rows_sha256,
+            self.baseline_binding_policy, self.baseline_binding_provenance,
+            self.baseline_reference,
+            self.baseline_parent_training_incident_ids,
         )
 
     def to_dict(self) -> dict[str, object]:
@@ -428,7 +541,10 @@ class RCAFeatureDatasetV3:
         rows = tuple(DatasetRowV3(row.split, _view_vector(row.vector, view), row.target) for row in self.rows)
         return RCAFeatureDatasetV3(rows, view, self.baselines, self.split_incident_ids,
                                    self.seed, self.split_fractions, self.policy_provenance,
-                                   self.supervised)
+                                   self.supervised, self.baseline_binding_policy,
+                                   self.baseline_binding_provenance,
+                                   self.baseline_reference,
+                                   self.baseline_parent_training_incident_ids)
 
 
 def _view_vector(vector, view: FeatureViewV3) -> RCAFeatureVectorViewV3:

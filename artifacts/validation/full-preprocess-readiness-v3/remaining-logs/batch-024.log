@@ -1,0 +1,38 @@
+
+COMMAND:
+/usr/bin/time -v /home/janynne/projects/CausalODS/correlation-engine/.venv/bin/python -m experiments.rcaeval_official_v3 materialize --root datasets/RCAEval-data --output /home/janynne/projects/CausalODS/artifacts/validation/rcaeval-remaining-735-cache-v3/batch-024 --cache /home/janynne/mnt/rcaeval-official-v3 --resume --incident-id rcaeval:re2tt_ts-travel-service_cpu_1 --incident-id rcaeval:re2tt_ts-travel-service_delay_1 --incident-id rcaeval:re2tt_ts-travel-service_disk_2 --incident-id rcaeval:re2tt_ts-travel-service_mem_2 --incident-id rcaeval:re2tt_ts-travel-service_mem_3 --incident-id rcaeval:re3ob_adservice_f5_3 --incident-id rcaeval:re3ob_emailservice_f1_2 --incident-id rcaeval:re3ob_emailservice_f2_1 --incident-id rcaeval:re3ob_emailservice_f2_2 --incident-id rcaeval:re3ob_emailservice_f2_3
+
+[001/010] RE2 TT re2tt_ts-travel-service_cpu_1 modalities=log,metric,trace events=1548221 usable=true elapsed=693.7s percent=10.0 eta=6243.2s rss=343842816 peak_rss=343842816 cache_hits=0 cache_misses=1
+[002/010] RE2 TT re2tt_ts-travel-service_delay_1 modalities=log,metric,trace events=1694249 usable=true elapsed=1514.4s percent=20.0 eta=6057.5s rss=347238400 peak_rss=347238400 cache_hits=0 cache_misses=2
+[003/010] RE2 TT re2tt_ts-travel-service_disk_2 modalities=log,metric,trace events=731015 usable=true elapsed=1820.3s percent=30.0 eta=4247.4s rss=347238400 peak_rss=347238400 cache_hits=0 cache_misses=3
+[004/010] RE2 TT re2tt_ts-travel-service_mem_2 modalities=log,metric,trace events=1663149 usable=true elapsed=2776.4s percent=40.0 eta=4164.6s rss=347238400 peak_rss=347238400 cache_hits=0 cache_misses=4
+[005/010] RE2 TT re2tt_ts-travel-service_mem_3 modalities=log,metric,trace events=1354047 usable=true elapsed=3356.0s percent=50.0 eta=3356.0s rss=347238400 peak_rss=347238400 cache_hits=0 cache_misses=5
+[006/010] RE3 OB re3ob_adservice_f5_3 modalities=log,metric,trace events=330361 usable=true elapsed=3500.9s percent=60.0 eta=2333.9s rss=347238400 peak_rss=347238400 cache_hits=0 cache_misses=6
+[007/010] RE3 OB re3ob_emailservice_f1_2 modalities=log,metric,trace events=329887 usable=true elapsed=3647.2s percent=70.0 eta=1563.1s rss=347238400 peak_rss=347238400 cache_hits=0 cache_misses=7
+[008/010] RE3 OB re3ob_emailservice_f2_1 modalities=log,metric,trace events=333375 usable=true elapsed=3793.8s percent=80.0 eta=948.5s rss=347238400 peak_rss=347238400 cache_hits=0 cache_misses=8
+[009/010] RE3 OB re3ob_emailservice_f2_2 modalities=log,metric,trace events=330853 usable=true elapsed=3941.6s percent=90.0 eta=438.0s rss=347238400 peak_rss=347238400 cache_hits=0 cache_misses=9
+[010/010] RE3 OB re3ob_emailservice_f2_3 modalities=log,metric,trace events=329200 usable=true elapsed=4086.4s percent=100.0 eta=0.0s rss=347238400 peak_rss=347238400 cache_hits=0 cache_misses=10
+{"cache_hits":0,"cache_misses":10,"coordinator_peak_rss_bytes":347238400,"elapsed_seconds":4086.5407833729987,"errors":0,"free_disk_after":58418233344,"free_disk_before":58992148480,"global_schema_computations":1,"global_schema_sha256":"1085058837f3da8df47352a329d62577e2b9fee7264d2248fba3aceb0b5be9b0","heavy_recomputations":10,"manifest_usable_for_benchmark":10,"max_worker_peak_rss_bytes":3966992384,"mode":"targeted","peak_rss":347238400,"planned":10,"processed":10,"requested_incidents":["rcaeval:re2tt_ts-travel-service_cpu_1","rcaeval:re2tt_ts-travel-service_delay_1","rcaeval:re2tt_ts-travel-service_disk_2","rcaeval:re2tt_ts-travel-service_mem_2","rcaeval:re2tt_ts-travel-service_mem_3","rcaeval:re3ob_adservice_f5_3","rcaeval:re3ob_emailservice_f1_2","rcaeval:re3ob_emailservice_f2_1","rcaeval:re3ob_emailservice_f2_2","rcaeval:re3ob_emailservice_f2_3"],"selected_incidents":["rcaeval:re2tt_ts-travel-service_cpu_1","rcaeval:re2tt_ts-travel-service_delay_1","rcaeval:re2tt_ts-travel-service_disk_2","rcaeval:re2tt_ts-travel-service_mem_2","rcaeval:re2tt_ts-travel-service_mem_3","rcaeval:re3ob_adservice_f5_3","rcaeval:re3ob_emailservice_f1_2","rcaeval:re3ob_emailservice_f2_1","rcaeval:re3ob_emailservice_f2_2","rcaeval:re3ob_emailservice_f2_3"],"unusable":0,"usable_for_benchmark":10,"valid":10,"version":"rcaeval-official-hf-materializer-v3"}
+	Command being timed: "/home/janynne/projects/CausalODS/correlation-engine/.venv/bin/python -m experiments.rcaeval_official_v3 materialize --root datasets/RCAEval-data --output /home/janynne/projects/CausalODS/artifacts/validation/rcaeval-remaining-735-cache-v3/batch-024 --cache /home/janynne/mnt/rcaeval-official-v3 --resume --incident-id rcaeval:re2tt_ts-travel-service_cpu_1 --incident-id rcaeval:re2tt_ts-travel-service_delay_1 --incident-id rcaeval:re2tt_ts-travel-service_disk_2 --incident-id rcaeval:re2tt_ts-travel-service_mem_2 --incident-id rcaeval:re2tt_ts-travel-service_mem_3 --incident-id rcaeval:re3ob_adservice_f5_3 --incident-id rcaeval:re3ob_emailservice_f1_2 --incident-id rcaeval:re3ob_emailservice_f2_1 --incident-id rcaeval:re3ob_emailservice_f2_2 --incident-id rcaeval:re3ob_emailservice_f2_3"
+	User time (seconds): 4007.46
+	System time (seconds): 51.95
+	Percent of CPU this job got: 99%
+	Elapsed (wall clock) time (h:mm:ss or m:ss): 1:08:08
+	Average shared text size (kbytes): 0
+	Average unshared data size (kbytes): 0
+	Average stack size (kbytes): 0
+	Average total size (kbytes): 0
+	Maximum resident set size (kbytes): 3874016
+	Average resident set size (kbytes): 0
+	Major (requiring I/O) page faults: 1
+	Minor (reclaiming a frame) page faults: 13847258
+	Voluntary context switches: 2346
+	Involuntary context switches: 229980
+	Swaps: 0
+	File system inputs: 425872
+	File system outputs: 2495320
+	Socket messages sent: 0
+	Socket messages received: 0
+	Signals delivered: 0
+	Page size (bytes): 4096
+	Exit status: 0

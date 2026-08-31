@@ -18,6 +18,7 @@ from typing import Any, Iterable, Mapping
 
 import joblib
 import numpy as np
+from multimodal_v1.canonical import canonical_sha256
 from sklearn.base import BaseEstimator
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.impute import SimpleImputer
@@ -182,6 +183,69 @@ class BenchmarkDataset:
             actual_ids = sorted({item["vector"]["incident_id"] for item in split_rows})
             if actual_ids != sorted(expected_split_ids.get(split, ())):
                 raise ValueError(f"IDs declarados divergem no split {split}.")
+        binding_policy = manifest.get("baseline_binding_policy", "split-train-exact")
+        binding_provenance = manifest.get("baseline_binding_provenance", {})
+        if binding_policy == "split-train-exact":
+            try:
+                baseline_payload = json.loads(manifest["baseline_json"])
+                baseline_ids = set(baseline_payload["training_incident_ids"])
+            except (KeyError, TypeError, json.JSONDecodeError) as exc:
+                raise ValueError("Baseline serializado inválido.") from exc
+            if manifest.get("baseline_sha256") != sha256(baseline_payload):
+                raise ValueError("baseline_sha256 diverge do baseline serializado.")
+            if baseline_ids != set(expected_split_ids["train"]) or binding_provenance:
+                raise ValueError("Baseline deve corresponder exatamente ao split train.")
+        elif binding_policy == "frozen-parent-train":
+            required = {"official_parent_baseline_sha256", "parent_base_key",
+                        "parent_split_sha256", "scientific_tranche_id",
+                        "scientific_tranche_sha256", "parent_training_incident_ids_sha256",
+                        "parent_training_incident_count", "baseline_binding_sha256"}
+            if not isinstance(binding_provenance, dict) or set(binding_provenance) != required:
+                raise ValueError("Proveniência frozen-parent-train incompleta.")
+            if manifest.get("baseline_json") is not None:
+                raise ValueError("frozen-parent-train não pode embutir baseline_json.")
+            reference = manifest.get("baseline_reference")
+            reference_required = {"schema_version", "path", "baseline_sha256",
+                                  "parent_base_key", "parent_split_sha256",
+                                  "parent_training_incident_ids_sha256",
+                                  "parent_training_incident_count", "preprocessing_version"}
+            if not isinstance(reference, dict) or set(reference) != reference_required \
+                    or reference.get("schema_version") != "frozen-parent-baseline-reference-v1":
+                raise ValueError("Referência frozen-parent-train incompleta.")
+            if (not isinstance(reference.get("path"), str) or reference["path"].startswith("/")
+                    or ".." in reference["path"].split("/")):
+                raise ValueError("Referência frozen-parent-train insegura.")
+            if reference["baseline_sha256"] != manifest.get("baseline_sha256"):
+                raise ValueError("SHA da referência de baseline diverge do manifesto.")
+            baseline_ids = set(manifest.get("baseline_parent_training_incident_ids", ()))
+            if len(baseline_ids) != reference["parent_training_incident_count"] \
+                    or canonical_sha256(sorted(baseline_ids)) != reference[
+                        "parent_training_incident_ids_sha256"]:
+                raise ValueError("IDs compactos do baseline pai divergem da referência.")
+            if not set(expected_split_ids["train"]) <= baseline_ids:
+                raise ValueError("Tranche train não pertence integralmente ao baseline pai.")
+            if (set(expected_split_ids["validation"]) | set(expected_split_ids["test"])) & baseline_ids:
+                raise ValueError("Validation/test da tranche sobrepõem o baseline pai.")
+            if binding_provenance["official_parent_baseline_sha256"] != manifest["baseline_sha256"]:
+                raise ValueError("Baseline oficial diverge da proveniência.")
+            if binding_provenance["parent_training_incident_ids_sha256"] != sha256(
+                    sorted(baseline_ids)) or binding_provenance[
+                        "parent_training_incident_count"] != len(baseline_ids):
+                raise ValueError("Identidade do treino do baseline pai diverge.")
+            from multimodal_v1.features_v3.dataset import baseline_binding_sha256
+            if binding_provenance["baseline_binding_sha256"] != baseline_binding_sha256(
+                    binding_provenance, expected_split_ids):
+                raise ValueError("Binding canônico frozen-parent-train diverge.")
+            total = sum(len(expected_split_ids[name]) for name in ("train", "validation", "test"))
+            expected_fractions = {name: len(expected_split_ids[name]) / total
+                                  for name in ("train", "validation", "test")}
+            fractions = manifest.get("split_fractions", {})
+            if any(not math.isclose(fractions.get(name, -1), expected_fractions[name],
+                                    rel_tol=1e-12, abs_tol=1e-12)
+                   for name in expected_fractions):
+                raise ValueError("Frações frozen-parent-train divergem dos splits.")
+        else:
+            raise ValueError("baseline_binding_policy inválida.")
         if manifest.get("row_count") != len(rows):
             raise ValueError("row_count diverge das linhas.")
         if manifest.get("incident_count") != len({row.incident_id for row in rows}):
@@ -210,6 +274,10 @@ class BenchmarkDataset:
             "split_sha256": manifest.get("split_sha256"),
             "feature_fingerprint": manifest.get("feature_fingerprint"),
             "feature_names": list(names),
+            "baseline_binding_policy": binding_policy,
+            "baseline_binding_provenance": binding_provenance,
+            "baseline_sha256": manifest.get("baseline_sha256"),
+            "baseline_reference": manifest.get("baseline_reference", {}),
         })
         dataset.validate()
         return dataset

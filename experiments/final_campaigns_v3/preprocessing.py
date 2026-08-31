@@ -44,6 +44,7 @@ from multimodal_v1.features_v3 import (
     PolicyProvenanceV3, RCAFeatureDatasetV3, RCAFeatureExtractorV3,
     RCAFeatureVectorViewV3, RCAServiceTargetV3,
 )
+from multimodal_v1.features_v3.dataset import baseline_binding_sha256
 from multimodal_v1.features_v3.baselines import event_latency_ms, log_template, metric_kind
 
 from .core import (
@@ -181,17 +182,19 @@ def resolve_preprocessing_binding(*, registry: FrozenDatasetRegistry,
     )
 
 
-def build_preprocessing_keys(*, registry: FrozenDatasetRegistry,
-                             sources: Mapping[str, Any],
-                             splits: Mapping[str, Iterable[str]],
-                             protocol: str, held_out: str | None,
-                             seed: int) -> tuple[str, str, tuple[str, ...]]:
-    """Canonical frozen split/base key formula shared by CLI and materialize."""
+def preprocessing_key_preimage(*, registry: FrozenDatasetRegistry,
+                               sources: Mapping[str, Any],
+                               splits: Mapping[str, Iterable[str]],
+                               protocol: str, held_out: str | None, seed: int,
+                               registry_sha256: str | None = None,
+                               ) -> tuple[dict[str, Any], tuple[str, ...]]:
+    """Return the complete deterministic base-key preimage for forensic use."""
     split_key = sha256_value({name: sorted(values) for name, values in splits.items()})
     incident_ids = tuple(sorted({value for values in splits.values() for value in values}))
     manifest_hashes = sorted(sources[value].manifest_sha256 for value in incident_ids)
-    base_key = sha256_value({
-        "dataset_fingerprints": registry.snapshot()["registry_sha256"],
+    return ({
+        "dataset_fingerprints": (registry_sha256 if registry_sha256 is not None
+                                 else registry.snapshot()["registry_sha256"]),
         "manifest_hashes": manifest_hashes,
         "protocol": protocol,
         "held_out": held_out,
@@ -199,8 +202,33 @@ def build_preprocessing_keys(*, registry: FrozenDatasetRegistry,
         "split_hash": split_key,
         "feature_registry_hash": FeatureRegistryV3().fingerprint,
         "preprocessing_version": PREPROCESSING_VERSION,
-    })
+    }, incident_ids)
+
+
+def build_preprocessing_keys(*, registry: FrozenDatasetRegistry,
+                             sources: Mapping[str, Any],
+                             splits: Mapping[str, Iterable[str]],
+                             protocol: str, held_out: str | None,
+                             seed: int, registry_sha256: str | None = None,
+                             ) -> tuple[str, str, tuple[str, ...]]:
+    """Canonical frozen split/base key formula shared by CLI and materialize."""
+    preimage, incident_ids = preprocessing_key_preimage(
+        registry=registry, sources=sources, splits=splits, protocol=protocol,
+        held_out=held_out, seed=seed, registry_sha256=registry_sha256)
+    split_key = preimage["split_hash"]
+    base_key = sha256_value(preimage)
     return split_key, base_key, incident_ids
+
+
+def effective_split_sha256(splits: Mapping[str, Iterable[str]]) -> str:
+    """Canonical identity of actual train/validation/test membership.
+
+    This is intentionally distinct from the parent planner split and from a
+    scientific tranche selection-manifest fingerprint.  Operational tranche
+    checkpoints retain their historical selection-SHA binding separately.
+    """
+    return sha256_value({name: sorted(splits[name])
+                         for name in ("train", "validation", "test")})
 
 
 def _read_json(path: Path) -> Any:
@@ -225,6 +253,38 @@ def _atomic_json(path: Path, payload: Any) -> None:
     finally:
         if temporary is not None and temporary.exists():
             temporary.unlink()
+
+
+def _record_finalization_phase(path: Path, phase: str, *, started: float,
+                               view: str | None = None,
+                               cache_key: str | None = None) -> None:
+    """Persist bounded parent-process telemetry outside scientific hashes."""
+    current_rss_kb = None
+    try:
+        for line in Path("/proc/self/status").read_text().splitlines():
+            if line.startswith("VmRSS:"):
+                current_rss_kb = int(line.split()[1])
+                break
+    except (OSError, ValueError):
+        pass
+    events = []
+    if path.is_file():
+        try:
+            prior = _read_json(path)
+            if isinstance(prior, dict) and isinstance(prior.get("events"), list):
+                events = prior["events"][-255:]
+        except ValueError:
+            events = []
+    events.append({
+        "phase": phase, "elapsed_seconds": time.perf_counter() - started,
+        "rss_kb": current_rss_kb,
+        "peak_rss_kb": resource.getrusage(resource.RUSAGE_SELF).ru_maxrss,
+        "view": view, "cache_key": cache_key,
+    })
+    _atomic_json(path, {
+        "schema_version": "tranche-finalization-telemetry-v1",
+        "status": "IN_PROGRESS", "events": events,
+    })
 
 
 def _atomic_text(path: Path, value: str) -> None:
@@ -514,6 +574,24 @@ def _load_valid_baseline_snapshot(path: Path, bindings: Mapping[str, Any]) -> di
         return None
 
 
+def _load_worker_baseline(*, snapshot_path: str | Path, expected_sha256: str,
+                          bindings: Mapping[str, Any]) -> BaselineSnapshotV3:
+    """Load an immutable planner-bound baseline reference for one worker."""
+    path = Path(snapshot_path)
+    payload = _load_valid_baseline_snapshot(path, bindings)
+    if payload is None:
+        raise RuntimeError(f"INCIDENT_WORKER_BASELINE_REFERENCE_INVALID:{path}")
+    if payload.get("baseline_sha256") != expected_sha256:
+        raise RuntimeError("INCIDENT_WORKER_BASELINE_SHA256_MISMATCH")
+    baseline_json = payload["baseline_json"]
+    baseline = _baseline_from_json(baseline_json)
+    # Release both the parsed snapshot mapping and its large JSON string before
+    # the normalized event cache is opened.
+    del baseline_json, payload
+    gc.collect()
+    return baseline
+
+
 def _incident_scientific_payload(payload: Mapping[str, Any]) -> dict[str, Any]:
     keys = ("schema_version", "preprocessing_version", "base_key", "incident_id",
             "source_manifest_sha256", "source_cache_identity", "source_dataset",
@@ -582,13 +660,16 @@ def _load_valid_incident_checkpoint(path: Path, bindings: Mapping[str, Any]) -> 
 def _incident_worker_payload(
     *, registry: FrozenDatasetRegistry, rcaeval_cache: str | Path | None,
     incident_id: str, split: str, base_key: str, split_key: str,
-    baseline_json: str, source: IncidentSource, target: Path,
+    baseline_snapshot_path: str | Path, baseline_sha256: str,
+    baseline_snapshot_bindings: Mapping[str, Any], source: IncidentSource, target: Path,
+    phase_diagnostic_path: str | Path | None = None,
 ) -> dict[str, Any]:
     if os.environ.get("CAUSALODS_TEST_FAIL_INCIDENT_WORKER") == incident_id:
         raise RuntimeError(f"TEST_INCIDENT_WORKER_FAILURE:{incident_id}")
     started = time.perf_counter()
     phase_started = started
     phase_telemetry = []
+    diagnostic = Path(phase_diagnostic_path or target.with_suffix(".phases.json"))
 
     def record_phase(name: str) -> None:
         nonlocal phase_started
@@ -607,17 +688,25 @@ def _incident_worker_payload(
             "rss_kb": current_rss_kb,
             "peak_rss_kb": resource.getrusage(resource.RUSAGE_SELF).ru_maxrss,
         })
+        _atomic_json(diagnostic, {
+            "schema_version": "incident-worker-phase-diagnostic-v1",
+            "incident_id": incident_id, "status": "IN_PROGRESS",
+            "current_phase": name, "phases": phase_telemetry,
+        })
         phase_started = now
 
-    baseline = _baseline_from_json(baseline_json)
+    baseline = _load_worker_baseline(
+        snapshot_path=baseline_snapshot_path, expected_sha256=baseline_sha256,
+        bindings=baseline_snapshot_bindings)
     loader = FrozenEvidenceLoader(registry, rcaeval_cache=rcaeval_cache)
     source = loader.sources[incident_id]
+    record_phase("CACHE_START")
     events = loader.events(source)
-    record_phase("cache")
+    record_phase("CACHE_DONE")
     event_fingerprints = loader.event_fingerprints_aligned(events)
-    record_phase("fingerprints")
+    record_phase("FINGERPRINTS_DONE")
     bundle, _ = FrozenEvidenceLoader._bundle(source, events)
-    record_phase("bundle")
+    record_phase("BUNDLE_DONE")
     graph = EventGraphBuilder().build(bundle)
     # IncidentGraphContext defensively copies arbitrary public mappings.  The
     # private frozen boundary is already immutable and is also retained by the
@@ -634,7 +723,7 @@ def _incident_worker_payload(
             }
         _bind_event_fingerprints(graph, event_fingerprints)
         del event_fingerprints
-    record_phase("graph")
+    record_phase("GRAPH_DONE")
     extractor = RCAFeatureExtractorV3()
     full_view = FeatureRegistryV3().select()
     rows = []
@@ -650,14 +739,14 @@ def _incident_worker_payload(
         )
         positives += 1 if target_row.is_root_cause else 0
         rows.append(DatasetRowV3(split, _full_view_vector(vector, full_view), target_row))
-    record_phase("features")
+    record_phase("FEATURES_DONE")
     if not positives:
         raise ValueError(f"GROUND_TRUTH_SERVICE_ABSENT_FROM_EVIDENCE:{incident_id}")
     rows_payload = [row.to_dict() for row in sorted(
         rows, key=lambda row: (row.split, row.vector.incident_id, row.vector.service_name))]
     bindings = _checkpoint_bindings(
         base_key=base_key, incident_id=incident_id, source=source,
-        baseline_sha256=sha256_value(json.loads(baseline_json)), split_key=split_key)
+        baseline_sha256=baseline_sha256, split_key=split_key)
     payload = {
         **bindings,
         "status": "COMPLETED",
@@ -677,11 +766,11 @@ def _incident_worker_payload(
             "elapsed_seconds": time.perf_counter() - started,
             "peak_rss_kb": resource.getrusage(resource.RUSAGE_SELF).ru_maxrss,
             "phase_telemetry": phase_telemetry,
-            "after_cache_load_rss_kb": phase_telemetry[0]["rss_kb"],
-            "after_event_fingerprints_rss_kb": phase_telemetry[1]["rss_kb"],
-            "after_bundle_rss_kb": phase_telemetry[2]["rss_kb"],
-            "after_graph_rss_kb": phase_telemetry[3]["rss_kb"],
-            "after_feature_extraction_rss_kb": phase_telemetry[4]["rss_kb"],
+            "after_cache_load_rss_kb": phase_telemetry[1]["rss_kb"],
+            "after_event_fingerprints_rss_kb": phase_telemetry[2]["rss_kb"],
+            "after_bundle_rss_kb": phase_telemetry[3]["rss_kb"],
+            "after_graph_rss_kb": phase_telemetry[4]["rss_kb"],
+            "after_feature_extraction_rss_kb": phase_telemetry[5]["rss_kb"],
             "phase_elapsed_seconds": {
                 row["phase"]: row["elapsed_seconds"] for row in phase_telemetry
             },
@@ -695,9 +784,11 @@ def _incident_worker_payload(
 def _run_incident_worker(
     *, registry: FrozenDatasetRegistry, rcaeval_cache: str | Path | None,
     incident_id: str, split: str, base_key: str, split_key: str,
-    baseline_json: str, output: Path,
+    baseline_snapshot_path: str | Path, baseline_sha256: str,
+    baseline_snapshot_bindings: Mapping[str, Any], output: Path,
 ) -> dict[str, Any]:
     spec = output.with_suffix(".worker.json")
+    phases = output.with_suffix(".phases.json")
     _atomic_json(spec, {
         "registry_snapshot": registry.snapshot(),
         "rcaeval_cache": str(rcaeval_cache) if rcaeval_cache is not None else None,
@@ -705,7 +796,10 @@ def _run_incident_worker(
         "split": split,
         "base_key": base_key,
         "split_key": split_key,
-        "baseline_json": baseline_json,
+        "baseline_snapshot_path": str(Path(baseline_snapshot_path).resolve()),
+        "baseline_sha256": baseline_sha256,
+        "baseline_snapshot_bindings": dict(baseline_snapshot_bindings),
+        "phase_diagnostic_path": str(phases),
         "output": str(output),
     })
     args = [
@@ -726,12 +820,21 @@ def _run_incident_worker(
             "status": "FAILED_WORKER", "incident_id": incident_id,
             "worker_kind": "FEATURE", "command": args,
             "worker_spec": str(spec),
+            "phase_diagnostic": str(phases),
             "worker_returncode": completed.returncode, "signal": signal_name,
             "stdout": _diagnostic_tail(completed.stdout),
             "stderr": _diagnostic_tail(completed.stderr),
             "elapsed_seconds": time.perf_counter() - started,
         }
     payload = _read_json(output)
+    if not isinstance(payload, dict) or payload.get("status") != "COMPLETED":
+        raise ValueError(f"INCIDENT_WORKER_CHECKPOINT_INVALID:{output}")
+    # Keep the diagnostic spec throughout subprocess execution and on every
+    # failure path.  Only a successfully readable scientific checkpoint makes
+    # the baseline-heavy incident spec redundant.  The checkpoint itself is
+    # never touched here.
+    spec.unlink()
+    phases.unlink(missing_ok=True)
     payload.setdefault("worker", {})["returncode"] = completed.returncode
     return payload
 
@@ -1104,6 +1207,9 @@ def _materialize_base_dataset_crash_safe(
     *, loader: FrozenEvidenceLoader, registry: FrozenDatasetRegistry,
     rcaeval_cache: str | Path | None, splits: Mapping[str, Iterable[str]],
     seed: int, base_key: str, split_key: str, work_root: Path, resume: bool,
+    official_baseline_snapshot: Mapping[str, Any] | None = None,
+    official_baseline_snapshot_path: str | Path | None = None,
+    scientific_tranche_binding: Mapping[str, Any] | None = None,
 ) -> _ScientificDatasetBuild:
     normalized_splits = {name: tuple(sorted(values)) for name, values in splits.items()}
     incident_ids = tuple(sorted({item for values in normalized_splits.values() for item in values}))
@@ -1121,16 +1227,104 @@ def _materialize_base_dataset_crash_safe(
                     current_incident_id=incident_id, last_completed_incident=incident_id,
                     **counters)
     write_state("IN_PROGRESS", "BASELINE", completed_baseline=0, completed_features=0)
-    try:
-        baseline, baseline_report = _baseline_crash_safe(
-            registry=registry, rcaeval_cache=rcaeval_cache, sources=loader.sources,
-            train_incident_ids=normalized_splits["train"], work_root=work_root, base_key=base_key,
-            split_key=split_key, resume=resume, progress=baseline_progress,
-        )
-    except WorkerExecutionError:
-        raise
-    baseline_json = baseline.to_json()
-    baseline_sha256 = sha256_value(json.loads(baseline_json))
+    using_official_baseline = official_baseline_snapshot_path is not None
+    if using_official_baseline:
+        if official_baseline_snapshot is None:
+            official_baseline_snapshot = _read_json(Path(official_baseline_snapshot_path))
+        baseline = _baseline_from_json(official_baseline_snapshot["baseline_json"])
+        actual = official_baseline_snapshot.get("baseline_sha256")
+        if not isinstance(actual, str) or len(actual) != 64:
+            raise RuntimeError("OFFICIAL_BASELINE_SHA256_MISMATCH")
+        expected_official_sha = (scientific_tranche_binding or {}).get(
+            "official_parent_baseline_sha256",
+            "4471f20eab2c0b619eaf8871cb13b5f83fe8611cb539e19d7badc574dc91eae1")
+        if actual != expected_official_sha:
+            raise RuntimeError("OFFICIAL_BASELINE_SHA256_MISMATCH")
+        if official_baseline_snapshot.get("status") != "COMPLETED" or \
+                official_baseline_snapshot.get("preprocessing_version") != PREPROCESSING_VERSION:
+            raise RuntimeError("OFFICIAL_BASELINE_SNAPSHOT_CONTRACT_MISMATCH")
+        official_binding_values = {
+            "base_key": official_baseline_snapshot["base_key"],
+            "split_sha256": official_baseline_snapshot["split_sha256"],
+            "training_incident_ids": tuple(official_baseline_snapshot["training_incident_ids"]),
+        }
+        if scientific_tranche_binding is not None and (
+                official_binding_values["base_key"] != scientific_tranche_binding["parent_base_key"]
+                or official_binding_values["split_sha256"] != scientific_tranche_binding[
+                    "parent_split_key"]):
+            raise RuntimeError("OFFICIAL_PARENT_BASELINE_BINDING_FAIL")
+        del official_baseline_snapshot
+        gc.collect()
+        baseline_report = {"official_parent_baseline_reused": True,
+                           "official_parent_baseline_sha256": actual}
+    else:
+        try:
+            baseline, baseline_report = _baseline_crash_safe(
+                registry=registry, rcaeval_cache=rcaeval_cache, sources=loader.sources,
+                train_incident_ids=normalized_splits["train"], work_root=work_root, base_key=base_key,
+                split_key=split_key, resume=resume, progress=baseline_progress,
+            )
+        except WorkerExecutionError:
+            raise
+    if using_official_baseline:
+        baseline_sha256 = actual
+    else:
+        baseline_json = baseline.to_json()
+        baseline_sha256 = sha256_value(json.loads(baseline_json))
+        del baseline_json
+        gc.collect()
+    baseline_snapshot_path = (Path(official_baseline_snapshot_path)
+                              if using_official_baseline
+                              else work_root / base_key / "baseline" / "snapshot.json")
+    baseline_snapshot_bindings = _baseline_snapshot_bindings(
+        base_key=(official_binding_values["base_key"] if using_official_baseline else base_key),
+        split_key=(official_binding_values["split_sha256"]
+                   if using_official_baseline else split_key),
+        train_incident_ids=(official_binding_values["training_incident_ids"]
+                            if using_official_baseline
+                            else normalized_splits["train"]))
+    if scientific_tranche_binding is not None:
+        baseline_binding_policy = "frozen-parent-train"
+        baseline_binding_provenance = {
+            "official_parent_baseline_sha256": baseline_sha256,
+            "parent_base_key": scientific_tranche_binding["parent_base_key"],
+            "parent_split_sha256": scientific_tranche_binding["parent_split_key"],
+            "scientific_tranche_id": scientific_tranche_binding["tranche_id"],
+            "scientific_tranche_sha256": scientific_tranche_binding["selection_sha256"],
+            "parent_training_incident_ids_sha256": sha256_value(
+                sorted(baseline.training_incident_ids)),
+            "parent_training_incident_count": len(baseline.training_incident_ids),
+        }
+        baseline_binding_provenance["baseline_binding_sha256"] = baseline_binding_sha256(
+            baseline_binding_provenance, normalized_splits)
+        try:
+            baseline_reference_path = str(
+                baseline_snapshot_path.resolve().relative_to(registry.repository_root.resolve()))
+        except ValueError as exc:
+            raise RuntimeError("OFFICIAL_BASELINE_REFERENCE_OUTSIDE_REPOSITORY") from exc
+        baseline_reference = {
+            "schema_version": "frozen-parent-baseline-reference-v1",
+            "path": baseline_reference_path,
+            "baseline_sha256": baseline_sha256,
+            "parent_base_key": baseline_binding_provenance["parent_base_key"],
+            "parent_split_sha256": baseline_binding_provenance["parent_split_sha256"],
+            "parent_training_incident_ids_sha256": baseline_binding_provenance[
+                "parent_training_incident_ids_sha256"],
+            "parent_training_incident_count": baseline_binding_provenance[
+                "parent_training_incident_count"],
+            "preprocessing_version": PREPROCESSING_VERSION,
+        }
+        baseline_parent_training_ids = tuple(baseline.training_incident_ids)
+        total_incidents = sum(len(values) for values in normalized_splits.values())
+        split_fractions = {name: len(values) / total_incidents
+                           for name, values in normalized_splits.items()}
+    else:
+        baseline_binding_policy = "split-train-exact"
+        baseline_binding_provenance = {}
+        split_fractions = {"train": .7, "validation": .15,
+                           "test": 1 - .7 - .15}
+        baseline_reference = {}
+        baseline_parent_training_ids = ()
     incident_root = work_root / base_key / "incidents"
     incident_root.mkdir(parents=True, exist_ok=True)
     counters = {"checkpoint_hits": 0, "checkpoint_misses": 0,
@@ -1161,7 +1355,9 @@ def _materialize_base_dataset_crash_safe(
             payload = _run_incident_worker(
                 registry=registry, rcaeval_cache=rcaeval_cache, incident_id=incident_id,
                 split=split_by_id[incident_id], base_key=base_key, split_key=split_key,
-                baseline_json=baseline_json, output=target,
+                baseline_snapshot_path=baseline_snapshot_path,
+                baseline_sha256=baseline_sha256,
+                baseline_snapshot_bindings=baseline_snapshot_bindings, output=target,
             )
             if payload.get("status") == "FAILED_WORKER":
                 state_path = work_root / base_key / "state.json"
@@ -1210,10 +1406,16 @@ def _materialize_base_dataset_crash_safe(
         ",".join(business_policy_versions), ",".join(topology_policy_versions),
         graph_fingerprints, topology_fingerprints, graph_policy_by_incident,
     )
+    dataset_baseline = baseline
+    if scientific_tranche_binding is not None:
+        dataset_baseline = None
+        del baseline
+        gc.collect()
     dataset = RCAFeatureDatasetV3(
-        rows, FeatureRegistryV3().select(), baseline, normalized_splits, seed,
-        {"train": .7, "validation": .15, "test": 1 - .7 - .15},
-        policy_provenance, True,
+        rows, FeatureRegistryV3().select(), dataset_baseline, normalized_splits, seed,
+        split_fractions, policy_provenance, True,
+        baseline_binding_policy, baseline_binding_provenance,
+        baseline_reference, baseline_parent_training_ids,
     )
     report = {
         **baseline_report, **counters,
@@ -1854,7 +2056,9 @@ def run_heavy_resource_gate(*, registry: FrozenDatasetRegistry,
             registry=registry, rcaeval_cache=rcaeval_cache,
             incident_id=incident_id, split="test", base_key=worker_base_key,
             split_key=worker_split_key,
-            baseline_json=baseline_payload["baseline_json"], output=checkpoint)
+            baseline_snapshot_path=reference_baseline,
+            baseline_sha256=baseline_sha256,
+            baseline_snapshot_bindings=baseline_bindings, output=checkpoint)
         checkpoint_status = "MISS"
     else:
         payload = cached
@@ -1947,6 +2151,8 @@ def _supervise(dataset: RCAFeatureDatasetV3,
     return RCAFeatureDatasetV3(
         tuple(rows), dataset.feature_view, dataset.baselines, dataset.split_incident_ids,
         dataset.seed, dataset.split_fractions, dataset.policy_provenance, True,
+        dataset.baseline_binding_policy, dataset.baseline_binding_provenance,
+        dataset.baseline_reference, dataset.baseline_parent_training_incident_ids,
     )
 
 
@@ -1984,6 +2190,7 @@ def validate_catalog(path: str | Path, *, repository_root: str | Path,
             "model_specification_hash") != expected_model_specification_hash:
         raise ValueError("MODEL_SPECIFICATION_HASH_MISMATCH")
     keys, checked, hits = set(), 0, []
+    validated_baseline_references: set[Path] = set()
     required = {
         "source_dataset", "source_system", "feature_view", "protocol", "held_out",
         "seed", "path", "dataset_sha256", "feature_view_sha256", "split_sha256",
@@ -2018,6 +2225,65 @@ def validate_catalog(path: str | Path, *, repository_root: str | Path,
         for name in ("train", "validation", "test"):
             if _sha_ids(splits[name]) != item[f"{name}_incident_ids_sha256"]:
                 raise ValueError("SCIENTIFIC_SPLIT_IDS_HASH_MISMATCH")
+        tranche_fields = {
+            "scientific_tranche_id": "scientific_tranche_id",
+            "scientific_tranche_sha256": "scientific_tranche_sha256",
+            "parent_split_sha256": "parent_split_sha256",
+            "parent_base_key": "parent_base_key",
+        }
+        if item.get("scientific_tranche_id") is not None:
+            for field in tranche_fields:
+                if payload.get(field) != item.get(field):
+                    raise ValueError("SCIENTIFIC_TRANCHE_CATALOG_BINDING_MISMATCH")
+            if manifest.get("baseline_binding_policy") != "frozen-parent-train":
+                raise ValueError("SCIENTIFIC_TRANCHE_BASELINE_POLICY_MISSING")
+            provenance = manifest.get("baseline_binding_provenance", {})
+            for entry_field, provenance_field in tranche_fields.items():
+                if item.get(entry_field) != provenance.get(provenance_field):
+                    raise ValueError("SCIENTIFIC_TRANCHE_BASELINE_PROVENANCE_MISMATCH")
+            if manifest.get("baseline_sha256") != provenance.get(
+                    "official_parent_baseline_sha256"):
+                raise ValueError("SCIENTIFIC_TRANCHE_OFFICIAL_BASELINE_MISMATCH")
+            if manifest.get("baseline_json") is not None:
+                raise ValueError("SCIENTIFIC_TRANCHE_BASELINE_JSON_MUST_NOT_BE_EMBEDDED")
+            reference = manifest.get("baseline_reference", {})
+            relative = reference.get("path")
+            if not isinstance(relative, str) or not relative.strip():
+                raise ValueError("SCIENTIFIC_TRANCHE_BASELINE_REFERENCE_MISSING")
+            reference_path = (repo / relative).resolve()
+            if reference_path != repo and repo not in reference_path.parents:
+                raise ValueError("SCIENTIFIC_TRANCHE_BASELINE_REFERENCE_OUTSIDE_REPOSITORY")
+            if not reference_path.is_file():
+                raise ValueError("SCIENTIFIC_TRANCHE_BASELINE_REFERENCE_NOT_FOUND")
+            expected_reference = {
+                "baseline_sha256": provenance.get("official_parent_baseline_sha256"),
+                "parent_base_key": provenance.get("parent_base_key"),
+                "parent_split_sha256": provenance.get("parent_split_sha256"),
+                "parent_training_incident_ids_sha256": provenance.get(
+                    "parent_training_incident_ids_sha256"),
+                "parent_training_incident_count": provenance.get(
+                    "parent_training_incident_count"),
+                "preprocessing_version": PREPROCESSING_VERSION,
+            }
+            if any(reference.get(name) != value for name, value in expected_reference.items()):
+                raise ValueError("SCIENTIFIC_TRANCHE_BASELINE_REFERENCE_MISMATCH")
+            if reference_path not in validated_baseline_references:
+                snapshot = _read_json(reference_path)
+                snapshot_ids = tuple(snapshot.get("training_incident_ids", ()))
+                if snapshot.get("status") != "COMPLETED" \
+                        or snapshot.get("preprocessing_version") != PREPROCESSING_VERSION:
+                    raise ValueError("SCIENTIFIC_TRANCHE_BASELINE_SNAPSHOT_STATUS_MISMATCH")
+                if snapshot.get("baseline_sha256") != reference["baseline_sha256"] \
+                        or snapshot.get("base_key") != reference["parent_base_key"] \
+                        or snapshot.get("split_sha256") != reference["parent_split_sha256"]:
+                    raise ValueError("SCIENTIFIC_TRANCHE_BASELINE_SNAPSHOT_BINDING_MISMATCH")
+                if len(snapshot_ids) != reference["parent_training_incident_count"] \
+                        or _sha_ids(snapshot_ids) != reference[
+                            "parent_training_incident_ids_sha256"]:
+                    raise ValueError("SCIENTIFIC_TRANCHE_BASELINE_SNAPSHOT_TRAINING_MISMATCH")
+                validated_baseline_references.add(reference_path)
+                del snapshot, snapshot_ids
+                gc.collect()
         if sha256_value(dict(dataset.feature_schema)) != item["feature_schema_sha256"]:
             raise ValueError("SCIENTIFIC_FEATURE_SCHEMA_HASH_MISMATCH")
         found = _forbidden_feature_hits(dataset_payload)
@@ -2067,7 +2333,8 @@ def audit_existing_artifacts(output: str | Path) -> dict[str, Any]:
 def materialize(*, registry: FrozenDatasetRegistry, config_dir: str | Path,
                 output: str | Path, model_specification: str | Path,
                 rcaeval_cache: str | Path | None = None, resume: bool = False,
-                max_new_artifacts: int | None = None) -> dict[str, Any]:
+                max_new_artifacts: int | None = None,
+                scientific_tranche: str | Path | None = None) -> dict[str, Any]:
     """Materialize all unique planner-bound BenchmarkDatasets; never train a model."""
     output, config_dir = Path(output).resolve(), Path(config_dir).resolve()
     if max_new_artifacts is not None and (
@@ -2108,6 +2375,38 @@ def materialize(*, registry: FrozenDatasetRegistry, config_dir: str | Path,
             assignments.extend((protocol, seed, item) for item in values if item.applicable)
     views = ("FULL", *H1B_VIEWS, *H1C_VIEWS)
     loader = FrozenEvidenceLoader(registry, rcaeval_cache=rcaeval_cache)
+    finalization_started = time.perf_counter()
+    finalization_telemetry = output / "finalization-telemetry.json"
+    tranche_payload = None
+    tranche_parent_splits = None
+    official_baseline_snapshot = None
+    official_baseline_snapshot_path = None
+    if scientific_tranche is not None:
+        from .scientific_tranche import load_manifest, validate_manifest
+        tranche_payload = load_manifest(scientific_tranche)
+        parent_matches = []
+        for protocol, seed, assignment in assignments:
+            parent_splits = {"train": assignment.train_incident_ids,
+                             "validation": assignment.validation_incident_ids,
+                             "test": assignment.test_incident_ids}
+            parent_split_key, parent_base_key, _ = build_preprocessing_keys(
+                registry=registry, sources=loader.sources, splits=parent_splits,
+                protocol=protocol, held_out=assignment.held_out, seed=seed)
+            if (parent_split_key == tranche_payload.get("parent_split_key")
+                    and parent_base_key == tranche_payload.get("parent_base_key")):
+                parent_matches.append((protocol, seed, assignment, parent_splits))
+        if not parent_matches:
+            raise ValueError("SCIENTIFIC_TRANCHE_PARENT_BINDING_NOT_FOUND")
+        protocol, seed, _, tranche_parent_splits = parent_matches[0]
+        validate_manifest(
+            tranche_payload, parent_splits=tranche_parent_splits, protocol=protocol,
+            seed=seed, parent_base_key=tranche_payload["parent_base_key"],
+            parent_split_key=tranche_payload["parent_split_key"],
+            expected_feature_registry_sha256=FeatureRegistryV3().fingerprint,
+            expected_preprocessing_version=PREPROCESSING_VERSION)
+        baseline_path = (registry.repository_root / "artifacts/final-experiments-v3/scientific-inputs"
+                         / "work" / tranche_payload["parent_base_key"] / "baseline/snapshot.json")
+        official_baseline_snapshot_path = baseline_path
     entries, new_artifacts, reused_artifacts = [], 0, 0
     artifact_cache = {}
     base_dataset_cache = {}
@@ -2121,6 +2420,21 @@ def materialize(*, registry: FrozenDatasetRegistry, config_dir: str | Path,
             registry=registry, sources=loader.sources, splits=splits,
             protocol=protocol, held_out=assignment.held_out, seed=seed,
         )
+        if tranche_payload is not None:
+            if (split_key != tranche_payload["parent_split_key"]
+                    or base_key != tranche_payload["parent_base_key"]):
+                continue
+            splits = {name: tuple(tranche_payload[f"{name}_incident_ids"])
+                      for name in ("train", "validation", "test")}
+            incident_ids = tuple(tranche_payload["incident_ids"])
+            # Isolate all checkpoints and datasets from their full-campaign
+            # counterparts while preserving the parent binding in provenance.
+            base_key = sha256_value({"parent_base_key": base_key,
+                                     "scientific_tranche_sha256": tranche_payload["selection_sha256"]})
+            # Backward-compatible operational binding for the already frozen
+            # incident checkpoints.  Do not expose this as catalog split_sha256.
+            split_key = tranche_payload["selection_sha256"]
+        effective_split_key = effective_split_sha256(splits)
         manifest_hashes = sorted(
             loader.sources[item].manifest_sha256 for item in incident_ids)
         view_targets = []
@@ -2161,7 +2475,13 @@ def materialize(*, registry: FrozenDatasetRegistry, config_dir: str | Path,
                 if valid_existing:
                     reused_artifacts += 1
                     dataset_payload = payload
+                    _record_finalization_phase(
+                        finalization_telemetry, "BENCHMARK_VALIDATION_START",
+                        started=finalization_started, cache_key=cache_key)
                     benchmark = BenchmarkDataset.from_json(target)
+                    _record_finalization_phase(
+                        finalization_telemetry, "BENCHMARK_VALIDATION_DONE",
+                        started=finalization_started, cache_key=cache_key)
                     manifest = dataset_payload["manifest"]
                     artifact_cache[cache_key] = (target, benchmark, manifest)
                 else:
@@ -2175,13 +2495,19 @@ def materialize(*, registry: FrozenDatasetRegistry, config_dir: str | Path,
                 generated = _materialize_base_dataset_crash_safe(
                     loader=loader, registry=registry, rcaeval_cache=rcaeval_cache,
                     splits=splits, seed=seed, base_key=base_key, split_key=split_key,
-                    work_root=output / "work", resume=resume)
+                    work_root=output / "work", resume=resume,
+                    official_baseline_snapshot=official_baseline_snapshot,
+                    official_baseline_snapshot_path=official_baseline_snapshot_path,
+                    scientific_tranche_binding=tranche_payload)
                 max_live = generated.checkpoint_report.get(
                     "max_live_full_feature_inputs", generated.lifecycle.max_live
                 ) if generated.checkpoint_report else generated.lifecycle.max_live
                 if max_live > 1:
                     raise RuntimeError("FEATURE_INPUT_MEMORY_BOUND_EXCEEDED")
                 base_dataset_cache[base_key] = generated.dataset
+                _record_finalization_phase(
+                    finalization_telemetry, "DATASET_OBJECT_READY",
+                    started=finalization_started, cache_key=base_key)
             base_scientific = base_dataset_cache[base_key]
             for view, cache_key, _, target in view_targets:
                 if cache_key in artifact_cache:
@@ -2190,10 +2516,22 @@ def materialize(*, registry: FrozenDatasetRegistry, config_dir: str | Path,
                     stopped_early = True
                     break
                 scientific = _apply_view(base_scientific, view)
+                _record_finalization_phase(
+                    finalization_telemetry, "VIEW_SERIALIZATION_START",
+                    started=finalization_started, view=view, cache_key=cache_key)
                 _atomic_text(target, scientific.to_json() + "\n")
                 manifest = scientific.manifest.to_dict()
                 _atomic_json(output / "manifests" / f"{cache_key}.json", manifest)
+                _record_finalization_phase(
+                    finalization_telemetry, "VIEW_SERIALIZATION_DONE",
+                    started=finalization_started, view=view, cache_key=cache_key)
+                _record_finalization_phase(
+                    finalization_telemetry, "BENCHMARK_VALIDATION_START",
+                    started=finalization_started, view=view, cache_key=cache_key)
                 benchmark = BenchmarkDataset.from_json(target)
+                _record_finalization_phase(
+                    finalization_telemetry, "BENCHMARK_VALIDATION_DONE",
+                    started=finalization_started, view=view, cache_key=cache_key)
                 artifact_cache[cache_key] = (target, benchmark, manifest)
                 new_artifacts += 1
 
@@ -2216,7 +2554,7 @@ def materialize(*, registry: FrozenDatasetRegistry, config_dir: str | Path,
                 "dataset_sha256": file_sha256(target),
                 "benchmark_dataset_sha256": benchmark.dataset_hash,
                 "feature_view_sha256": manifest["feature_view_sha256"],
-                "split_sha256": split_key,
+                "split_sha256": effective_split_key,
                 "train_incident_ids_sha256": _sha_ids(splits["train"]),
                 "validation_incident_ids_sha256": _sha_ids(splits["validation"]),
                 "test_incident_ids_sha256": _sha_ids(splits["test"]),
@@ -2224,6 +2562,13 @@ def materialize(*, registry: FrozenDatasetRegistry, config_dir: str | Path,
                 "preprocessing_version": PREPROCESSING_VERSION,
                 "cache_key": cache_key,
             }
+            if tranche_payload is not None:
+                entry.update({
+                    "scientific_tranche_id": tranche_payload["tranche_id"],
+                    "scientific_tranche_sha256": tranche_payload["selection_sha256"],
+                    "parent_split_sha256": tranche_payload["parent_split_key"],
+                    "parent_base_key": tranche_payload["parent_base_key"],
+                })
             entries.append(entry)
         if stopped_early:
             break
@@ -2260,7 +2605,16 @@ def materialize(*, registry: FrozenDatasetRegistry, config_dir: str | Path,
                            "reason": "null root_cause_service; abstention-only control"},
         "datasets": [unique[key] for key in sorted(unique, key=repr)],
     }
+    if tranche_payload is not None:
+        catalog.update({
+            "scientific_tranche_id": tranche_payload["tranche_id"],
+            "scientific_tranche_sha256": tranche_payload["selection_sha256"],
+            "parent_split_sha256": tranche_payload["parent_split_key"],
+            "parent_base_key": tranche_payload["parent_base_key"],
+        })
     output.mkdir(parents=True, exist_ok=True)
+    _record_finalization_phase(
+        finalization_telemetry, "CATALOG_FINALIZE", started=finalization_started)
     _atomic_json(output / "benchmark-catalog.json", catalog)
     audit = validate_catalog(output / "benchmark-catalog.json",
                              repository_root=registry.repository_root,

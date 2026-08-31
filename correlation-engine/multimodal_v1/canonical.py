@@ -6,6 +6,7 @@ from collections.abc import Mapping, Sequence, Set
 from datetime import datetime, timezone
 from types import MappingProxyType
 from typing import Any
+import hashlib
 
 
 def canonical_json_value(value: Any) -> Any:
@@ -33,6 +34,16 @@ def canonical_json_value(value: Any) -> Any:
     raise ValueError(f"Tipo não suportado no payload canônico: {type(value).__name__}.")
 
 
+def canonical_json(value: Any) -> str:
+    """Canonical scientific JSON, including literal UTF-8 Unicode."""
+    return json.dumps(canonical_json_value(value), sort_keys=True, separators=(",", ":"),
+                      ensure_ascii=False, allow_nan=False)
+
+
+def canonical_sha256(value: Any) -> str:
+    return hashlib.sha256(canonical_json(value).encode("utf-8")).hexdigest()
+
+
 def deep_freeze_json(value: Any) -> Any:
     canonical = canonical_json_value(value)
     if isinstance(canonical, dict):
@@ -40,4 +51,3 @@ def deep_freeze_json(value: Any) -> Any:
     if isinstance(canonical, list):
         return tuple(deep_freeze_json(item) for item in canonical)
     return canonical
-

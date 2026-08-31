@@ -1,0 +1,38 @@
+
+COMMAND:
+/usr/bin/time -v /home/janynne/projects/CausalODS/correlation-engine/.venv/bin/python -m experiments.rcaeval_official_v3 materialize --root datasets/RCAEval-data --output /home/janynne/projects/CausalODS/artifacts/validation/rcaeval-remaining-735-cache-v3/batch-004 --cache /home/janynne/mnt/rcaeval-official-v3 --resume --incident-id rcaeval:re1ob_currencyservice_mem_2 --incident-id rcaeval:re1ob_currencyservice_mem_3 --incident-id rcaeval:re1ob_productcatalogservice_cpu_2 --incident-id rcaeval:re1ob_productcatalogservice_delay_1 --incident-id rcaeval:re1ob_productcatalogservice_delay_3 --incident-id rcaeval:re1ob_productcatalogservice_disk_1 --incident-id rcaeval:re1ob_productcatalogservice_disk_3 --incident-id rcaeval:re1ob_productcatalogservice_loss_1 --incident-id rcaeval:re1ob_productcatalogservice_loss_3 --incident-id rcaeval:re1ob_productcatalogservice_mem_2
+
+[001/010] RE1 OB re1ob_currencyservice_mem_2 modalities=metric events=205849 usable=true elapsed=78.8s percent=10.0 eta=709.6s rss=315273216 peak_rss=315273216 cache_hits=0 cache_misses=1
+[002/010] RE1 OB re1ob_currencyservice_mem_3 modalities=metric events=205849 usable=true elapsed=157.2s percent=20.0 eta=628.7s rss=319619072 peak_rss=319619072 cache_hits=0 cache_misses=2
+[003/010] RE1 OB re1ob_productcatalogservice_cpu_2 modalities=metric events=205849 usable=true elapsed=237.1s percent=30.0 eta=553.3s rss=320102400 peak_rss=320102400 cache_hits=0 cache_misses=3
+[004/010] RE1 OB re1ob_productcatalogservice_delay_1 modalities=metric events=41097 usable=true elapsed=255.0s percent=40.0 eta=382.5s rss=320102400 peak_rss=320102400 cache_hits=0 cache_misses=4
+[005/010] RE1 OB re1ob_productcatalogservice_delay_3 modalities=metric events=41818 usable=true elapsed=272.5s percent=50.0 eta=272.5s rss=320102400 peak_rss=320102400 cache_hits=0 cache_misses=5
+[006/010] RE1 OB re1ob_productcatalogservice_disk_1 modalities=metric events=40905 usable=true elapsed=290.0s percent=60.0 eta=193.4s rss=321449984 peak_rss=321449984 cache_hits=0 cache_misses=6
+[007/010] RE1 OB re1ob_productcatalogservice_disk_3 modalities=metric events=41097 usable=true elapsed=307.2s percent=70.0 eta=131.7s rss=321449984 peak_rss=321449984 cache_hits=0 cache_misses=7
+[008/010] RE1 OB re1ob_productcatalogservice_loss_1 modalities=metric events=42539 usable=true elapsed=325.5s percent=80.0 eta=81.4s rss=322002944 peak_rss=322002944 cache_hits=0 cache_misses=8
+[009/010] RE1 OB re1ob_productcatalogservice_loss_3 modalities=metric events=42539 usable=true elapsed=343.1s percent=90.0 eta=38.1s rss=322002944 peak_rss=322002944 cache_hits=0 cache_misses=9
+[010/010] RE1 OB re1ob_productcatalogservice_mem_2 modalities=metric events=205849 usable=true elapsed=424.9s percent=100.0 eta=0.0s rss=322027520 peak_rss=322027520 cache_hits=0 cache_misses=10
+{"cache_hits":0,"cache_misses":10,"coordinator_peak_rss_bytes":322027520,"elapsed_seconds":425.00870532800036,"errors":0,"free_disk_after":64194502656,"free_disk_before":64246415360,"global_schema_computations":1,"global_schema_sha256":"d0db6a3117bfc3589b07e9ed08b29b924d915fdc1c334820e7f3f35e98321c37","heavy_recomputations":10,"manifest_usable_for_benchmark":10,"max_worker_peak_rss_bytes":759103488,"mode":"targeted","peak_rss":322027520,"planned":10,"processed":10,"requested_incidents":["rcaeval:re1ob_currencyservice_mem_2","rcaeval:re1ob_currencyservice_mem_3","rcaeval:re1ob_productcatalogservice_cpu_2","rcaeval:re1ob_productcatalogservice_delay_1","rcaeval:re1ob_productcatalogservice_delay_3","rcaeval:re1ob_productcatalogservice_disk_1","rcaeval:re1ob_productcatalogservice_disk_3","rcaeval:re1ob_productcatalogservice_loss_1","rcaeval:re1ob_productcatalogservice_loss_3","rcaeval:re1ob_productcatalogservice_mem_2"],"selected_incidents":["rcaeval:re1ob_currencyservice_mem_2","rcaeval:re1ob_currencyservice_mem_3","rcaeval:re1ob_productcatalogservice_cpu_2","rcaeval:re1ob_productcatalogservice_delay_1","rcaeval:re1ob_productcatalogservice_delay_3","rcaeval:re1ob_productcatalogservice_disk_1","rcaeval:re1ob_productcatalogservice_disk_3","rcaeval:re1ob_productcatalogservice_loss_1","rcaeval:re1ob_productcatalogservice_loss_3","rcaeval:re1ob_productcatalogservice_mem_2"],"unusable":0,"usable_for_benchmark":10,"valid":10,"version":"rcaeval-official-hf-materializer-v3"}
+	Command being timed: "/home/janynne/projects/CausalODS/correlation-engine/.venv/bin/python -m experiments.rcaeval_official_v3 materialize --root datasets/RCAEval-data --output /home/janynne/projects/CausalODS/artifacts/validation/rcaeval-remaining-735-cache-v3/batch-004 --cache /home/janynne/mnt/rcaeval-official-v3 --resume --incident-id rcaeval:re1ob_currencyservice_mem_2 --incident-id rcaeval:re1ob_currencyservice_mem_3 --incident-id rcaeval:re1ob_productcatalogservice_cpu_2 --incident-id rcaeval:re1ob_productcatalogservice_delay_1 --incident-id rcaeval:re1ob_productcatalogservice_delay_3 --incident-id rcaeval:re1ob_productcatalogservice_disk_1 --incident-id rcaeval:re1ob_productcatalogservice_disk_3 --incident-id rcaeval:re1ob_productcatalogservice_loss_1 --incident-id rcaeval:re1ob_productcatalogservice_loss_3 --incident-id rcaeval:re1ob_productcatalogservice_mem_2"
+	User time (seconds): 425.54
+	System time (seconds): 6.78
+	Percent of CPU this job got: 101%
+	Elapsed (wall clock) time (h:mm:ss or m:ss): 7:07.13
+	Average shared text size (kbytes): 0
+	Average unshared data size (kbytes): 0
+	Average stack size (kbytes): 0
+	Average total size (kbytes): 0
+	Maximum resident set size (kbytes): 741312
+	Average resident set size (kbytes): 0
+	Major (requiring I/O) page faults: 0
+	Minor (reclaiming a frame) page faults: 2009561
+	Voluntary context switches: 719
+	Involuntary context switches: 15886
+	Swaps: 0
+	File system inputs: 4800
+	File system outputs: 244880
+	Socket messages sent: 0
+	Socket messages received: 0
+	Signals delivered: 0
+	Page size (bytes): 4096
+	Exit status: 0

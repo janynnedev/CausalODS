@@ -1,0 +1,38 @@
+
+COMMAND:
+/usr/bin/time -v /home/janynne/projects/CausalODS/correlation-engine/.venv/bin/python -m experiments.rcaeval_official_v3 materialize --root datasets/RCAEval-data --output /home/janynne/projects/CausalODS/artifacts/validation/rcaeval-remaining-735-cache-v3/batch-005 --cache /home/janynne/mnt/rcaeval-official-v3 --resume --incident-id rcaeval:re1ob_productcatalogservice_mem_5 --incident-id rcaeval:re1ss_carts_cpu_2 --incident-id rcaeval:re1ss_carts_delay_3 --incident-id rcaeval:re1ss_carts_delay_4 --incident-id rcaeval:re1ss_carts_disk_4 --incident-id rcaeval:re1ss_carts_loss_4 --incident-id rcaeval:re1ss_carts_loss_5 --incident-id rcaeval:re1ss_carts_mem_2 --incident-id rcaeval:re1ss_carts_mem_3 --incident-id rcaeval:re1ss_carts_mem_5
+
+[001/010] RE1 OB re1ob_productcatalogservice_mem_5 modalities=metric events=205849 usable=true elapsed=81.3s percent=10.0 eta=732.0s rss=314990592 peak_rss=314990592 cache_hits=0 cache_misses=1
+[002/010] RE1 SS re1ss_carts_cpu_2 modalities=metric events=42539 usable=true elapsed=99.3s percent=20.0 eta=397.2s rss=314990592 peak_rss=314990592 cache_hits=0 cache_misses=2
+[003/010] RE1 SS re1ss_carts_delay_3 modalities=metric events=42242 usable=true elapsed=119.0s percent=30.0 eta=277.7s rss=314990592 peak_rss=314990592 cache_hits=0 cache_misses=3
+[004/010] RE1 SS re1ss_carts_delay_4 modalities=metric events=41521 usable=true elapsed=136.6s percent=40.0 eta=204.8s rss=319868928 peak_rss=319868928 cache_hits=0 cache_misses=4
+[005/010] RE1 SS re1ss_carts_disk_4 modalities=metric events=41097 usable=true elapsed=154.4s percent=50.0 eta=154.4s rss=319868928 peak_rss=319868928 cache_hits=0 cache_misses=5
+[006/010] RE1 SS re1ss_carts_loss_4 modalities=metric events=43260 usable=true elapsed=172.5s percent=60.0 eta=115.0s rss=320090112 peak_rss=320090112 cache_hits=0 cache_misses=6
+[007/010] RE1 SS re1ss_carts_loss_5 modalities=metric events=43260 usable=true elapsed=190.8s percent=70.0 eta=81.8s rss=320090112 peak_rss=320090112 cache_hits=0 cache_misses=7
+[008/010] RE1 SS re1ss_carts_mem_2 modalities=metric events=41818 usable=true elapsed=208.3s percent=80.0 eta=52.1s rss=320090112 peak_rss=320090112 cache_hits=0 cache_misses=8
+[009/010] RE1 SS re1ss_carts_mem_3 modalities=metric events=41818 usable=true elapsed=227.7s percent=90.0 eta=25.3s rss=320090112 peak_rss=320090112 cache_hits=0 cache_misses=9
+[010/010] RE1 SS re1ss_carts_mem_5 modalities=metric events=42539 usable=true elapsed=245.9s percent=100.0 eta=0.0s rss=322084864 peak_rss=322084864 cache_hits=0 cache_misses=10
+{"cache_hits":0,"cache_misses":10,"coordinator_peak_rss_bytes":322084864,"elapsed_seconds":246.07163304300047,"errors":0,"free_disk_after":64162967552,"free_disk_before":64194478080,"global_schema_computations":1,"global_schema_sha256":"e6a9dfa96f6b37dcd961ef0831df3507b493daf99fec4e86fffd2676b50531c0","heavy_recomputations":10,"manifest_usable_for_benchmark":10,"max_worker_peak_rss_bytes":756809728,"mode":"targeted","peak_rss":322084864,"planned":10,"processed":10,"requested_incidents":["rcaeval:re1ob_productcatalogservice_mem_5","rcaeval:re1ss_carts_cpu_2","rcaeval:re1ss_carts_delay_3","rcaeval:re1ss_carts_delay_4","rcaeval:re1ss_carts_disk_4","rcaeval:re1ss_carts_loss_4","rcaeval:re1ss_carts_loss_5","rcaeval:re1ss_carts_mem_2","rcaeval:re1ss_carts_mem_3","rcaeval:re1ss_carts_mem_5"],"selected_incidents":["rcaeval:re1ob_productcatalogservice_mem_5","rcaeval:re1ss_carts_cpu_2","rcaeval:re1ss_carts_delay_3","rcaeval:re1ss_carts_delay_4","rcaeval:re1ss_carts_disk_4","rcaeval:re1ss_carts_loss_4","rcaeval:re1ss_carts_loss_5","rcaeval:re1ss_carts_mem_2","rcaeval:re1ss_carts_mem_3","rcaeval:re1ss_carts_mem_5"],"unusable":0,"usable_for_benchmark":10,"valid":10,"version":"rcaeval-official-hf-materializer-v3"}
+	Command being timed: "/home/janynne/projects/CausalODS/correlation-engine/.venv/bin/python -m experiments.rcaeval_official_v3 materialize --root datasets/RCAEval-data --output /home/janynne/projects/CausalODS/artifacts/validation/rcaeval-remaining-735-cache-v3/batch-005 --cache /home/janynne/mnt/rcaeval-official-v3 --resume --incident-id rcaeval:re1ob_productcatalogservice_mem_5 --incident-id rcaeval:re1ss_carts_cpu_2 --incident-id rcaeval:re1ss_carts_delay_3 --incident-id rcaeval:re1ss_carts_delay_4 --incident-id rcaeval:re1ss_carts_disk_4 --incident-id rcaeval:re1ss_carts_loss_4 --incident-id rcaeval:re1ss_carts_loss_5 --incident-id rcaeval:re1ss_carts_mem_2 --incident-id rcaeval:re1ss_carts_mem_3 --incident-id rcaeval:re1ss_carts_mem_5"
+	User time (seconds): 247.80
+	System time (seconds): 5.04
+	Percent of CPU this job got: 101%
+	Elapsed (wall clock) time (h:mm:ss or m:ss): 4:08.25
+	Average shared text size (kbytes): 0
+	Average unshared data size (kbytes): 0
+	Average stack size (kbytes): 0
+	Average total size (kbytes): 0
+	Maximum resident set size (kbytes): 739072
+	Average resident set size (kbytes): 0
+	Major (requiring I/O) page faults: 0
+	Minor (reclaiming a frame) page faults: 1316374
+	Voluntary context switches: 736
+	Involuntary context switches: 10407
+	Swaps: 0
+	File system inputs: 3000
+	File system outputs: 134088
+	Socket messages sent: 0
+	Socket messages received: 0
+	Signals delivered: 0
+	Page size (bytes): 4096
+	Exit status: 0

@@ -196,16 +196,31 @@ class ScientificH4Evaluator:
             for item in vectors])
 
 
+def trained_artifact_index_path(*, config, repository_root: str | Path) -> Path:
+    """Resolve the explicitly configured H4 model index, defaulting to full."""
+    root = Path(repository_root).resolve()
+    relative = config.criteria.get(
+        "scientific_trained_artifact_index",
+        "artifacts/final-experiments-v3/trained-artifacts/INDEX.json")
+    return _inside(root, relative)
+
+
 def load_h4_inputs(*, config, repository_root):
     """Resolve frozen observations and post-H1/H2 verified models explicitly."""
     repository_root = Path(repository_root).resolve()
     catalog_path = _inside(repository_root, config.criteria["scientific_benchmark_catalog"])
-    artifact_index = repository_root / "artifacts/final-experiments-v3/trained-artifacts/INDEX.json"
+    artifact_index = trained_artifact_index_path(
+        config=config, repository_root=repository_root)
     if not catalog_path.is_file():
         raise RuntimeError("SCIENTIFIC_BENCHMARK_CATALOG_NOT_FOUND")
     if not artifact_index.is_file():
         raise RuntimeError("H4_SCIENTIFIC_MODELS_NOT_AVAILABLE")
     catalog_payload, artifacts = _read(catalog_path), _read(artifact_index)
+    tranche_fields = ("scientific_tranche_id", "scientific_tranche_sha256",
+                      "parent_split_sha256", "parent_base_key")
+    if any(field in catalog_payload or field in artifacts for field in tranche_fields):
+        if any(catalog_payload.get(field) != artifacts.get(field) for field in tranche_fields):
+            raise RuntimeError("H4_SCIENTIFIC_TRANCHE_ARTIFACT_BINDING_MISMATCH")
     catalog = {tuple(item[name] for name in (
         "source_dataset", "source_system", "feature_view", "protocol", "held_out", "seed")): item
         for item in catalog_payload["datasets"]}

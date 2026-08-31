@@ -1,0 +1,38 @@
+
+COMMAND:
+/usr/bin/time -v /home/janynne/projects/CausalODS/correlation-engine/.venv/bin/python -m experiments.rcaeval_official_v3 materialize --root datasets/RCAEval-data --output /home/janynne/projects/CausalODS/artifacts/validation/rcaeval-remaining-735-cache-v3/batch-012 --cache /home/janynne/mnt/rcaeval-official-v3 --resume --incident-id rcaeval:re1tt_ts-route-service_delay_4 --incident-id rcaeval:re1tt_ts-route-service_delay_5 --incident-id rcaeval:re1tt_ts-route-service_disk_2 --incident-id rcaeval:re1tt_ts-route-service_disk_3 --incident-id rcaeval:re1tt_ts-route-service_loss_1 --incident-id rcaeval:re1tt_ts-route-service_loss_2 --incident-id rcaeval:re1tt_ts-route-service_loss_5 --incident-id rcaeval:re1tt_ts-train-service_cpu_1 --incident-id rcaeval:re1tt_ts-train-service_cpu_3 --incident-id rcaeval:re1tt_ts-train-service_cpu_4
+
+[001/010] RE1 TT re1tt_ts-route-service_delay_4 modalities=metric events=193047 usable=true elapsed=76.5s percent=10.0 eta=688.1s rss=315752448 peak_rss=315752448 cache_hits=0 cache_misses=1
+[002/010] RE1 TT re1tt_ts-route-service_delay_5 modalities=metric events=191191 usable=true elapsed=150.6s percent=20.0 eta=602.3s rss=315752448 peak_rss=315752448 cache_hits=0 cache_misses=2
+[003/010] RE1 TT re1tt_ts-route-service_disk_2 modalities=metric events=171288 usable=true elapsed=217.8s percent=30.0 eta=508.3s rss=315752448 peak_rss=315752448 cache_hits=0 cache_misses=3
+[004/010] RE1 TT re1tt_ts-route-service_disk_3 modalities=metric events=171598 usable=true elapsed=285.0s percent=40.0 eta=427.6s rss=318607360 peak_rss=318607360 cache_hits=0 cache_misses=4
+[005/010] RE1 TT re1tt_ts-route-service_loss_1 modalities=metric events=190272 usable=true elapsed=359.7s percent=50.0 eta=359.7s rss=319086592 peak_rss=319086592 cache_hits=0 cache_misses=5
+[006/010] RE1 TT re1tt_ts-route-service_loss_2 modalities=metric events=212317 usable=true elapsed=440.5s percent=60.0 eta=293.6s rss=320372736 peak_rss=320372736 cache_hits=0 cache_misses=6
+[007/010] RE1 TT re1tt_ts-route-service_loss_5 modalities=metric events=192766 usable=true elapsed=517.0s percent=70.0 eta=221.6s rss=320520192 peak_rss=320520192 cache_hits=0 cache_misses=7
+[008/010] RE1 TT re1tt_ts-train-service_cpu_1 modalities=metric events=213294 usable=true elapsed=599.6s percent=80.0 eta=149.9s rss=320520192 peak_rss=320520192 cache_hits=0 cache_misses=8
+[009/010] RE1 TT re1tt_ts-train-service_cpu_3 modalities=metric events=209328 usable=true elapsed=684.3s percent=90.0 eta=76.0s rss=321036288 peak_rss=321036288 cache_hits=0 cache_misses=9
+[010/010] RE1 TT re1tt_ts-train-service_cpu_4 modalities=metric events=192200 usable=true elapsed=757.8s percent=100.0 eta=0.0s rss=321036288 peak_rss=321036288 cache_hits=0 cache_misses=10
+{"cache_hits":0,"cache_misses":10,"coordinator_peak_rss_bytes":321036288,"elapsed_seconds":757.9925059989982,"errors":0,"free_disk_after":63778803712,"free_disk_before":63888830464,"global_schema_computations":1,"global_schema_sha256":"0b77976655e2d17fe82dc9a26f93ff8b2ec4dc8479c79bbe4df63af75f2bb6b3","heavy_recomputations":10,"manifest_usable_for_benchmark":10,"max_worker_peak_rss_bytes":773033984,"mode":"targeted","peak_rss":321036288,"planned":10,"processed":10,"requested_incidents":["rcaeval:re1tt_ts-route-service_delay_4","rcaeval:re1tt_ts-route-service_delay_5","rcaeval:re1tt_ts-route-service_disk_2","rcaeval:re1tt_ts-route-service_disk_3","rcaeval:re1tt_ts-route-service_loss_1","rcaeval:re1tt_ts-route-service_loss_2","rcaeval:re1tt_ts-route-service_loss_5","rcaeval:re1tt_ts-train-service_cpu_1","rcaeval:re1tt_ts-train-service_cpu_3","rcaeval:re1tt_ts-train-service_cpu_4"],"selected_incidents":["rcaeval:re1tt_ts-route-service_delay_4","rcaeval:re1tt_ts-route-service_delay_5","rcaeval:re1tt_ts-route-service_disk_2","rcaeval:re1tt_ts-route-service_disk_3","rcaeval:re1tt_ts-route-service_loss_1","rcaeval:re1tt_ts-route-service_loss_2","rcaeval:re1tt_ts-route-service_loss_5","rcaeval:re1tt_ts-train-service_cpu_1","rcaeval:re1tt_ts-train-service_cpu_3","rcaeval:re1tt_ts-train-service_cpu_4"],"unusable":0,"usable_for_benchmark":10,"valid":10,"version":"rcaeval-official-hf-materializer-v3"}
+	Command being timed: "/home/janynne/projects/CausalODS/correlation-engine/.venv/bin/python -m experiments.rcaeval_official_v3 materialize --root datasets/RCAEval-data --output /home/janynne/projects/CausalODS/artifacts/validation/rcaeval-remaining-735-cache-v3/batch-012 --cache /home/janynne/mnt/rcaeval-official-v3 --resume --incident-id rcaeval:re1tt_ts-route-service_delay_4 --incident-id rcaeval:re1tt_ts-route-service_delay_5 --incident-id rcaeval:re1tt_ts-route-service_disk_2 --incident-id rcaeval:re1tt_ts-route-service_disk_3 --incident-id rcaeval:re1tt_ts-route-service_loss_1 --incident-id rcaeval:re1tt_ts-route-service_loss_2 --incident-id rcaeval:re1tt_ts-route-service_loss_5 --incident-id rcaeval:re1tt_ts-train-service_cpu_1 --incident-id rcaeval:re1tt_ts-train-service_cpu_3 --incident-id rcaeval:re1tt_ts-train-service_cpu_4"
+	User time (seconds): 752.93
+	System time (seconds): 10.79
+	Percent of CPU this job got: 100%
+	Elapsed (wall clock) time (h:mm:ss or m:ss): 12:40.63
+	Average shared text size (kbytes): 0
+	Average unshared data size (kbytes): 0
+	Average stack size (kbytes): 0
+	Average total size (kbytes): 0
+	Maximum resident set size (kbytes): 754916
+	Average resident set size (kbytes): 0
+	Major (requiring I/O) page faults: 0
+	Minor (reclaiming a frame) page faults: 3286754
+	Voluntary context switches: 1016
+	Involuntary context switches: 27614
+	Swaps: 0
+	File system inputs: 11688
+	File system outputs: 467176
+	Socket messages sent: 0
+	Socket messages received: 0
+	Signals delivered: 0
+	Page size (bytes): 4096
+	Exit status: 0

@@ -304,6 +304,7 @@ def test_prepare_incident_resume_interoperability(tmp_path):
     assert prepared.returncode == 0; baseline = _last_json(prepared.stdout)
     first = _cli("preprocess-incident", registry, configs, spec, output, incident)
     assert first.returncode == 0; first_json = _last_json(first.stdout)
+    assert not Path(first_json["checkpoint"]).with_suffix(".worker.json").exists()
     hit = _cli("preprocess-incident", registry, configs, spec, output, incident, "--resume")
     assert hit.returncode == 0; hit_json = _last_json(hit.stdout)
     assert hit_json["checkpoint_status"] == "HIT" and not hit_json["worker_executed"]

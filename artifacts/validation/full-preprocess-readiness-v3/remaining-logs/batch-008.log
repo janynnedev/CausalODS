@@ -1,0 +1,38 @@
+
+COMMAND:
+/usr/bin/time -v /home/janynne/projects/CausalODS/correlation-engine/.venv/bin/python -m experiments.rcaeval_official_v3 materialize --root datasets/RCAEval-data --output /home/janynne/projects/CausalODS/artifacts/validation/rcaeval-remaining-735-cache-v3/batch-008 --cache /home/janynne/mnt/rcaeval-official-v3 --resume --incident-id rcaeval:re1ss_payment_cpu_2 --incident-id rcaeval:re1ss_payment_delay_1 --incident-id rcaeval:re1ss_payment_delay_3 --incident-id rcaeval:re1ss_payment_delay_5 --incident-id rcaeval:re1ss_payment_disk_2 --incident-id rcaeval:re1ss_payment_disk_3 --incident-id rcaeval:re1ss_payment_loss_2 --incident-id rcaeval:re1ss_payment_mem_1 --incident-id rcaeval:re1ss_payment_mem_2 --incident-id rcaeval:re1ss_payment_mem_4
+
+[001/010] RE1 SS re1ss_payment_cpu_2 modalities=metric events=41818 usable=true elapsed=18.1s percent=10.0 eta=162.8s rss=314335232 peak_rss=314335232 cache_hits=0 cache_misses=1
+[002/010] RE1 SS re1ss_payment_delay_1 modalities=metric events=42539 usable=true elapsed=37.1s percent=20.0 eta=148.3s rss=314626048 peak_rss=314626048 cache_hits=0 cache_misses=2
+[003/010] RE1 SS re1ss_payment_delay_3 modalities=metric events=41818 usable=true elapsed=55.3s percent=30.0 eta=129.1s rss=319537152 peak_rss=319537152 cache_hits=0 cache_misses=3
+[004/010] RE1 SS re1ss_payment_delay_5 modalities=metric events=42539 usable=true elapsed=73.4s percent=40.0 eta=110.1s rss=319537152 peak_rss=319537152 cache_hits=0 cache_misses=4
+[005/010] RE1 SS re1ss_payment_disk_2 modalities=metric events=43260 usable=true elapsed=93.6s percent=50.0 eta=93.6s rss=319537152 peak_rss=319537152 cache_hits=0 cache_misses=5
+[006/010] RE1 SS re1ss_payment_disk_3 modalities=metric events=43125 usable=true elapsed=112.3s percent=60.0 eta=74.9s rss=319537152 peak_rss=319537152 cache_hits=0 cache_misses=6
+[007/010] RE1 SS re1ss_payment_loss_2 modalities=metric events=41818 usable=true elapsed=130.1s percent=70.0 eta=55.7s rss=320184320 peak_rss=320184320 cache_hits=0 cache_misses=7
+[008/010] RE1 SS re1ss_payment_mem_1 modalities=metric events=42892 usable=true elapsed=148.7s percent=80.0 eta=37.2s rss=321925120 peak_rss=321925120 cache_hits=0 cache_misses=8
+[009/010] RE1 SS re1ss_payment_mem_2 modalities=metric events=42171 usable=true elapsed=168.8s percent=90.0 eta=18.8s rss=322048000 peak_rss=322048000 cache_hits=0 cache_misses=9
+[010/010] RE1 SS re1ss_payment_mem_4 modalities=metric events=42172 usable=true elapsed=187.0s percent=100.0 eta=0.0s rss=322048000 peak_rss=322048000 cache_hits=0 cache_misses=10
+{"cache_hits":0,"cache_misses":10,"coordinator_peak_rss_bytes":322048000,"elapsed_seconds":187.15568965800048,"errors":0,"free_disk_after":64095936512,"free_disk_before":64122028032,"global_schema_computations":1,"global_schema_sha256":"c792072bb8533b13f3b7c90eef8b6e5d8827fc3901af385371ca3a6eb3d0a43a","heavy_recomputations":10,"manifest_usable_for_benchmark":10,"max_worker_peak_rss_bytes":331173888,"mode":"targeted","peak_rss":322048000,"planned":10,"processed":10,"requested_incidents":["rcaeval:re1ss_payment_cpu_2","rcaeval:re1ss_payment_delay_1","rcaeval:re1ss_payment_delay_3","rcaeval:re1ss_payment_delay_5","rcaeval:re1ss_payment_disk_2","rcaeval:re1ss_payment_disk_3","rcaeval:re1ss_payment_loss_2","rcaeval:re1ss_payment_mem_1","rcaeval:re1ss_payment_mem_2","rcaeval:re1ss_payment_mem_4"],"selected_incidents":["rcaeval:re1ss_payment_cpu_2","rcaeval:re1ss_payment_delay_1","rcaeval:re1ss_payment_delay_3","rcaeval:re1ss_payment_delay_5","rcaeval:re1ss_payment_disk_2","rcaeval:re1ss_payment_disk_3","rcaeval:re1ss_payment_loss_2","rcaeval:re1ss_payment_mem_1","rcaeval:re1ss_payment_mem_2","rcaeval:re1ss_payment_mem_4"],"unusable":0,"usable_for_benchmark":10,"valid":10,"version":"rcaeval-official-hf-materializer-v3"}
+	Command being timed: "/home/janynne/projects/CausalODS/correlation-engine/.venv/bin/python -m experiments.rcaeval_official_v3 materialize --root datasets/RCAEval-data --output /home/janynne/projects/CausalODS/artifacts/validation/rcaeval-remaining-735-cache-v3/batch-008 --cache /home/janynne/mnt/rcaeval-official-v3 --resume --incident-id rcaeval:re1ss_payment_cpu_2 --incident-id rcaeval:re1ss_payment_delay_1 --incident-id rcaeval:re1ss_payment_delay_3 --incident-id rcaeval:re1ss_payment_delay_5 --incident-id rcaeval:re1ss_payment_disk_2 --incident-id rcaeval:re1ss_payment_disk_3 --incident-id rcaeval:re1ss_payment_loss_2 --incident-id rcaeval:re1ss_payment_mem_1 --incident-id rcaeval:re1ss_payment_mem_2 --incident-id rcaeval:re1ss_payment_mem_4"
+	User time (seconds): 190.14
+	System time (seconds): 4.21
+	Percent of CPU this job got: 102%
+	Elapsed (wall clock) time (h:mm:ss or m:ss): 3:09.25
+	Average shared text size (kbytes): 0
+	Average unshared data size (kbytes): 0
+	Average stack size (kbytes): 0
+	Average total size (kbytes): 0
+	Maximum resident set size (kbytes): 323412
+	Average resident set size (kbytes): 0
+	Major (requiring I/O) page faults: 0
+	Minor (reclaiming a frame) page faults: 1067274
+	Voluntary context switches: 740
+	Involuntary context switches: 10105
+	Swaps: 0
+	File system inputs: 2744
+	File system outputs: 97536
+	Socket messages sent: 0
+	Socket messages received: 0
+	Signals delivered: 0
+	Page size (bytes): 4096
+	Exit status: 0

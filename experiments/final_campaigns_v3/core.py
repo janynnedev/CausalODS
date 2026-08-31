@@ -938,7 +938,9 @@ def write_final_result_indexes(store: Any, results: Iterable[Mapping[str, Any]],
 
 
 def promote_trained_artifacts(repository_root: Path, results: Iterable[Mapping[str, Any]],
-                              runs: Mapping[str, ExperimentRunV3]) -> dict[str, Any]:
+                              runs: Mapping[str, ExperimentRunV3], *,
+                              scientific_tranche: Mapping[str, Any] | None = None,
+                              destination: str | Path | None = None) -> dict[str, Any]:
     """Publish a checksum-bound fold index only after a scientific H1/H2 run."""
     rows = []
     learned = {"logistic-regression", "random-forest", "xgboost-rca-v3", "mlp-light-v3"}
@@ -984,7 +986,22 @@ def promote_trained_artifacts(repository_root: Path, results: Iterable[Mapping[s
         unique[key] = row
     payload = {"schema_version": "trained-model-artifact-index-v3",
                "artifacts": [unique[key] for key in sorted(unique, key=repr)]}
-    target = repository_root / "artifacts/final-experiments-v3/trained-artifacts/INDEX.json"
+    if scientific_tranche is not None:
+        payload.update({
+            "scientific_tranche_id": scientific_tranche["tranche_id"],
+            "scientific_tranche_sha256": scientific_tranche["selection_sha256"],
+            "parent_split_sha256": scientific_tranche["parent_split_key"],
+            "parent_base_key": scientific_tranche["parent_base_key"],
+        })
+    if destination is not None:
+        target = Path(destination)
+        if not target.is_absolute():
+            target = repository_root / target
+    elif scientific_tranche is not None:
+        target = (repository_root / "artifacts/final-experiments-v3"
+                  / f"trained-artifacts-{scientific_tranche['tranche_id']}" / "INDEX.json")
+    else:
+        target = repository_root / "artifacts/final-experiments-v3/trained-artifacts/INDEX.json"
     _atomic_json(target, payload)
     return {"artifacts": len(unique), "path": str(target)}
 

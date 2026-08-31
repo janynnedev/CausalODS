@@ -1,0 +1,38 @@
+
+COMMAND:
+/usr/bin/time -v /home/janynne/projects/CausalODS/correlation-engine/.venv/bin/python -m experiments.rcaeval_official_v3 materialize --root datasets/RCAEval-data --output /home/janynne/projects/CausalODS/artifacts/validation/rcaeval-remaining-735-cache-v3/batch-017 --cache /home/janynne/mnt/rcaeval-official-v3 --resume --incident-id rcaeval:re2ss_carts_cpu_2 --incident-id rcaeval:re2ss_carts_cpu_3 --incident-id rcaeval:re2ss_carts_delay_1 --incident-id rcaeval:re2ss_carts_disk_3 --incident-id rcaeval:re2ss_carts_loss_1 --incident-id rcaeval:re2ss_carts_loss_2 --incident-id rcaeval:re2ss_carts_loss_3 --incident-id rcaeval:re2ss_carts_mem_1 --incident-id rcaeval:re2ss_carts_socket_1 --incident-id rcaeval:re2ss_carts_socket_3
+
+[001/010] RE2 SS re2ss_carts_cpu_2 modalities=log,metric events=196056 usable=true elapsed=80.8s percent=10.0 eta=727.2s rss=313753600 peak_rss=313753600 cache_hits=0 cache_misses=1
+[002/010] RE2 SS re2ss_carts_cpu_3 modalities=log,metric events=197833 usable=true elapsed=162.2s percent=20.0 eta=648.8s rss=314658816 peak_rss=314658816 cache_hits=0 cache_misses=2
+[003/010] RE2 SS re2ss_carts_delay_1 modalities=log,metric events=195344 usable=true elapsed=243.8s percent=30.0 eta=568.9s rss=316653568 peak_rss=316653568 cache_hits=0 cache_misses=3
+[004/010] RE2 SS re2ss_carts_disk_3 modalities=log,metric events=193655 usable=true elapsed=322.8s percent=40.0 eta=484.2s rss=317591552 peak_rss=317591552 cache_hits=0 cache_misses=4
+[005/010] RE2 SS re2ss_carts_loss_1 modalities=log,metric events=196774 usable=true elapsed=403.5s percent=50.0 eta=403.5s rss=317722624 peak_rss=317722624 cache_hits=0 cache_misses=5
+[006/010] RE2 SS re2ss_carts_loss_2 modalities=log,metric events=189957 usable=true elapsed=479.5s percent=60.0 eta=319.7s rss=318164992 peak_rss=318164992 cache_hits=0 cache_misses=6
+[007/010] RE2 SS re2ss_carts_loss_3 modalities=log,metric events=190189 usable=true elapsed=556.8s percent=70.0 eta=238.6s rss=318164992 peak_rss=318164992 cache_hits=0 cache_misses=7
+[008/010] RE2 SS re2ss_carts_mem_1 modalities=log,metric events=195448 usable=true elapsed=635.7s percent=80.0 eta=158.9s rss=318918656 peak_rss=318918656 cache_hits=0 cache_misses=8
+[009/010] RE2 SS re2ss_carts_socket_1 modalities=log,metric events=200999 usable=true elapsed=715.9s percent=90.0 eta=79.5s rss=320503808 peak_rss=320503808 cache_hits=0 cache_misses=9
+[010/010] RE2 SS re2ss_carts_socket_3 modalities=log,metric events=192593 usable=true elapsed=795.2s percent=100.0 eta=0.0s rss=320503808 peak_rss=320503808 cache_hits=0 cache_misses=10
+{"cache_hits":0,"cache_misses":10,"coordinator_peak_rss_bytes":320503808,"elapsed_seconds":795.3679308959981,"errors":0,"free_disk_after":62258495488,"free_disk_before":62370832384,"global_schema_computations":1,"global_schema_sha256":"44c41b32ff77899d4d5ac296fd63fa72dac06cc6359b950640ddf0d4cb26460e","heavy_recomputations":10,"manifest_usable_for_benchmark":10,"max_worker_peak_rss_bytes":531673088,"mode":"targeted","peak_rss":320503808,"planned":10,"processed":10,"requested_incidents":["rcaeval:re2ss_carts_cpu_2","rcaeval:re2ss_carts_cpu_3","rcaeval:re2ss_carts_delay_1","rcaeval:re2ss_carts_disk_3","rcaeval:re2ss_carts_loss_1","rcaeval:re2ss_carts_loss_2","rcaeval:re2ss_carts_loss_3","rcaeval:re2ss_carts_mem_1","rcaeval:re2ss_carts_socket_1","rcaeval:re2ss_carts_socket_3"],"selected_incidents":["rcaeval:re2ss_carts_cpu_2","rcaeval:re2ss_carts_cpu_3","rcaeval:re2ss_carts_delay_1","rcaeval:re2ss_carts_disk_3","rcaeval:re2ss_carts_loss_1","rcaeval:re2ss_carts_loss_2","rcaeval:re2ss_carts_loss_3","rcaeval:re2ss_carts_mem_1","rcaeval:re2ss_carts_socket_1","rcaeval:re2ss_carts_socket_3"],"unusable":0,"usable_for_benchmark":10,"valid":10,"version":"rcaeval-official-hf-materializer-v3"}
+	Command being timed: "/home/janynne/projects/CausalODS/correlation-engine/.venv/bin/python -m experiments.rcaeval_official_v3 materialize --root datasets/RCAEval-data --output /home/janynne/projects/CausalODS/artifacts/validation/rcaeval-remaining-735-cache-v3/batch-017 --cache /home/janynne/mnt/rcaeval-official-v3 --resume --incident-id rcaeval:re2ss_carts_cpu_2 --incident-id rcaeval:re2ss_carts_cpu_3 --incident-id rcaeval:re2ss_carts_delay_1 --incident-id rcaeval:re2ss_carts_disk_3 --incident-id rcaeval:re2ss_carts_loss_1 --incident-id rcaeval:re2ss_carts_loss_2 --incident-id rcaeval:re2ss_carts_loss_3 --incident-id rcaeval:re2ss_carts_mem_1 --incident-id rcaeval:re2ss_carts_socket_1 --incident-id rcaeval:re2ss_carts_socket_3"
+	User time (seconds): 793.92
+	System time (seconds): 13.11
+	Percent of CPU this job got: 101%
+	Elapsed (wall clock) time (h:mm:ss or m:ss): 13:18.47
+	Average shared text size (kbytes): 0
+	Average unshared data size (kbytes): 0
+	Average stack size (kbytes): 0
+	Average total size (kbytes): 0
+	Maximum resident set size (kbytes): 520236
+	Average resident set size (kbytes): 0
+	Major (requiring I/O) page faults: 0
+	Minor (reclaiming a frame) page faults: 3596984
+	Voluntary context switches: 1318
+	Involuntary context switches: 30020
+	Swaps: 0
+	File system inputs: 22728
+	File system outputs: 503504
+	Socket messages sent: 0
+	Socket messages received: 0
+	Signals delivered: 0
+	Page size (bytes): 4096
+	Exit status: 0
