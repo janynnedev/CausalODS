@@ -268,7 +268,8 @@ def test_configured_tuning_budget_reaches_benchmark_and_matches_manifest(
     monkeypatch.setattr(
         "experiments.multimodal_v3.executors.train_and_evaluate", fake_train)
     delegate = ExistingBenchmarkDelegateV3(
-        {(run.source_dataset, run.source_system, run.feature_view): dataset},
+        {(run.source_dataset, run.source_system, run.feature_view, run.protocol,
+          run.held_out, run.seed): dataset},
         tmp_path, tuning_budget=config.tuning_budget)
     report = delegate(run)
     delegate(run)
@@ -277,6 +278,82 @@ def test_configured_tuning_budget_reaches_benchmark_and_matches_manifest(
                          "bootstrap_iterations": 100, "runtime_policy": None}]
     assert report["effective_tuning_budget"] == 4
     assert manifest["models"]["tuning_budget"] == captured[0]["tuning_budget"]
+
+
+def test_benchmark_delegate_reuses_physical_dataset_across_logical_catalog_keys(
+        monkeypatch, tmp_path):
+    base = next(run for run in ExperimentPlannerV3(replace(
+        smoke_config(), hypotheses=("H2",))).plan()
+                if run.method == "xgboost-rca-v3")
+    logical_reuse = replace(base, source_system="logical-system-b",
+                            protocol="cross-system", run_id="")
+    dataset = SimpleNamespace(
+        feature_schema={"feature_view_sha256": base.feature_view_hash},
+        dataset_hash="d" * 64)
+    calls = []
+
+    def fake_train(method, dataset_arg, output, **kwargs):
+        calls.append((method, dataset_arg.dataset_hash, kwargs["seed"]))
+        return {
+            "metrics": {"macro_f1": 1.0},
+            "incident_predictions": [{
+                "incident_id": base.incident_id, "ranking": [],
+                "actual_services": ["payment-service"], "reciprocal_rank": 1.0,
+            }],
+            "manifest": {"splits": {
+                "train": list(base.train_incident_ids),
+                "validation": list(base.validation_incident_ids),
+                "test": list(base.test_incident_ids),
+            }},
+            "artifact_dir": str(tmp_path / method / dataset_arg.dataset_hash[:12]
+                                / f"seed-{kwargs['seed']}"),
+        }
+
+    monkeypatch.setattr(
+        "experiments.multimodal_v3.executors.train_and_evaluate", fake_train)
+    catalog = {
+        (base.source_dataset, base.source_system, base.feature_view, base.protocol,
+         base.held_out, base.seed): dataset,
+        (logical_reuse.source_dataset, logical_reuse.source_system,
+         logical_reuse.feature_view, logical_reuse.protocol, logical_reuse.held_out,
+         logical_reuse.seed): dataset,
+    }
+    delegate = ExistingBenchmarkDelegateV3(catalog, tmp_path, tuning_budget=6,
+                                            bootstrap_iterations=1000)
+
+    first = delegate(base)
+    second = delegate(logical_reuse)
+
+    assert calls == [(base.method, dataset.dataset_hash, base.seed)]
+    assert first["artifact_dir"] == second["artifact_dir"]
+
+
+def test_benchmark_delegate_requires_exact_logical_catalog_lookup(tmp_path):
+    run = next(run for run in ExperimentPlannerV3(replace(
+        smoke_config(), hypotheses=("H2",))).plan()
+               if run.method == "xgboost-rca-v3")
+    dataset = SimpleNamespace(
+        feature_schema={"feature_view_sha256": run.feature_view_hash},
+        dataset_hash="d" * 64)
+    delegate = ExistingBenchmarkDelegateV3(
+        {(run.source_dataset, run.source_system, run.feature_view): dataset}, tmp_path)
+
+    with pytest.raises(Exception, match="BenchmarkDataset ausente") as raised:
+        delegate(run)
+    assert raised.value.stage == "dataset_lookup"
+
+
+def test_tranche_a_catalog_reuses_physical_benchmark_datasets(repo_root):
+    catalog = json.loads((
+        repo_root / "artifacts/final-experiments-v3/scientific-inputs-tranche-a-180"
+        / "benchmark-catalog.json").read_text(encoding="utf-8"))
+    rows = catalog["datasets"]
+    full = [row for row in rows if row["feature_view"] == "FULL"]
+
+    assert len(rows) == 18  # H1A_LOGICAL_CATALOG_KEYS
+    assert len({row["benchmark_dataset_sha256"] for row in rows}) == 7
+    assert len(full) == 3  # FULL_VIEW_LOGICAL_KEYS
+    assert len({row["benchmark_dataset_sha256"] for row in full}) == 1
 
 
 def test_h4_is_paired_uses_same_base_noop_and_never_retrains(tmp_path, repo_root):

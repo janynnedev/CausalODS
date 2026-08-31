@@ -6,7 +6,9 @@ from typing import Any, Callable, Mapping
 
 from explanations_v2 import ExplanationMode, ExplanationService
 from explanations_v2.prompt_builder import GROUND_TRUTH_FIELD_NAMES
-from multimodal_v1.benchmark_v3 import BenchmarkDataset, train_and_evaluate
+from multimodal_v1.benchmark_v3 import (
+    BenchmarkDataset, BenchmarkRuntimePolicy, train_and_evaluate,
+)
 from multimodal_v1.degradation_v3 import (
     ObservationDataset, ObservationDegradationHarness, degradation_metrics,
 )
@@ -64,20 +66,32 @@ class ExistingBenchmarkDelegateV3:
         self.tuning_budget = tuning_budget
         self.bootstrap_iterations = bootstrap_iterations
         self.runtime_policy = runtime_policy
+        effective_runtime_policy = runtime_policy or BenchmarkRuntimePolicy()
+        self._runtime_policy_identity = sha256_value(effective_runtime_policy.to_dict())
         self._cache: dict[tuple[Any, ...], Mapping[str, Any]] = {}
 
+    def _physical_cache_key(self, run: ExperimentRunV3,
+                            dataset: BenchmarkDataset) -> tuple[Any, ...]:
+        """Identity of every input that can change the persisted benchmark report.
+
+        The delegate configuration is immutable for its campaign-scoped output root.
+        Logical catalog coordinates intentionally do not participate: distinct catalog
+        entries may resolve to the same immutable physical BenchmarkDataset.
+        """
+        return (run.method, run.seed, dataset.dataset_hash, self.tuning_budget,
+                self.bootstrap_iterations, self._runtime_policy_identity)
+
     def __call__(self, run: ExperimentRunV3) -> Mapping[str, Any]:
-        key = (run.source_dataset, run.source_system, run.feature_view)
-        protocol_key = (*key, run.protocol, run.held_out, run.seed)
-        dataset = self.datasets.get(protocol_key, self.datasets.get(key))
+        protocol_key = (run.source_dataset, run.source_system, run.feature_view,
+                        run.protocol, run.held_out, run.seed)
+        dataset = self.datasets.get(protocol_key)
         if dataset is None:
             raise StageFailureV3(RunStatusV3.FAILED_INPUT_VALIDATION, "dataset_lookup",
-                                 f"BenchmarkDataset ausente para {protocol_key} (ou {key}).")
+                                 f"BenchmarkDataset ausente para {protocol_key}.")
         if dataset.feature_schema["feature_view_sha256"] != run.feature_view_hash:
             raise StageFailureV3(RunStatusV3.FAILED_INPUT_VALIDATION, "feature_view",
                                  "FeatureView do benchmark diverge do plano.")
-        cache_key = (*protocol_key, run.method, self.tuning_budget,
-                     self.bootstrap_iterations, dataset.dataset_hash)
+        cache_key = self._physical_cache_key(run, dataset)
         if cache_key not in self._cache:
             try:
                 self._cache[cache_key] = train_and_evaluate(
