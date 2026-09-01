@@ -27,6 +27,17 @@ _ALLOWED_FALLBACK_REASONS = {
     "explanation_validation_failed",
 }
 
+# Single key identity shared by the frozen H3 instruction and response parser.
+H3_OUTPUT_KEYS = (
+    "root_cause",
+    "summary",
+    "evidence_statements",
+    "propagation_path",
+    "recommendations",
+    "cited_evidence_ids",
+)
+H3_EVIDENCE_STATEMENT_KEYS = ("text", "evidence_ids")
+
 
 def _freeze(value: Any) -> Any:
     if isinstance(value, Mapping):

@@ -19,6 +19,9 @@ from multimodal_v1.benchmark_v3 import BenchmarkDataset
 from multimodal_v1.degradation_v3 import ObservationDegradationHarness
 
 from experiments.final_campaigns_v3.live_client import EnvironmentOpenAICompatibleClient
+from experiments.final_campaigns_v3.h3_openai_freeze import (
+    load_manifest as load_h3_llm_manifest, prompt_provenance_fields,
+)
 from experiments.final_campaigns_v3.preprocessing import validate_catalog
 from experiments.multimodal_v3 import (
     ExperimentPlannerV3, H1ExperimentExecutor, H2ExperimentExecutor,
@@ -84,6 +87,7 @@ class _BenchmarkProvenanceExecutor:
 
 class _AuditedLLMClient:
     is_live_provider = True
+    fail_closed = True
 
     def __init__(self, delegate):
         self.delegate = delegate
@@ -107,13 +111,40 @@ class _H3ProvenanceExecutor:
             raise RuntimeError("LLM_RAW_RESPONSE_PROVENANCE_MISSING")
         rca = self.delegate.rca_results[run.incident_id]
         rca_payload = rca.to_dict()
+        freeze_manifest = load_h3_llm_manifest()
+        mode = run.explanation_mode
+        rendered_prompt = provenance.get("prompt_text")
+        if mode not in freeze_manifest["prompt_hashes"] or not isinstance(rendered_prompt, str):
+            raise RuntimeError("H3_PROMPT_PROVENANCE_BINDING_INVALID")
+        prompt_provenance = prompt_provenance_fields(
+            freeze_manifest, mode=mode, prompt=rendered_prompt,
+            prompt_hash=provenance.get("prompt_hash"))
         digest = lambda value: hashlib.sha256(
             json.dumps(value, sort_keys=True, separators=(",", ":"), default=str).encode()).hexdigest()
         return result, {
-            **provenance, "llm_model_identifier": response.model_name,
+            **provenance, "provider": "openai",
+            "requested_model_id": self.client.requested_model,
+            "returned_model_id": response.model_name,
+            "api_family": "chat-completions",
+            "reasoning_effort": "none",
+            "top_p_policy": "provider_default_omitted",
+            "api_seed_policy": "omitted",
+            "max_completion_tokens": 1024,
+            "input_token_budget": getattr(self.client.delegate, "manifest", {}).get(
+                "input_token_budget"),
+            "estimated_input_tokens": getattr(
+                self.client.delegate, "last_estimated_input_tokens", None),
+            "finish_reason": response.finish_reason,
+            "response_id": response.response_id,
+            "provider_prompt_tokens": response.tokens_prompt,
+            "provider_completion_tokens": response.tokens_completion,
+            "provider_total_tokens": response.total_tokens,
+            "system_fingerprint": response.system_fingerprint,
+            "request_id": response.request_id,
+            "llm_model_identifier": response.model_name,
             "llm_temperature": self.temperature,
             "prompt_template_version": "prompt-builder-v1",
-            "prompt_template_hash": provenance.get("prompt_hash"),
+            **prompt_provenance,
             "input_evidence_hash": provenance.get("evidence_hash"),
             "evidence_base_hash": digest(rca_payload.get("evidence", ())),
             "root_cause_ranking_hash": digest({

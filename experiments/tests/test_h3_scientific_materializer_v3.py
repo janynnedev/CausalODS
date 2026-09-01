@@ -300,9 +300,7 @@ def test_build_executors_binds_original_sample_before_sanitization(
         "scientific_rca_results": str(path.relative_to(tmp_path)),
         "h3_input_provider": "experiments.final_campaigns_v3.providers:load_h3_inputs",
     })
-    monkeypatch.setenv("CAUSALODS_LLM_MODEL", "preflight-only")
-    monkeypatch.setenv("CAUSALODS_LLM_ENDPOINT", "http://127.0.0.1:1")
-    monkeypatch.setenv("CAUSALODS_LLM_API_KEY", "preflight-only")
+    monkeypatch.setenv("OPENAI_API_KEY", "preflight-only")
     raw_decodes = []
     real_read = providers._read
 

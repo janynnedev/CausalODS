@@ -4,6 +4,9 @@ from __future__ import annotations
 
 import json
 import os
+import bisect
+import re
+import mmap
 from collections.abc import Iterator, Mapping
 from dataclasses import replace
 from datetime import datetime
@@ -76,12 +79,13 @@ def _rca_result(payload):
 class FrozenRawTelemetryMapping(Mapping[str, tuple[Mapping[str, Any], ...]]):
     """Immutable, uncached view over frozen raw telemetry files."""
 
-    def __init__(self, repository_root: str | Path, descriptors) -> None:
+    def __init__(self, repository_root: str | Path, descriptors, *, verified=False) -> None:
         self._repository_root = Path(repository_root).resolve()
         self._descriptors = {
             item["incident_id"]: (item["raw_telemetry_path"], item["raw_telemetry_sha256"])
             for item in descriptors
         }
+        self._verified = verified
 
     def __len__(self) -> int:
         return len(self._descriptors)
@@ -100,12 +104,96 @@ class FrozenRawTelemetryMapping(Mapping[str, tuple[Mapping[str, Any], ...]]):
         path = _inside(self._repository_root, relative)
         if not path.is_file():
             raise ValueError("H3 raw telemetry congelada ausente.")
-        if file_sha256(path) != expected_sha256:
+        if not self._verified and file_sha256(path) != expected_sha256:
             raise ValueError("H3 scientific RCA bundle checksum mismatch.")
-        payload = _read(path)
-        if not isinstance(payload, list) or any(not isinstance(item, Mapping) for item in payload):
+        if path.stat().st_size < 64 * 1024 * 1024:
+            payload = _read(path)
+            if not isinstance(payload, list) or any(
+                    not isinstance(item, Mapping) for item in payload):
+                raise ValueError("H3 raw telemetry deve ser uma lista JSON de objetos.")
+            return tuple(payload)
+        # These files are canonical JSON emitted by h3_materializer: every
+        # top-level object starts with the lexicographically first `attributes`
+        # key and has a mandatory event_id. Scan canonical object bytes in C-backed
+        # chunks and decode only the same 50 objects PromptBuilder would retain.
+        selected, sequence = [], 0
+        for event_id, raw_object in _iter_canonical_event_objects(path):
+            key = (event_id, sequence)
+            sequence += 1
+            position = bisect.bisect_right([entry[0] for entry in selected], key)
+            if position < 50:
+                selected.insert(position, (key, raw_object))
+                del selected[50:]
+        result = tuple(json.loads(raw_object) for _, raw_object in selected)
+        if any(not isinstance(item, Mapping) for item in result):
             raise ValueError("H3 raw telemetry deve ser uma lista JSON de objetos.")
-        return tuple(payload)
+        return result
+
+
+_TOP_LEVEL_DELIMITER = b'},{"attributes":'
+_EVENT_ID_BYTES = re.compile(br'"event_id":"([^"\\]+)"')
+
+
+def _iter_canonical_event_objects(path: Path, chunk_size: int = 8 * 1024 * 1024):
+    with path.open("rb") as handle:
+        with mmap.mmap(handle.fileno(), 0, access=mmap.ACCESS_READ) as data:
+            last = data.rfind(b"]")
+            if (data[:15] != b'[{"attributes":' or last < 1
+                    or data[last + 1:].strip()):
+                raise ValueError("H3 raw telemetry deve ser uma lista JSON de objetos.")
+            start = 1
+            while True:
+                boundary = data.find(_TOP_LEVEL_DELIMITER, start)
+                if boundary < 0:
+                    raw_object = data[start:last]
+                else:
+                    raw_object = data[start:boundary + 1]
+                match = _EVENT_ID_BYTES.search(raw_object)
+                if match is None:
+                    raise ValueError("H3 canonical raw telemetry sem event_id.")
+                yield match.group(1).decode("utf-8"), raw_object
+                if boundary < 0:
+                    return
+                # The delimiter includes the opening bytes of the next object.
+                start = boundary + 2
+
+
+def _iter_json_array(path: Path, chunk_size: int = 1024 * 1024):
+    decoder = json.JSONDecoder()
+    with path.open("r", encoding="utf-8") as handle:
+        buffer, position, eof, started = "", 0, False, False
+        while True:
+            if position > chunk_size:
+                buffer, position = buffer[position:], 0
+            while position >= len(buffer) and not eof:
+                chunk = handle.read(chunk_size)
+                eof = not chunk
+                buffer += chunk
+            while position < len(buffer) and buffer[position].isspace():
+                position += 1
+            if not started:
+                if position >= len(buffer) and not eof:
+                    continue
+                if position >= len(buffer) or buffer[position] != "[":
+                    raise ValueError("H3 raw telemetry deve ser uma lista JSON de objetos.")
+                position += 1
+                started = True
+                continue
+            while position < len(buffer) and (buffer[position].isspace() or buffer[position] == ","):
+                position += 1
+            if position < len(buffer) and buffer[position] == "]":
+                return
+            try:
+                value, end = decoder.raw_decode(buffer, position)
+            except json.JSONDecodeError:
+                if eof:
+                    raise ValueError("H3 raw telemetry JSON truncado.")
+                chunk = handle.read(chunk_size)
+                eof = not chunk
+                buffer += chunk
+                continue
+            position = end
+            yield value
 
 
 def load_h3_inputs(*, config, repository_root, expected_incident_ids=None,
@@ -160,7 +248,7 @@ def load_h3_inputs(*, config, repository_root, expected_incident_ids=None,
         if sha256_value(rca.to_dict()) != item["rca_result_contract_sha256"]:
             raise ValueError("H3 RCAResult contract hash mismatch.")
         rca_results[item["incident_id"]] = rca
-    raw_telemetry = FrozenRawTelemetryMapping(repository_root, descriptors)
+    raw_telemetry = FrozenRawTelemetryMapping(repository_root, descriptors, verified=True)
     if len(rca_results) != 40 or len(raw_telemetry) != 40:
         raise RuntimeError("H3_SCIENTIFIC_RCA_RESULTS_NOT_AVAILABLE")
     return {"rca_results": rca_results, "raw_telemetry": raw_telemetry}

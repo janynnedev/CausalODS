@@ -1,0 +1,47 @@
+{
+  "api_family": "chat-completions",
+  "api_seed_policy": "omitted",
+  "conditions": [
+    "generic",
+    "raw_telemetry",
+    "evidence_grounded"
+  ],
+  "endpoint_base": "https://api.openai.com/v1",
+  "endpoint_path": "/chat/completions",
+  "experiment": "H3",
+  "final_incident_count": 40,
+  "h3_protocol_version": "h3-explanations-v3",
+  "input_token_budget": 32768,
+  "manifest_schema_version": "h3-llm-freeze-manifest-v1",
+  "max_completion_tokens": 1024,
+  "model_family": "GPT-5.4 Mini",
+  "model_id": "gpt-5.4-mini-2026-03-17",
+  "openai_sdk": {
+    "library": "not-installed",
+    "transport": "stdlib-urllib-single-request-v1",
+    "version": null
+  },
+  "output_contract_hash": "439101ed78fc1a900ab9f78b1b56d02675a5a8fa3f9a5a841204824295332a2f",
+  "output_contract_version": "structured-explanation-v1",
+  "prompt_contract_version": "prompt-builder-v1/prompt-schema-v1",
+  "prompt_hashes": {
+    "common": "9c9f5fe166ac0b0a586bd45b93b72caebaadc4eea0ba92370b84a81bff1676a3",
+    "evidence_grounded": "20a2b9f830035f9ec8e96a14e8fbcb851cff0a22275d92ca0e59364fff4684cd",
+    "generic": "45d8b2e01a99f19e466674a367acc37f0d13c4862a9efca6e167a07f2501184b",
+    "raw_telemetry": "4f24a8dbf152fc7442f7f27ab26cc70bf4e6236ec35e2fa8b11dfb578354060e"
+  },
+  "provenance_schema_version": "h3-generation-provenance-v1",
+  "provider": "openai",
+  "reasoning_effort": "none",
+  "stream": false,
+  "temperature": 0.0,
+  "tokenizer": {
+    "count_kind": "deterministic estimate",
+    "counting_method": "tiktoken_chat_messages_estimate_v1",
+    "encoding": "o200k_base",
+    "library": "tiktoken",
+    "model_mapping": "gpt-5.4-mini-2026-03-17",
+    "version": "0.14.0"
+  },
+  "top_p_policy": "provider_default_omitted"
+}

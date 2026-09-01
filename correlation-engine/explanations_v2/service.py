@@ -15,6 +15,8 @@ from explanations_v2.contracts import (
     PromptPayload,
     StructuredExplanation,
     sha256_canonical,
+    H3_OUTPUT_KEYS,
+    H3_EVIDENCE_STATEMENT_KEYS,
 )
 from explanations_v2.deterministic_explainer import DeterministicTemplateExplainer, UNCERTAINTY_POLICY_VERSION, compute_uncertainty
 from explanations_v2.prompt_builder import PromptBuilder
@@ -71,22 +73,25 @@ class ExplanationService:
                 raise ValueError('empty_response')
             parsed = self._parse_response(response.text, evidence, prompt, response)
             return self._finalize(evidence, prompt, parsed, response, False, None)
-        except TimeoutError:
-            return self._finalize(evidence, prompt, fallback, response, True, 'timeout')
-        except RootCauseMismatchError:
-            return self._finalize(evidence, prompt, fallback, response, True, 'root_cause_mismatch')
-        except json.JSONDecodeError:
-            return self._finalize(evidence, prompt, fallback, response, True, 'invalid_json')
-        except ValueError as exc:
-            reason = str(exc)
-            if reason not in {
-                'invalid_schema', 'empty_response', 'invalid_evidence_reference', 'missing_evidence_citation'
-            }:
-                reason = 'invalid_schema'
-            return self._finalize(evidence, prompt, fallback, response, True, reason)
-        except Exception:
+        except Exception as exc:
+            # Scientific H3 providers are fail-closed: deterministic fallbacks would
+            # turn a failed treatment into a different treatment.
+            if getattr(self.llm_client, 'fail_closed', False):
+                raise
+            if isinstance(exc, TimeoutError):
+                return self._finalize(evidence, prompt, fallback, response, True, 'timeout')
+            if isinstance(exc, RootCauseMismatchError):
+                return self._finalize(evidence, prompt, fallback, response, True, 'root_cause_mismatch')
+            if isinstance(exc, json.JSONDecodeError):
+                return self._finalize(evidence, prompt, fallback, response, True, 'invalid_json')
+            if isinstance(exc, ValueError):
+                reason = str(exc)
+                if reason not in {
+                    'invalid_schema', 'empty_response', 'invalid_evidence_reference', 'missing_evidence_citation'
+                }:
+                    reason = 'invalid_schema'
+                return self._finalize(evidence, prompt, fallback, response, True, reason)
             return self._finalize(evidence, prompt, fallback, response, True, 'provider_error')
-
     def _build_evidence(self, rca_result) -> EvidenceObjectV1:
         ranking = tuple(getattr(rca_result, 'ranking', ()) or ())
         evidence_items = tuple(getattr(rca_result, 'evidence', ()) or ())
@@ -183,7 +188,10 @@ class ExplanationService:
             generated_at=getattr(rca_result, 'generated_at'),
             pipeline_version=str(getattr(rca_result, 'pipeline_version')),
             model_version=str(getattr(rca_result, 'model_version')),
-            model_hash=str(metadata.get('model_hash', '')),
+            # Final H3 RCA artifacts bind the physical trained model under the
+            # explicit materializer provenance key; older callers used model_hash.
+            model_hash=str(metadata.get('model_hash') or
+                           metadata.get('model_artifact_sha256') or ''),
             ranked_root_causes=tuple(item.service_name for item in ranking),
             model_probabilities={item.service_name: item.scores.model_probability for item in ranking},
             final_ranking_scores={item.service_name: item.scores.final_score for item in ranking},
@@ -207,8 +215,7 @@ class ExplanationService:
         data = json.loads(text)
         if not isinstance(data, dict):
             raise ValueError('invalid_schema')
-        required = {'root_cause', 'summary', 'evidence_statements', 'propagation_path', 'recommendations', 'cited_evidence_ids'}
-        if set(data) != required:
+        if set(data) != set(H3_OUTPUT_KEYS):
             raise ValueError('invalid_schema')
         trusted_root = evidence.ranked_root_causes[0] if evidence.ranked_root_causes else None
         returned_root = data['root_cause']
@@ -222,7 +229,7 @@ class ExplanationService:
             raise ValueError('invalid_schema')
         statements = []
         for item in data['evidence_statements']:
-            if not isinstance(item, dict) or set(item) != {'text', 'evidence_ids'}:
+            if not isinstance(item, dict) or set(item) != set(H3_EVIDENCE_STATEMENT_KEYS):
                 raise ValueError('invalid_schema')
             statements.append(EvidenceStatementV1(text=item['text'], evidence_ids=item['evidence_ids']))
         cited = tuple(data['cited_evidence_ids'])

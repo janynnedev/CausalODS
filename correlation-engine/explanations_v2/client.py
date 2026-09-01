@@ -40,6 +40,11 @@ class LLMResponse:
     latency_ms: float | None = None
     cost_usd: float | None = None
     response_hash: str | None = None
+    finish_reason: str | None = None
+    response_id: str | None = None
+    total_tokens: int | None = None
+    system_fingerprint: str | None = None
+    request_id: str | None = None
 
     def __post_init__(self) -> None:
         if not isinstance(self.text, str):
@@ -51,6 +56,7 @@ class LLMResponse:
         object.__setattr__(self, 'tokens_completion', _validate_int(self.tokens_completion, 'tokens_completion'))
         object.__setattr__(self, 'latency_ms', _validate_float(self.latency_ms, 'latency_ms'))
         object.__setattr__(self, 'cost_usd', _validate_float(self.cost_usd, 'cost_usd'))
+        object.__setattr__(self, 'total_tokens', _validate_int(self.total_tokens, 'total_tokens'))
         computed = hashlib.sha256(self.text.encode('utf-8')).hexdigest()
         if self.response_hash is None:
             object.__setattr__(self, 'response_hash', computed)
