@@ -17,6 +17,7 @@ from experiments.multimodal_v3.core import ExperimentPlannerV3, file_sha256, sha
 from experiments.multimodal_v3.executors import H3ExperimentExecutor
 from experiments.multimodal_v3.fixtures import smoke_config, smoke_rca
 from explanations_v2 import ExplanationService
+from experiments.causalods_campaign_bindings import build_executors
 from models.rca_context import RCAContext
 from pipeline.rca_result_factory import RCAResultFactory
 from types import SimpleNamespace
@@ -35,6 +36,12 @@ def _planned_incidents(config):
     return sorted({run.incident_id for run in ExperimentPlannerV3(config).plan()
                    if run.hypothesis == "H3"
                    and run.experiment_family == "H3-EXPLANATIONS"})
+
+
+def _sanitized(config):
+    return replace(config, datasets=tuple(replace(
+        item, fault_type=None, scenario=None, rca_correct=None, reliable=None)
+        for item in config.datasets))
 
 
 def _bundle(root: Path, *, corrupt_raw=False, omit_last=False):
@@ -249,6 +256,69 @@ def test_h3_executor_preserves_lazy_mapping_and_loads_only_raw_mode():
     assert selected["selection_id"] == "raw-1"
     assert selected["payload"]["event_id"] == "raw-1"
     assert len({value[1]["rca_result_hash"] for value in (generic, grounded, raw_result)}) == 1
+
+
+def test_provider_accepts_authoritative_binding_for_sanitized_config(tmp_path):
+    config, path, index = _bundle(tmp_path)
+    expected = tuple(_planned_incidents(config))
+    configured = replace(_sanitized(config), criteria={
+        "scientific_rca_results": str(path.relative_to(tmp_path))})
+    with pytest.raises(ValueError, match="AUTHORITATIVE_SAMPLE_BINDING_REQUIRED"):
+        load_h3_inputs(config=configured, repository_root=tmp_path)
+    loaded = load_h3_inputs(
+        config=configured, repository_root=tmp_path,
+        expected_incident_ids=expected,
+        expected_sample_sha256=sha256_value(list(expected)),
+    )
+    assert len(loaded["rca_results"]) == len(loaded["raw_telemetry"]) == 40
+    assert tuple(item["incident_id"] for item in index["incidents"]) == expected
+
+
+def test_provider_rejects_wrong_authoritative_binding(tmp_path):
+    config, path, _ = _bundle(tmp_path)
+    expected = tuple(_planned_incidents(config))
+    configured = replace(_sanitized(config), criteria={
+        "scientific_rca_results": str(path.relative_to(tmp_path))})
+    wrong_ids = tuple(sorted((*expected[1:], "wrong-incident")))
+    with pytest.raises(ValueError, match="diverge da amostra"):
+        load_h3_inputs(
+            config=configured, repository_root=tmp_path,
+            expected_incident_ids=wrong_ids,
+            expected_sample_sha256=sha256_value(list(wrong_ids)),
+        )
+    with pytest.raises(ValueError, match="authoritative sample hash"):
+        load_h3_inputs(
+            config=configured, repository_root=tmp_path,
+            expected_incident_ids=expected, expected_sample_sha256="0" * 64,
+        )
+
+
+def test_build_executors_binds_original_sample_before_sanitization(
+        tmp_path, monkeypatch):
+    config, path, _ = _bundle(tmp_path)
+    configured = replace(config, criteria={
+        "scientific_rca_results": str(path.relative_to(tmp_path)),
+        "h3_input_provider": "experiments.final_campaigns_v3.providers:load_h3_inputs",
+    })
+    monkeypatch.setenv("CAUSALODS_LLM_MODEL", "preflight-only")
+    monkeypatch.setenv("CAUSALODS_LLM_ENDPOINT", "http://127.0.0.1:1")
+    monkeypatch.setenv("CAUSALODS_LLM_API_KEY", "preflight-only")
+    raw_decodes = []
+    real_read = providers._read
+
+    def audited_read(value):
+        if value.name == "raw-telemetry.json":
+            raw_decodes.append(value)
+        return real_read(value)
+
+    monkeypatch.setattr(providers, "_read", audited_read)
+    executors = build_executors(
+        config=configured, output=tmp_path / "output", repository_root=tmp_path)
+    delegate = executors["H3"].delegate
+    assert len(delegate.rca_results) == len(delegate.raw_telemetry) == 40
+    assert isinstance(delegate.raw_telemetry, FrozenRawTelemetryMapping)
+    assert raw_decodes == []
+    assert all(not _forbidden_paths(rca.to_dict()) for rca in delegate.rca_results.values())
 
 
 @pytest.mark.parametrize("key", sorted(("ground_truth", "actual_services", "fault_service",

@@ -21,8 +21,10 @@ from multimodal_v1.degradation_v3 import ObservationDegradationHarness
 from experiments.final_campaigns_v3.live_client import EnvironmentOpenAICompatibleClient
 from experiments.final_campaigns_v3.preprocessing import validate_catalog
 from experiments.multimodal_v3 import (
-    H1ExperimentExecutor, H2ExperimentExecutor, H3ExperimentExecutor, H4ExperimentExecutor,
+    ExperimentPlannerV3, H1ExperimentExecutor, H2ExperimentExecutor,
+    H3ExperimentExecutor, H4ExperimentExecutor,
 )
+from experiments.multimodal_v3.core import sha256_value
 from experiments.multimodal_v3.executors import ExistingBenchmarkDelegateV3
 
 
@@ -290,10 +292,24 @@ def build_executors(*, config, output: Path, repository_root: Path) -> dict[str,
         if "H2" in selected:
             result["H2"] = _BenchmarkProvenanceExecutor(H2ExperimentExecutor(audit), audit)
     if "H3" in selected:
+        original_h3_runs = tuple(
+            run for run in ExperimentPlannerV3(config).plan()
+            if run.hypothesis == "H3" and run.experiment_family == "H3-EXPLANATIONS"
+        )
+        expected_h3_incident_ids = tuple(sorted({
+            run.incident_id for run in original_h3_runs
+        }))
+        expected_h3_sample_sha256 = sha256_value(list(expected_h3_incident_ids))
+        if len(expected_h3_incident_ids) != 40:
+            raise ValueError("H3_AUTHORITATIVE_SAMPLE_BINDING_INVALID")
         provider_ref = criteria.get("h3_input_provider")
         if not provider_ref:
             raise ValueError("H3_SCIENTIFIC_RCA_PROVIDER_NOT_CONFIGURED")
-        supplied = _factory(provider_ref)(config=scientific_config, repository_root=repository_root)
+        supplied = _factory(provider_ref)(
+            config=scientific_config, repository_root=repository_root,
+            expected_incident_ids=expected_h3_incident_ids,
+            expected_sample_sha256=expected_h3_sample_sha256,
+        )
         if not isinstance(supplied, Mapping) or "rca_results" not in supplied:
             raise ValueError("H3 input provider deve retornar rca_results e raw_telemetry.")
         live_client = EnvironmentOpenAICompatibleClient.from_environment(

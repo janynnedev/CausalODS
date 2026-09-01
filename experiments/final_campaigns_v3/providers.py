@@ -108,7 +108,8 @@ class FrozenRawTelemetryMapping(Mapping[str, tuple[Mapping[str, Any], ...]]):
         return tuple(payload)
 
 
-def load_h3_inputs(*, config, repository_root):
+def load_h3_inputs(*, config, repository_root, expected_incident_ids=None,
+                   expected_sample_sha256=None):
     """Load the post-H1/H2 RCA bundle and prove all three modes share one RCA."""
     relative = config.criteria.get("scientific_rca_results")
     path = _inside(Path(repository_root).resolve(), relative) if relative else None
@@ -117,16 +118,32 @@ def load_h3_inputs(*, config, repository_root):
     index = _read(path)
     if index.get("schema_version") != "scientific-rca-bundle-index-v3":
         raise ValueError("H3 scientific RCA bundle index inválido.")
-    from experiments.multimodal_v3.core import ExperimentPlannerV3
-    planner = ExperimentPlannerV3(config)
-    expected = tuple(sorted({
-        run.incident_id for run in planner.plan()
-        if run.hypothesis == "H3" and run.experiment_family == "H3-EXPLANATIONS"
-    }))
+    if (expected_incident_ids is None) != (expected_sample_sha256 is None):
+        raise ValueError("H3 authoritative sample binding incompleto.")
+    if expected_incident_ids is None:
+        if config.datasets and all(
+                item.fault_type is None and item.scenario is None
+                and item.rca_correct is None and item.reliable is None
+                for item in config.datasets):
+            raise ValueError("H3_AUTHORITATIVE_SAMPLE_BINDING_REQUIRED")
+        from experiments.multimodal_v3.core import ExperimentPlannerV3
+        planner = ExperimentPlannerV3(config)
+        expected = tuple(sorted({
+            run.incident_id for run in planner.plan()
+            if run.hypothesis == "H3" and run.experiment_family == "H3-EXPLANATIONS"
+        }))
+        expected_hash = sha256_value(list(expected))
+    else:
+        expected = tuple(expected_incident_ids)
+        if expected != tuple(sorted(set(expected))) or len(expected) != 40:
+            raise ValueError("H3 authoritative incident IDs inválidos.")
+        expected_hash = sha256_value(list(expected))
+        if expected_sample_sha256 != expected_hash:
+            raise ValueError("H3 authoritative sample hash inválido.")
     indexed = tuple(item.get("incident_id") for item in index.get("incidents", ()))
     if len(expected) != 40 or indexed != expected:
         raise ValueError("H3 scientific RCA bundle diverge da amostra congelada.")
-    if index.get("h3_sample_selection_sha256") != sha256_value(list(expected)):
+    if index.get("h3_sample_selection_sha256") != expected_hash:
         raise ValueError("H3 scientific RCA bundle sample selection hash mismatch.")
     rca_results = {}
     descriptors = tuple(index.get("incidents", ()))
