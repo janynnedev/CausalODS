@@ -197,7 +197,7 @@ class H3ExperimentExecutor:
                  allow_live_llm: bool = False):
         self.service = service
         self.rca_results = dict(rca_results)
-        self.raw_telemetry = dict(raw_telemetry or {})
+        self.raw_telemetry = raw_telemetry if raw_telemetry is not None else {}
         self.allow_live_llm = allow_live_llm
 
     def execute(self, run: ExperimentRunV3):
@@ -210,10 +210,12 @@ class H3ExperimentExecutor:
         rca = self.rca_results[run.incident_id]
         rca_payload = rca.to_dict() if hasattr(rca, "to_dict") else vars(rca)
         rca_hash = sha256_value(rca_payload)
+        mode = run.explanation_mode or ExplanationMode.EVIDENCE_GROUNDED
+        raw_telemetry = (self.raw_telemetry.get(run.incident_id, ())
+                         if mode == ExplanationMode.RAW_TELEMETRY else ())
         try:
             output = self.service.explain(
-                rca, mode=run.explanation_mode or ExplanationMode.EVIDENCE_GROUNDED,
-                raw_telemetry=self.raw_telemetry.get(run.incident_id, ()))
+                rca, mode=mode, raw_telemetry=raw_telemetry)
         except Exception as exc:
             raise StageFailureV3(RunStatusV3.FAILED_EXPLANATION, "explanation_service",
                                  str(exc)) from exc

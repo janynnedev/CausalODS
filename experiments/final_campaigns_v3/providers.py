@@ -4,9 +4,11 @@ from __future__ import annotations
 
 import json
 import os
+from collections.abc import Iterator, Mapping
 from dataclasses import replace
 from datetime import datetime
 from pathlib import Path
+from typing import Any
 
 import joblib
 import numpy as np
@@ -71,6 +73,41 @@ def _rca_result(payload):
     )
 
 
+class FrozenRawTelemetryMapping(Mapping[str, tuple[Mapping[str, Any], ...]]):
+    """Immutable, uncached view over frozen raw telemetry files."""
+
+    def __init__(self, repository_root: str | Path, descriptors) -> None:
+        self._repository_root = Path(repository_root).resolve()
+        self._descriptors = {
+            item["incident_id"]: (item["raw_telemetry_path"], item["raw_telemetry_sha256"])
+            for item in descriptors
+        }
+
+    def __len__(self) -> int:
+        return len(self._descriptors)
+
+    def __iter__(self) -> Iterator[str]:
+        return iter(self._descriptors)
+
+    def __contains__(self, incident_id: object) -> bool:
+        return incident_id in self._descriptors
+
+    def __getitem__(self, incident_id: str) -> tuple[Mapping[str, Any], ...]:
+        try:
+            relative, expected_sha256 = self._descriptors[incident_id]
+        except KeyError:
+            raise KeyError(incident_id) from None
+        path = _inside(self._repository_root, relative)
+        if not path.is_file():
+            raise ValueError("H3 raw telemetry congelada ausente.")
+        if file_sha256(path) != expected_sha256:
+            raise ValueError("H3 scientific RCA bundle checksum mismatch.")
+        payload = _read(path)
+        if not isinstance(payload, list) or any(not isinstance(item, Mapping) for item in payload):
+            raise ValueError("H3 raw telemetry deve ser uma lista JSON de objetos.")
+        return tuple(payload)
+
+
 def load_h3_inputs(*, config, repository_root):
     """Load the post-H1/H2 RCA bundle and prove all three modes share one RCA."""
     relative = config.criteria.get("scientific_rca_results")
@@ -82,15 +119,22 @@ def load_h3_inputs(*, config, repository_root):
         raise ValueError("H3 scientific RCA bundle index inválido.")
     from experiments.multimodal_v3.core import ExperimentPlannerV3
     planner = ExperimentPlannerV3(config)
-    expected = tuple(sorted(planner._h3_sample(tuple(config.datasets),
-                                               seed=min(config.seeds))))
+    expected = tuple(sorted({
+        run.incident_id for run in planner.plan()
+        if run.hypothesis == "H3" and run.experiment_family == "H3-EXPLANATIONS"
+    }))
     indexed = tuple(item.get("incident_id") for item in index.get("incidents", ()))
     if len(expected) != 40 or indexed != expected:
         raise ValueError("H3 scientific RCA bundle diverge da amostra congelada.")
-    rca_results, raw_telemetry = {}, {}
-    for item in index.get("incidents", ()):
+    if index.get("h3_sample_selection_sha256") != sha256_value(list(expected)):
+        raise ValueError("H3 scientific RCA bundle sample selection hash mismatch.")
+    rca_results = {}
+    descriptors = tuple(index.get("incidents", ()))
+    for item in descriptors:
         rca_path = _inside(Path(repository_root).resolve(), item["rca_result_path"])
         raw_path = _inside(Path(repository_root).resolve(), item["raw_telemetry_path"])
+        if not rca_path.is_file() or not raw_path.is_file():
+            raise ValueError("H3 scientific RCA bundle file ausente.")
         if file_sha256(rca_path) != item["rca_result_sha256"] \
                 or file_sha256(raw_path) != item["raw_telemetry_sha256"]:
             raise ValueError("H3 scientific RCA bundle checksum mismatch.")
@@ -99,10 +143,7 @@ def load_h3_inputs(*, config, repository_root):
         if sha256_value(rca.to_dict()) != item["rca_result_contract_sha256"]:
             raise ValueError("H3 RCAResult contract hash mismatch.")
         rca_results[item["incident_id"]] = rca
-        raw_payload = _read(raw_path)
-        if not isinstance(raw_payload, list):
-            raise ValueError("H3 raw telemetry deve ser uma lista JSON.")
-        raw_telemetry[item["incident_id"]] = tuple(raw_payload)
+    raw_telemetry = FrozenRawTelemetryMapping(repository_root, descriptors)
     if len(rca_results) != 40 or len(raw_telemetry) != 40:
         raise RuntimeError("H3_SCIENTIFIC_RCA_RESULTS_NOT_AVAILABLE")
     return {"rca_results": rca_results, "raw_telemetry": raw_telemetry}
