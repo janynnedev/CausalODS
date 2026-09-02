@@ -173,3 +173,59 @@ def test_gate_runner_has_no_training_entrypoint():
     assert ".partial_fit(" not in source
     assert "tolerance=STRICT_REPRODUCIBILITY_TOLERANCE" in source
     assert "bind_model_identity(expected_identity, actual_identity, identity_validator)" in source
+
+
+def test_final_runner_preserves_the_complete_frozen_view_matrix():
+    from experiments.scripts.run_h1h2_final_147_v3 import FAMILY_CONTRACTS, REQUIRED
+    assert ("xgboost-rca-v3", "GRAPH_BUSINESS") in FAMILY_CONTRACTS["H1-B"]
+    assert ("xgboost-rca-v3", "METRIC_TRACE_LOG_BUSINESS") in FAMILY_CONTRACTS["H1-C"]
+    assert REQUIRED["GRAPH_BUSINESS"] == {"business_event"}
+    assert REQUIRED["METRIC_TRACE_LOG_BUSINESS"] == {"metric", "trace", "log", "business_event"}
+
+
+def test_shards_are_complete_disjoint_and_guard_invalid_membership():
+    from experiments.scripts.materialize_h1h2_extension_shard_v3 import (
+        shard_incident_ids, validate_shard_partition,
+    )
+    extension = {"added_test_incident_ids": [f"i-{index:03d}" for index in range(107)]}
+    audit = validate_shard_partition(extension, 2)
+    assert audit["status"] == "PASS" and audit["sizes"] == [54, 53]
+    assert set(shard_incident_ids(extension, shard=0, shards=2)).isdisjoint(
+        shard_incident_ids(extension, shard=1, shards=2))
+    with pytest.raises(ValueError, match="INVALID_SHARD"):
+        shard_incident_ids(extension, shard=2, shards=2)
+
+
+def test_final_metrics_delegate_to_authoritative_benchmark_metric_code():
+    from experiments.scripts.run_h1h2_final_147_v3 import _metrics
+    observations = [{"family": "H1-A", "method": "x", "feature_view": "FULL",
+                     "execution_status": "SUCCESS", "incident_id": "i",
+                     "ranked_services": [{"service_name": "root", "score": .9, "is_root_cause": True},
+                                         {"service_name": "other", "score": .1, "is_root_cause": False}],
+                     "confidence": .9}]
+    metric = _metrics(observations)[0]
+    assert metric["top1"] == 1.0 and metric["top3"] == 1.0 and metric["mrr"] == 1.0
+    assert metric["fpr"] == 0.0
+
+
+def test_final_executor_has_no_view_only_catalog_fallback():
+    source = open("experiments/scripts/run_h1h2_final_147_v3.py", encoding="utf-8").read()
+    assert "by_view.get" not in source
+    assert "by_view_system.get((view, source_system))" in source
+
+
+def test_resume_checkpoint_reuses_valid_and_rejects_tampered_binding(tmp_path):
+    from experiments.final_campaigns_v3.h1h2_test_extension import (
+        load_resume_checkpoint, resume_key, write_resume_checkpoint,
+    )
+    base = {"family": "H1-A", "incident_id": "a", "source_system": "OB",
+            "method": "x", "feature_view": "FULL", "protocol": "within-dataset", "seed": 42,
+            "expanded_evaluation_tranche_sha256": "e" * 64, "feature_schema_sha256": "f" * 64,
+            "trained_model_artifact_hash": "m" * 64, "method_implementation_hash": None,
+            "model_specification_hash": "s" * 64, "training_split_sha256": "t" * 64,
+            "validation_split_sha256": "v" * 64, "expanded_test_split_sha256": "z" * 64,
+            "execution_status": "SUCCESS"}
+    path = tmp_path / f"{resume_key(base)}.json"; write_resume_checkpoint(path, base)
+    assert load_resume_checkpoint(path, base) is not None
+    tampered = {**base, "feature_schema_sha256": "q" * 64}
+    assert load_resume_checkpoint(path, tampered) is None

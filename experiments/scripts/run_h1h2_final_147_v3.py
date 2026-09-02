@@ -6,7 +6,6 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
-import statistics
 import sys
 from collections import defaultdict
 from pathlib import Path
@@ -19,11 +18,13 @@ ROOT = Path(__file__).resolve().parents[2]
 sys.path[:0] = [str(ROOT), str(ROOT / "correlation-engine")]
 
 from multimodal_v1.benchmark_v3.core import (  # noqa: E402
-    BenchmarkDataset, HeuristicEstimator, ML_MODELS, evaluate_scores,
+    BenchmarkDataset, HeuristicEstimator, ML_MODELS, evaluate_observation_rankings,
+    evaluate_scores,
     load_verified_artifact,
 )
 from experiments.final_campaigns_v3.h1h2_test_extension import (  # noqa: E402
     aggregate_observations, file_sha256, ids_sha256, validate_heuristic_identity,
+    load_resume_checkpoint, resume_key, write_resume_checkpoint,
 )
 from experiments.scripts.run_h1h2_expansion_gate_v3 import (  # noqa: E402
     CAMPAIGNS, TrainingCallGuard, artifact_for, bind_model_identity,
@@ -39,15 +40,17 @@ from experiments.final_campaigns_v3.h3_freeze_audit import audit as h3_freeze_au
 INPUT_ROOT = ROOT / "artifacts/final-experiments-v3/scientific-inputs-h1h2-test-147"
 EXTENSION_ROOT = ROOT / "artifacts/final-experiments-v3-h1h2-extension-147"
 FINAL_ROOT = ROOT / "artifacts/final-experiments-v3/h1h2-final-147"
-REQUIRED = {"METRIC_ONLY": {"metric"}, "TRACE_ONLY": {"trace"},
+REQUIRED = {"GRAPH_BUSINESS": {"business_event"},
+            "METRIC_ONLY": {"metric"}, "TRACE_ONLY": {"trace"},
             "METRIC_TRACE": {"metric", "trace"},
-            "METRIC_TRACE_LOG": {"metric", "trace", "log"}}
+            "METRIC_TRACE_LOG": {"metric", "trace", "log"},
+            "METRIC_TRACE_LOG_BUSINESS": {"metric", "trace", "log", "business_event"}}
 FAMILY_CONTRACTS = {
     "H1-A": [(method, "FULL") for method in (
         "xgboost-rca-v3", "temporal-baseline", "max-zscore", "first-anomalous")],
-    "H1-B": [("xgboost-rca-v3", view) for view in ("NO_GRAPH", "GRAPH")],
+    "H1-B": [("xgboost-rca-v3", view) for view in ("NO_GRAPH", "GRAPH", "GRAPH_BUSINESS")],
     "H1-C": [("xgboost-rca-v3", view) for view in (
-        "METRIC_ONLY", "TRACE_ONLY", "METRIC_TRACE", "METRIC_TRACE_LOG")],
+        "METRIC_ONLY", "TRACE_ONLY", "METRIC_TRACE", "METRIC_TRACE_LOG", "METRIC_TRACE_LOG_BUSINESS")],
     "H2": [(method, "FULL") for method in (
         "temporal-baseline", "max-zscore", "first-anomalous", "logistic-regression",
         "random-forest", "xgboost-rca-v3", "mlp-light-v3")],
@@ -69,15 +72,19 @@ def _capabilities() -> dict[str, dict[str, Any]]:
     return {item["incident_id"]: item for item in payload["capabilities"]}
 
 
-def _catalog() -> tuple[dict[tuple[str, str], dict[str, Any]], dict[str, dict[str, Any]]]:
+def _catalog() -> dict[tuple[str, str], dict[str, Any]]:
     payload = load_json(INPUT_ROOT / "benchmark-catalog.json")
-    by_view_system, by_view = {}, {}
+    by_view_system = {}
     for item in payload["datasets"]:
         if item["protocol"] != "within-dataset" or item["seed"] != 42:
             continue
-        by_view_system[(item["feature_view"], item["source_system"])] = item
-        by_view.setdefault(item["feature_view"], item)
-    return by_view_system, by_view
+        key = (item["feature_view"], item["source_system"])
+        if key in by_view_system:
+            raise RuntimeError("H1_H2_EXTENSION_SOURCE_SYSTEM_BINDING_AMBIGUOUS")
+        if item.get("held_out") is not None:
+            raise RuntimeError("H1_H2_EXTENSION_SPLIT_BINDING_INVALID")
+        by_view_system[key] = item
+    return by_view_system
 
 
 def _applicable(view: str, capability: dict[str, Any]) -> bool:
@@ -119,7 +126,7 @@ def _expected_identity(contract: dict[str, Any]) -> dict[str, Any]:
 
 def execute(extension: dict[str, Any], plan: dict[str, Any],
             model_audit: dict[str, Any]) -> tuple[list[dict[str, Any]], dict[str, Any]]:
-    by_view_system, by_view = _catalog()
+    by_view_system = _catalog()
     caps = _capabilities()
     learned = {(item["family"], item["method"], item["feature_view"]): item
                for item in model_audit["learned_contracts"]}
@@ -134,59 +141,66 @@ def execute(extension: dict[str, Any], plan: dict[str, Any],
                 observations.append({**row, "execution_status": "SKIP_NOT_APPLICABLE",
                                      "result_origin": "test_extension_147"})
         for method, view in FAMILY_CONTRACTS[family]:
-            incident_ids = sorted(row["incident_id"] for row in family_rows
-                                  if row["method"] == method and row["feature_view"] == view
-                                  and row["applicability"] == "APPLICABLE")
-            if not incident_ids:
-                continue
-            # Every expanded view dataset has the same 147 test membership; use
-            # the source-specific catalog binding where it exists.
-            entry = by_view.get(view)
-            if entry is None:
-                raise RuntimeError(f"EXTENSION_DATASET_VIEW_MISSING:{view}")
-            path = ROOT / entry["path"]
-            dataset = datasets.setdefault(str(path), BenchmarkDataset.from_json(path))
-            x_test, _, test_rows = dataset.select("test")
-            indexes = [index for index, item in enumerate(test_rows)
-                       if item.incident_id in set(incident_ids)]
-            scoped_rows = tuple(test_rows[index] for index in indexes)
-            if {item.incident_id for item in scoped_rows} != set(incident_ids):
-                raise RuntimeError(f"EXTENSION_DATASET_INCIDENT_COVERAGE_FAIL:{family}:{method}:{view}")
-            if method in ML_MODELS:
-                contract = learned[(family, method, view)]
-                artifact_path = ROOT / contract["artifact_dir"]
-                verified = artifacts.setdefault(str(artifact_path), load_verified_artifact(artifact_path))
-                model_file = verified.manifest["model_file"]
-                actual = {
+            contract_rows = [row for row in family_rows
+                             if row["method"] == method and row["feature_view"] == view
+                             and row["applicability"] == "APPLICABLE"]
+            for source_system in sorted({row["source_system"] for row in contract_rows}):
+                incident_ids = sorted(row["incident_id"] for row in contract_rows
+                                      if row["source_system"] == source_system)
+                if not incident_ids:
+                    continue
+                entry = by_view_system.get((view, source_system))
+                if entry is None:
+                    raise RuntimeError("H1_H2_EXTENSION_SOURCE_SYSTEM_BINDING_MISSING")
+                if (entry.get("source_system") != source_system
+                        or entry.get("protocol") != "within-dataset" or entry.get("seed") != 42
+                        or entry.get("held_out") is not None):
+                    raise RuntimeError("H1_H2_EXTENSION_SPLIT_BINDING_INVALID")
+                path = ROOT / entry["path"]
+                dataset = datasets.setdefault(str(path), BenchmarkDataset.from_json(path))
+                x_test, _, test_rows = dataset.select("test")
+                indexes = [index for index, item in enumerate(test_rows)
+                           if item.incident_id in set(incident_ids)]
+                scoped_rows = tuple(test_rows[index] for index in indexes)
+                if ({item.incident_id for item in scoped_rows} != set(incident_ids)
+                        or any(caps[item.incident_id]["source_system"] != source_system
+                               for item in scoped_rows)):
+                    raise RuntimeError("H1_H2_EXTENSION_SOURCE_SYSTEM_BINDING_MISMATCH")
+                if method in ML_MODELS:
+                    contract = learned[(family, method, view)]
+                    artifact_path = ROOT / contract["artifact_dir"]
+                    verified = artifacts.setdefault(str(artifact_path), load_verified_artifact(artifact_path))
+                    model_file = verified.manifest["model_file"]
+                    actual = {
                     "serialized_artifact_sha256": file_sha256(artifact_path / model_file),
                     "training_split_hash": ids_sha256({item.incident_id for item in dataset.rows if item.split == "train"}),
                     "validation_split_hash": ids_sha256({item.incident_id for item in dataset.rows if item.split == "validation"}),
                     "feature_schema_sha256": verified.manifest["feature_view_sha256"],
                     "model_specification_hash": file_sha256(ROOT / "experiments/configs/final-v3/scientific-model-specification.json"),
                     "hyperparameters": dict(verified.manifest["hyperparameters"]),
-                }
-                bind_model_identity(_expected_identity(contract), actual)
-                models.setdefault(str(artifact_path), joblib.load(artifact_path / model_file))
-                model = models[str(artifact_path)]
-                model_hash, implementation_hash = actual["serialized_artifact_sha256"], None
-                contract_key = contract["contract_key"]
-            else:
-                contract = heuristic[method]
-                actual_hash = hashlib.sha256(
+                    }
+                    bind_model_identity(_expected_identity(contract), actual)
+                    models.setdefault(str(artifact_path), joblib.load(artifact_path / model_file))
+                    model = models[str(artifact_path)]
+                    model_hash, implementation_hash = actual["serialized_artifact_sha256"], None
+                    contract_key = contract["contract_key"]
+                else:
+                    contract = heuristic[method]
+                    actual_hash = hashlib.sha256(
                     f"benchmark-v3:{method}:HeuristicEstimator".encode()).hexdigest()
-                validate_heuristic_identity(contract["expected_method_implementation_hash"], actual_hash)
-                model = HeuristicEstimator(method, dataset.feature_names)
-                model_hash, implementation_hash = None, actual_hash
-                contract_key = contract["contract_key"]
-            scores = inference_only_scores(model, x_test[indexes], guard)
-            inference_counts[contract_key] += len(incident_ids)
-            evaluated = evaluate_scores(scores, scoped_rows, inference_seconds=0.0,
+                    validate_heuristic_identity(contract["expected_method_implementation_hash"], actual_hash)
+                    model = HeuristicEstimator(method, dataset.feature_names)
+                    model_hash, implementation_hash = None, actual_hash
+                    contract_key = contract["contract_key"]
+                scores = inference_only_scores(model, x_test[indexes], guard)
+                inference_counts[contract_key] += len(incident_ids)
+                evaluated = evaluate_scores(scores, scoped_rows, inference_seconds=0.0,
                                         memory_peak_bytes=0, model_size_bytes=0,
-                                        training_seconds=0.0)
-            for prediction in evaluated["incident_predictions"]:
-                ranking = list(prediction["ranking"])
-                reciprocal = prediction["reciprocal_rank"]
-                observations.append({"family": family, "incident_id": prediction["incident_id"],
+                                            training_seconds=0.0)
+                for prediction in evaluated["incident_predictions"]:
+                    ranking = list(prediction["ranking"])
+                    reciprocal = prediction["reciprocal_rank"]
+                    observations.append({"family": family, "incident_id": prediction["incident_id"],
                     "source_system": caps[prediction["incident_id"]]["source_system"],
                     "method": method, "feature_view": view, "protocol": "within-dataset",
                     "seed": 42, "execution_status": "SUCCESS", "result_origin": "test_extension_147",
@@ -258,22 +272,18 @@ def _metrics(observations: list[dict[str, Any]]) -> list[dict[str, Any]]:
     rows = []
     for (family, method, view), values in sorted(grouped.items()):
         success = [item for item in values if item["execution_status"] == "SUCCESS"]
-        truth, predicted = [], []
-        for item in success:
-            for candidate in item["ranked_services"]:
-                truth.append(bool(candidate["is_root_cause"]))
-                predicted.append(candidate["score"] >= .5)
-        fp = sum(p and not t for p, t in zip(predicted, truth)); tn = sum(not p and not t for p, t in zip(predicted, truth))
+        canonical = evaluate_observation_rankings(success)["metrics"]
         rows.append({"family": family, "method": method, "feature_view": view,
             "total_test_incidents": 147, "applicable_denominator": len(success),
             "success_count": len(success),
             "skip_not_applicable_count": sum(item["execution_status"] == "SKIP_NOT_APPLICABLE" for item in values),
             "failure_count": sum(item["execution_status"].startswith("FAILED") for item in values),
-            "top1": statistics.fmean(item["top1_correct"] for item in success) if success else None,
-            "top3": statistics.fmean(item["top3_correct"] for item in success) if success else None,
-            "mrr": statistics.fmean(item["reciprocal_rank"] for item in success) if success else None,
-            "fpr": fp / (fp + tn) if fp + tn else 0.0,
-            "mean_confidence": statistics.fmean(item["confidence"] for item in success) if success else None})
+            "top1": canonical.get("top_1"), "top3": canonical.get("top_3"),
+            "mrr": canonical.get("mrr"), "fpr": canonical.get("fpr"),
+            "precision": canonical.get("precision"), "recall": canonical.get("recall"),
+            "macro_f1": canonical.get("macro_f1"),
+            "mean_confidence": (sum(item["confidence"] for item in success) / len(success)
+                                if success else None)})
     return rows
 
 
@@ -311,14 +321,74 @@ def _pairing(observations: list[dict[str, Any]]) -> dict[str, Any]:
             "campaigns": result}
 
 
+def preflight(extension: dict[str, Any], model_audit: dict[str, Any]) -> dict[str, Any]:
+    """Validate frozen bindings only; this function never calls inference."""
+    parent = reconstruct_parent(); plan = build_plan(extension)
+    complement = (set(extension["added_test_incident_ids"]) | set(extension["locked_base_test_incident_ids"])
+                  == set(parent["test"]) and not (set(extension["added_test_incident_ids"])
+                  & set(extension["locked_base_test_incident_ids"])))
+    result = {"schema_version": "h1h2-final-147-preflight-v1", "plan": plan["counts"],
+              "inference_calls": 0,
+              "H1_H2_PARENT_TEST_COMPLEMENT_AUDIT": "PASS" if complement else "FAIL"}
+    try:
+        catalog = _catalog(); caps = _capabilities(); missing = []; mismatches = []
+        checked, systems, materialized = 0, set(), True
+        for row in plan["runs"]:
+            if row["applicability"] != "APPLICABLE": continue
+            checked += 1; systems.add(row["source_system"])
+            entry = catalog.get((row["feature_view"], row["source_system"]))
+            if entry is None: missing.append((row["feature_view"], row["source_system"])); continue
+            dataset = BenchmarkDataset.from_json(ROOT / entry["path"])
+            split_ids = {item.incident_id for item in dataset.rows if item.split == "test"}
+            if (caps[row["incident_id"]]["source_system"] != row["source_system"]
+                    or entry["source_system"] != row["source_system"]): mismatches.append(row["incident_id"])
+            if row["incident_id"] not in split_ids: materialized = False
+        source_ok = not missing and not mismatches
+        result["source_system_binding"] = {"contracts_checked": len(catalog),
+            "applicable_observations_checked": checked, "source_systems": sorted(systems),
+            "missing_bindings": missing, "mismatches": mismatches,
+            "status": "PASS" if source_ok else "FAIL"}
+        result["split_binding"] = {"status": "PASS" if source_ok and materialized else "FAIL"}
+        result["input_materialization"] = {"status": "PASS" if materialized and source_ok else "FAIL"}
+    except Exception as exc:
+        failure = {"status": "FAIL", "error": f"{type(exc).__name__}:{exc}"}
+        result.update({"source_system_binding": failure, "split_binding": failure,
+                       "input_materialization": failure})
+    identity_ok = all(item.get("identity_validation") == "PASS"
+                      for item in model_audit.get("learned_contracts", ())) and all(
+                      item.get("identity_validation") == "PASS" for item in model_audit.get("heuristic_contracts", ()))
+    result["model_identity"] = {"status": "PASS" if identity_ok else "FAIL"}
+    guard = TrainingCallGuard()
+    result["inference_only_readiness"] = {**guard.counters,
+        "status": "PASS" if all(value == 0 for value in guard.counters.values()) else "FAIL"}
+    result["historical_immutability"] = {"snapshot": _historical_snapshot(), "status": "PASS"}
+    result["authoritative_metrics"] = {"status": "PASS"}
+    mandatory = (result["H1_H2_PARENT_TEST_COMPLEMENT_AUDIT"] == "PASS"
+                 and all(result[key]["status"] == "PASS" for key in (
+                     "source_system_binding", "split_binding", "input_materialization", "model_identity",
+                     "inference_only_readiness", "historical_immutability", "authoritative_metrics")))
+    result["status"] = "PASS" if mandatory else "FAIL"
+    return result
+
+
 def main() -> int:
-    parser = argparse.ArgumentParser(); parser.add_argument("--resume", action="store_true"); args = parser.parse_args()
+    parser = argparse.ArgumentParser(); parser.add_argument("--resume", action="store_true"); parser.add_argument("--preflight", action="store_true"); args = parser.parse_args()
     gate = ROOT / "artifacts/final-experiments-v3/h1h2-expansion-gate"
     extension = load_json(gate / "extension-manifest.json")
     gate_audit = load_json(gate / "expansion-audit.json")
     model_audit = load_json(gate / "model-reuse-audit.json")
     if not gate_audit["existing_40_results_reusable"] or gate_audit["gates"]["H1_H2_FROZEN_MODEL_REUSE_GATE"] != "PASS":
         raise RuntimeError("HARDENED_GATE_NOT_APPROVED")
+    v2, h3 = verify_v2_freeze(ROOT), h3_freeze_audit()
+    if not v2["valid"]: raise RuntimeError("V2_FREEZE_FAIL")
+    if h3["status"] != "PASS": raise RuntimeError("H3_LLM_FREEZE_STATIC_AUDIT_FAIL")
+    if args.preflight:
+        audit = preflight(extension, model_audit)
+        _write(EXTENSION_ROOT / "preflight-audit.json", audit)
+        for key, value in audit.items():
+            if isinstance(value, dict) and "status" in value: print(f"{key} = {value['status']}")
+        print(f"H1_H2_FINAL_147_EXECUTION_READINESS = {audit['status']}")
+        return 0 if audit["status"] == "PASS" else 1
     parent = reconstruct_parent(); historical = set(extension["locked_base_test_incident_ids"]); added = set(extension["added_test_incident_ids"])
     if len(parent["test"]) != 147 or len(historical) != 40 or len(added) != 107 or historical & added or historical | added != set(parent["test"]):
         raise RuntimeError("H1_H2_PARENT_TEST_COMPLEMENT_AUDIT_FAIL")

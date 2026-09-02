@@ -643,6 +643,31 @@ def evaluate_scores(scores: np.ndarray, rows: tuple[BenchmarkRow, ...], *,
             "incident_predictions": incident_predictions}
 
 
+def evaluate_observation_rankings(observations: Iterable[Mapping[str, Any]]) -> dict[str, Any]:
+    """Evaluate persisted observations with the same canonical metric code.
+
+    Final-campaign aggregation stores rankings rather than feature matrices.  This
+    adapter deliberately rebuilds benchmark rows and delegates to
+    :func:`evaluate_scores`, preventing a second, drifting metric definition.
+    """
+    rows, scores = [], []
+    for observation in observations:
+        if observation.get("execution_status") != "SUCCESS":
+            continue
+        for candidate in observation.get("ranked_services", ()):
+            rows.append(BenchmarkRow(
+                str(observation["incident_id"]), str(candidate["service_name"]), "test", (),
+                bool(candidate["is_root_cause"]),
+            ))
+            scores.append(float(candidate["score"]))
+    if not rows:
+        return {"metrics": {}, "confusion": {"tn": 0, "fp": 0, "fn": 0, "tp": 0},
+                "per_service_metrics": {}, "incident_predictions": []}
+    return evaluate_scores(np.asarray(scores, dtype=float), tuple(rows),
+                           inference_seconds=0.0, memory_peak_bytes=0,
+                           model_size_bytes=0, training_seconds=0.0)
+
+
 def bootstrap_intervals(predictions: list[dict[str, Any]], *, seed: int,
                         iterations: int = 1000) -> dict[str, dict[str, float]]:
     if iterations < 1:

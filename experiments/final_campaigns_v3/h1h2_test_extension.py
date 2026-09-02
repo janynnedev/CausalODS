@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
+import tempfile
 from collections import Counter
 from pathlib import Path
 from typing import Any, Iterable, Mapping, Sequence
@@ -11,7 +13,7 @@ from typing import Any, Iterable, Mapping, Sequence
 from experiments.final_campaigns_v3.scientific_tranche import (
     DEFAULT_POLICY, _tier_rows, _tie, metadata_rows,
 )
-from experiments.multimodal_v3.core import sha256_value
+from experiments.multimodal_v3.core import canonical_json, sha256_value
 
 
 SCHEMA_VERSION = "scientific-tranche-h1h2-test-extension-v1"
@@ -253,3 +255,49 @@ def file_sha256(path: str | Path) -> str:
         for chunk in iter(lambda: handle.read(1024 * 1024), b""):
             digest.update(chunk)
     return digest.hexdigest()
+
+
+RESUME_IDENTITY_FIELDS = (
+    "family", "incident_id", "source_system", "method", "feature_view", "protocol", "seed",
+    "expanded_evaluation_tranche_sha256", "feature_schema_sha256",
+    "trained_model_artifact_hash", "method_implementation_hash", "model_specification_hash",
+    "training_split_sha256", "validation_split_sha256", "expanded_test_split_sha256",
+)
+
+
+def resume_binding(observation: Mapping[str, Any]) -> dict[str, Any]:
+    return {field: observation.get(field) for field in RESUME_IDENTITY_FIELDS}
+
+
+def resume_key(observation: Mapping[str, Any]) -> str:
+    return sha256_value(resume_binding(observation))
+
+
+def atomic_json(path: str | Path, payload: Mapping[str, Any]) -> None:
+    target = Path(path); target.parent.mkdir(parents=True, exist_ok=True)
+    handle = tempfile.NamedTemporaryFile("w", encoding="utf-8", dir=target.parent,
+                                         prefix=f".{target.name}.", delete=False)
+    temporary = Path(handle.name)
+    try:
+        with handle:
+            handle.write(canonical_json(payload) + "\n"); handle.flush(); os.fsync(handle.fileno())
+        os.replace(temporary, target)
+    finally:
+        if temporary.exists(): temporary.unlink()
+
+
+def load_resume_checkpoint(path: str | Path, expected: Mapping[str, Any]) -> Mapping[str, Any] | None:
+    try:
+        payload = json.loads(Path(path).read_text(encoding="utf-8"))
+        if payload.get("checkpoint_sha256") != sha256_value({k: v for k, v in payload.items() if k != "checkpoint_sha256"}):
+            return None
+        if payload.get("execution_status") not in {"SUCCESS", "SKIP_NOT_APPLICABLE"}:
+            return None
+        return payload if resume_binding(payload) == resume_binding(expected) else None
+    except (OSError, ValueError, TypeError, json.JSONDecodeError):
+        return None
+
+
+def write_resume_checkpoint(path: str | Path, observation: Mapping[str, Any]) -> None:
+    payload = dict(observation); payload["checkpoint_sha256"] = sha256_value(payload)
+    atomic_json(path, payload)
