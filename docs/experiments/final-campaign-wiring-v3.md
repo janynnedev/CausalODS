@@ -1,5 +1,29 @@
 # Final campaign wiring v3
 
+## Escopo atual do artigo e extensão test-only H1/H2
+
+O artigo executa H1-A, H1-B, H1-C e H2 apenas em `within-dataset`, seed 42,
+com uma repetição. Cross-system, cross-source, leave-one-system-out e múltiplos
+seeds continuam implementados como infraestrutura de trabalhos futuros, mas não
+integram a campanha final deste artigo.
+
+O `tranche-a-180` permanece imutável como proveniência histórica: 110 incidentes
+de treino, 30 de validação e 40 de teste já avaliados. Qualquer ampliação H1/H2
+é uma extensão aninhada apenas de teste. Os IDs 110/30 e o estado congelado de
+pré-processamento não mudam; métodos aprendidos carregam os artefatos originais
+verificados e executam somente inferência. Cinco incidentes históricos,
+selecionados deterministicamente sem resultados do modelo, são reproduzidos
+antes de autorizar o reaproveitamento dos outros 35.
+
+O alvo 200 só é válido se o teste parental congelado tiver ao menos 200 IDs. O
+parent RCAEval within-dataset/seed-42 auditado possui 147, portanto o máximo
+compatível é 147 (40 bloqueados + 107 adições). O gate prepara essas 107 adições
+por metadados pré-modelo, sem executar a campanha completa.
+
+H3 permanece no freeze GPT-5.4 Mini aprovado de 40 incidentes. H4 permanece
+inicialmente em 40 incidentes, within-dataset e seed 42. Nenhum deles herda a
+extensão H1/H2.
+
 ## 1. Objetivo
 
 Esta camada prepara H1-A, H1-B, H1-C, H2, H3 e H4 sobre os datasets científicos congelados. Ela valida inputs, calcula planos capability-aware, fixa proveniência e injeta executores do `experimental-orchestrator-v3`. Este documento descreve readiness; nenhuma campanha final ou conclusão científica é produzida pelo Prompt 13C.
