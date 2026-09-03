@@ -1,0 +1,121 @@
+{
+  "audits": {
+    "canonical_checksums": "PASS",
+    "canonical_reconstruction": "PASS",
+    "experiment_validity": "PASS",
+    "same_rca_input": "PASS"
+  },
+  "campaign_root": "artifacts/final-experiments-v3-h3-final/H3/final-h3-v3/3ff75671bd14ae773dc577bf161a3212da0c6eaf0b6359d4b3843394e7f2f676",
+  "campaign_validation": "PASS",
+  "canonical_campaign": {
+    "bound_files": {
+      "configuration.json": "ed3062e5c401faa2aa8f584377d0bee11d2a4e4cd0a815e4a5b3413f68a3fc7d",
+      "environment.json": "c546bb844d7a9080325fc2e44f6af9427ec93b08af3d6528541d701d993f9ff0",
+      "experiment-validity.json": "505822dea14e64a6c188969d8cce234b383f6b10b612cf981f91bee5b9b169ed",
+      "h3-canonical-reconstruction.json": "ee8fd150246ed4c40678b9af20e8a27437b44e0d222cdc6d3616b8fc8ff79e8d",
+      "h3-same-rca-binding.json": "010aa7a441166f096d73ba9860d49d2f8135bd7044b4ca01dbe4031bc237345d",
+      "h3/h3-automatic-evaluation.csv": "738ca60a89c32874c32722ac2955fe84a8d49af199c01e30d895657d43a95d78",
+      "h3/h3-by-mode.csv": "6288f1da47b09fce8848e26f64bc4f57e29c8447765fb704bbf9fabc6e4d6935",
+      "h3/h3-cost-latency.csv": "6288f1da47b09fce8848e26f64bc4f57e29c8447765fb704bbf9fabc6e4d6935",
+      "h3/h3-human-blinding-audit.json": "504f5a3dbd188d3bcf521c261ff1acfc2c3aad74bd190f734f3845d099df48ca",
+      "h3/h3-human-condition-map.json": "65916a19f69c9dc30f0f1ae7d9e3dcab7ee9bf3390a5bb36e468245d21dccfdb",
+      "h3/h3-human-evaluation-blinded.csv": "5a715f43c60b55ebbf2ac673fa32ee5d81548c9d01a1392f40a9aa75b66f1e06",
+      "h3/h3-sample-manifest.json": "5f391e7251891500670eda3b07e0562bbf5ad6d3be4c429c12ac0bb12db1849c",
+      "model-manifest.json": "5fb27ef59122c6982cffe0ef87828ce109c5c121b40932f13080d83860b6b329",
+      "prompt-manifest.json": "18216fd80704825d4480316608733b1bf970f2299bf48f833629779995b12161",
+      "runs/index.json": "e0055a9b99f075583a3bd1f1401923f07f9ae1528e533c37330339d726e5e1c5"
+    },
+    "relative_path": "artifacts/final-experiments-v3-h3-final/H3/final-h3-v3/3ff75671bd14ae773dc577bf161a3212da0c6eaf0b6359d4b3843394e7f2f676",
+    "sha256sums_sha256": "e9924ac223286d541c62786ab1c701041150c9d0a2408ad8b263a6a7e524b5c8",
+    "validated_entries": 411
+  },
+  "canonical_reconstruction": {
+    "first_attempt_selected": 119,
+    "policy": "prefer_first_attempt_success_else_first_retry_success",
+    "retry_attempt_selected": 1,
+    "retry_run_id": "029be23de01d0dc8af43e5f9811326ad0bf635aabc59f50c764eb3c7cfef8e0c",
+    "selection_is_content_blind": true
+  },
+  "configuration_sha256": "3ff75671bd14ae773dc577bf161a3212da0c6eaf0b6359d4b3843394e7f2f676",
+  "documentation": {
+    "path": "docs/experiments/h3-final-computational-freeze-v1.md",
+    "sha256": "09dffb50ae81b4ebe475f609d66f8fd04b5a2cc05fd6380c40819d752a5930f2"
+  },
+  "execution_contract": {
+    "api_family": "chat-completions",
+    "api_seed": "omitted",
+    "common_prompt_hash": "9c9f5fe166ac0b0a586bd45b93b72caebaadc4eea0ba92370b84a81bff1676a3",
+    "configuration_identity": "3ff75671bd14ae773dc577bf161a3212da0c6eaf0b6359d4b3843394e7f2f676",
+    "endpoint": "https://api.openai.com/v1/chat/completions",
+    "fallback_policy": "NO_FALLBACK_OUTPUT_ACCEPTED",
+    "input_token_budget": 32768,
+    "max_completion_tokens": 1024,
+    "models": [
+      "gpt-5.4-mini-2026-03-17"
+    ],
+    "prompt_template_hashes": [
+      "20a2b9f830035f9ec8e96a14e8fbcb851cff0a22275d92ca0e59364fff4684cd",
+      "45d8b2e01a99f19e466674a367acc37f0d13c4862a9efca6e167a07f2501184b",
+      "4f24a8dbf152fc7442f7f27ab26cc70bf4e6236ec35e2fa8b11dfb578354060e"
+    ],
+    "protocols": [
+      "within-dataset"
+    ],
+    "providers": [
+      "openai"
+    ],
+    "reasoning_effort": "none",
+    "seeds": [
+      42
+    ],
+    "stream": false,
+    "temperatures": [
+      0.0
+    ],
+    "top_p": "omitted"
+  },
+  "failures": 0,
+  "fallback_count": 0,
+  "human_blinding_audit": "PASS",
+  "incidents": 40,
+  "mode_counts": {
+    "evidence_grounded": 40,
+    "generic": 40,
+    "raw_telemetry": 40
+  },
+  "model_contract": {
+    "api_family": "chat-completions",
+    "api_seed": "omitted",
+    "endpoint": "https://api.openai.com/v1/chat/completions",
+    "input_token_budget": 32768,
+    "max_completion_tokens": 1024,
+    "model_family": "GPT-5.4 Mini",
+    "model_id": "gpt-5.4-mini-2026-03-17",
+    "provider": "openai",
+    "reasoning_effort": "none",
+    "stream": false,
+    "temperature": 0.0,
+    "top_p": "omitted"
+  },
+  "population": {
+    "canonical_runs": 120,
+    "conditions": {
+      "evidence_grounded": 40,
+      "generic": 40,
+      "raw_telemetry": 40
+    },
+    "fallback_outputs": 0,
+    "incidents": 40,
+    "unique_provider_response_ids": 120
+  },
+  "protocol": "within-dataset",
+  "runs": 120,
+  "same_rca_binding": "PASS",
+  "schema_version": "h3-computational-freeze-v1",
+  "scientific_state": "COMPUTATION_COMPLETE_NO_FURTHER_H3_EXECUTION_AUTHORIZED",
+  "seed": 42,
+  "status": "PASS",
+  "success": 120,
+  "unique_response_ids": 120,
+  "v2_freeze": "12/12"
+}
