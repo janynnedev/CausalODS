@@ -263,10 +263,17 @@ RESUME_IDENTITY_FIELDS = (
     "trained_model_artifact_hash", "method_implementation_hash", "model_specification_hash",
     "training_split_sha256", "validation_split_sha256", "expanded_test_split_sha256",
 )
+RESUME_SUCCESS_FIELDS = (
+    "predicted_service", "ranked_services", "top1_correct", "top3_correct",
+    "reciprocal_rank", "confidence", "model_retrained", "model_retuned",
+)
 
 
 def resume_binding(observation: Mapping[str, Any]) -> dict[str, Any]:
-    return {field: observation.get(field) for field in RESUME_IDENTITY_FIELDS}
+    missing = [field for field in RESUME_IDENTITY_FIELDS if field not in observation]
+    if missing:
+        raise ValueError(f"H1_H2_RESUME_IDENTITY_FIELDS_MISSING:{','.join(missing)}")
+    return {field: observation[field] for field in RESUME_IDENTITY_FIELDS}
 
 
 def resume_key(observation: Mapping[str, Any]) -> str:
@@ -293,11 +300,18 @@ def load_resume_checkpoint(path: str | Path, expected: Mapping[str, Any]) -> Map
             return None
         if payload.get("execution_status") not in {"SUCCESS", "SKIP_NOT_APPLICABLE"}:
             return None
+        if payload["execution_status"] == "SUCCESS":
+            if any(field not in payload for field in RESUME_SUCCESS_FIELDS):
+                return None
+            if (not payload["ranked_services"] or payload["model_retrained"] is not False
+                    or payload["model_retuned"] is not False):
+                return None
         return payload if resume_binding(payload) == resume_binding(expected) else None
     except (OSError, ValueError, TypeError, json.JSONDecodeError):
         return None
 
 
 def write_resume_checkpoint(path: str | Path, observation: Mapping[str, Any]) -> None:
+    resume_binding(observation)
     payload = dict(observation); payload["checkpoint_sha256"] = sha256_value(payload)
     atomic_json(path, payload)

@@ -833,7 +833,7 @@ def _run_incident_worker(
     # failure path.  Only a successfully readable scientific checkpoint makes
     # the baseline-heavy incident spec redundant.  The checkpoint itself is
     # never touched here.
-    spec.unlink()
+    spec.unlink(missing_ok=True)
     phases.unlink(missing_ok=True)
     payload.setdefault("worker", {})["returncode"] = completed.returncode
     return payload

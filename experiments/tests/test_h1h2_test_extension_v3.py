@@ -1,7 +1,12 @@
 from __future__ import annotations
 
+import ast
+import hashlib
+import json
 import random
+from types import SimpleNamespace
 
+import numpy as np
 import pytest
 
 from experiments.final_campaigns_v3.h1h2_test_extension import (
@@ -224,8 +229,321 @@ def test_resume_checkpoint_reuses_valid_and_rejects_tampered_binding(tmp_path):
             "trained_model_artifact_hash": "m" * 64, "method_implementation_hash": None,
             "model_specification_hash": "s" * 64, "training_split_sha256": "t" * 64,
             "validation_split_sha256": "v" * 64, "expanded_test_split_sha256": "z" * 64,
-            "execution_status": "SUCCESS"}
+            "execution_status": "SUCCESS", "predicted_service": "root",
+            "ranked_services": [{"service_name": "root", "score": 1.0}],
+            "top1_correct": True, "top3_correct": True, "reciprocal_rank": 1.0,
+            "confidence": 1.0, "model_retrained": False, "model_retuned": False}
     path = tmp_path / f"{resume_key(base)}.json"; write_resume_checkpoint(path, base)
     assert load_resume_checkpoint(path, base) is not None
     tampered = {**base, "feature_schema_sha256": "q" * 64}
     assert load_resume_checkpoint(path, tampered) is None
+
+
+def _executor_resume_fixture(tmp_path, monkeypatch):
+    import experiments.scripts.run_h1h2_final_147_v3 as runner
+
+    incidents = ("a", "b", "c")
+    rows = [{"family": "H1-A", "incident_id": incident, "source_system": "OB",
+             "method": "temporal-baseline", "feature_view": "FULL",
+             "protocol": "within-dataset", "seed": 42, "applicability": "APPLICABLE",
+             "extension_tranche_sha256": "e" * 64} for incident in incidents]
+    plan = {"runs": rows, "counts": {"H1-A": {
+        "planned": 3, "applicable": 3, "expected_structured_skips": 0}}}
+    extension = {"selection_sha256": "e" * 64,
+                 "expanded_test_incident_ids_sha256": "z" * 64,
+                 "base_tranche_selection_sha256": "b" * 64,
+                 "base_test_incident_ids_sha256": "o" * 64,
+                 "tranche_id": "extension-147"}
+    implementation_hash = hashlib.sha256(
+        b"benchmark-v3:temporal-baseline:HeuristicEstimator").hexdigest()
+    contract = {"method": "temporal-baseline", "contract_key": "heuristic-contract",
+                "expected_method_implementation_hash": implementation_hash,
+                "identity_validation": "PASS"}
+    model_audit = {"learned_contracts": [], "heuristic_contracts": [contract]}
+    entry = {"path": "synthetic.json", "source_system": "OB", "protocol": "within-dataset",
+             "seed": 42, "held_out": None, "feature_view_sha256": "f" * 64,
+             "train_incident_ids_sha256": "t" * 64,
+             "validation_incident_ids_sha256": "v" * 64}
+
+    class Dataset:
+        feature_names = ("feature",)
+
+        def select(self, split):
+            assert split == "test"
+            return (np.arange(3, dtype=float).reshape(3, 1), None,
+                    tuple(SimpleNamespace(incident_id=item) for item in incidents))
+
+    inference_batches = []
+
+    def inference(_model, matrix, _guard):
+        inference_batches.append(tuple(int(value) for value in matrix[:, 0]))
+        return np.asarray(matrix[:, 0], dtype=float)
+
+    def evaluate(_scores, scoped_rows, **_kwargs):
+        return {"incident_predictions": [
+            {"incident_id": item.incident_id, "reciprocal_rank": 1.0,
+             "ranking": [{"service_name": "root", "score": 1.0,
+                          "is_root_cause": True}]}
+            for item in scoped_rows]}
+
+    monkeypatch.setattr(runner, "FAMILY_CONTRACTS", {
+        "H1-A": [("temporal-baseline", "FULL")]})
+    monkeypatch.setattr(runner, "_catalog", lambda: {("FULL", "OB"): entry})
+    monkeypatch.setattr(runner, "_capabilities", lambda: {
+        item: {"source_system": "OB"} for item in incidents})
+    monkeypatch.setattr(runner.BenchmarkDataset, "from_json", lambda _path: Dataset())
+    monkeypatch.setattr(runner, "HeuristicEstimator", lambda *_args: object())
+    monkeypatch.setattr(runner, "inference_only_scores", inference)
+    monkeypatch.setattr(runner, "evaluate_scores", evaluate)
+    checkpoint_root = tmp_path / "checkpoints"
+    audit_path = tmp_path / "resume-audit.json"
+
+    def expected(incident):
+        row = next(item for item in rows if item["incident_id"] == incident)
+        return runner._resume_expected_observation(row, extension, entry, contract)
+
+    def checkpoint(incident, *, tamper=False):
+        value = {**expected(incident), "execution_status": "SUCCESS",
+                 "result_origin": "test_extension_147", "predicted_service": "root",
+                 "ranked_services": [{"service_name": "root", "score": 1.0}],
+                 "top1_correct": True, "top3_correct": True,
+                 "reciprocal_rank": 1.0, "confidence": 1.0,
+                 "model_retrained": False, "model_retuned": False}
+        if tamper:
+            value["feature_schema_sha256"] = "q" * 64
+        path = checkpoint_root / f"{runner.resume_key(expected(incident))}.json"
+        runner.write_resume_checkpoint(path, value)
+        return path
+
+    def execute():
+        return runner.execute(extension, plan, model_audit, resume=True,
+                              checkpoint_root=checkpoint_root,
+                              resume_audit_path=audit_path)
+
+    return SimpleNamespace(runner=runner, execute=execute, checkpoint=checkpoint,
+                           expected=expected,
+                           extension=extension, model_audit=model_audit,
+                           checkpoint_root=checkpoint_root, audit_path=audit_path,
+                           inference_batches=inference_batches)
+
+
+def test_executor_selective_resume_infers_only_missing_observation(tmp_path, monkeypatch):
+    fixture = _executor_resume_fixture(tmp_path, monkeypatch)
+    fixture.checkpoint("a"); fixture.checkpoint("b")
+    observations, reuse = fixture.execute()
+    assert fixture.inference_batches == [(2,)]
+    assert {item["incident_id"] for item in observations} == {"a", "b", "c"}
+    assert reuse["selective_resume"]["valid_success_reused"] == 2
+    assert reuse["selective_resume"]["missing_executed"] == 1
+
+
+def test_executor_quarantines_tampered_binding_and_reexecutes_only_it(tmp_path, monkeypatch):
+    fixture = _executor_resume_fixture(tmp_path, monkeypatch)
+    invalid = fixture.checkpoint("a", tamper=True)
+    fixture.checkpoint("b"); fixture.checkpoint("c")
+    observations, reuse = fixture.execute()
+    assert fixture.inference_batches == [(0,)]
+    assert len(observations) == 3
+    assert reuse["selective_resume"]["invalid_quarantined"] == 1
+    assert fixture.runner.load_resume_checkpoint(invalid, fixture.expected("a")) is not None
+    assert len(list((fixture.checkpoint_root / "quarantine").rglob("*.json"))) == 1
+
+
+def test_executor_all_complete_resume_performs_zero_inference(tmp_path, monkeypatch):
+    fixture = _executor_resume_fixture(tmp_path, monkeypatch)
+    for incident in ("a", "b", "c"):
+        fixture.checkpoint(incident)
+    observations, reuse = fixture.execute()
+    assert fixture.inference_batches == []
+    assert len(observations) == 3
+    assert reuse["selective_resume"]["status"] == "PASS"
+
+
+def test_executor_interruption_preserves_written_success_for_next_resume(tmp_path, monkeypatch):
+    fixture = _executor_resume_fixture(tmp_path, monkeypatch)
+    original = fixture.runner.write_resume_checkpoint
+    writes = 0
+
+    def interrupt_after_first(path, observation):
+        nonlocal writes
+        writes += 1
+        if writes == 2:
+            raise RuntimeError("synthetic interruption")
+        original(path, observation)
+
+    monkeypatch.setattr(fixture.runner, "write_resume_checkpoint", interrupt_after_first)
+    with pytest.raises(RuntimeError, match="synthetic interruption"):
+        fixture.execute()
+    assert fixture.inference_batches == [(0, 1, 2)]
+    interrupted_audit = json.loads(fixture.audit_path.read_text())
+    assert interrupted_audit["inference_observations_executed"] == 3
+    assert interrupted_audit["observations_remaining"] == 2
+    assert interrupted_audit["status"] == "FAIL"
+    monkeypatch.setattr(fixture.runner, "write_resume_checkpoint", original)
+    observations, reuse = fixture.execute()
+    assert fixture.inference_batches == [(0, 1, 2), (1, 2)]
+    assert len(observations) == 3
+    assert reuse["selective_resume"]["valid_success_reused"] == 1
+    assert reuse["selective_resume"]["status"] == "PASS"
+
+
+def test_executor_reconstructs_structured_skip_without_catalog_or_inference(
+        tmp_path, monkeypatch):
+    fixture = _executor_resume_fixture(tmp_path, monkeypatch)
+    monkeypatch.setattr(fixture.runner, "FAMILY_CONTRACTS", {
+        "H1-A": [("temporal-baseline", "GRAPH_BUSINESS")]})
+    monkeypatch.setattr(fixture.runner, "_catalog", lambda: {})
+    monkeypatch.setattr(fixture.runner, "_capabilities", lambda: {
+        "a": {"source_system": "OB", "available_modalities": ["metric", "trace"]}})
+    row = {"family": "H1-A", "incident_id": "a", "source_system": "OB",
+           "method": "temporal-baseline", "feature_view": "GRAPH_BUSINESS",
+           "protocol": "within-dataset", "seed": 42,
+           "applicability": "SKIP_NOT_APPLICABLE", "extension_tranche_sha256": "e" * 64}
+    plan = {"runs": [row], "counts": {"H1-A": {
+        "planned": 1, "applicable": 0, "expected_structured_skips": 1}}}
+    observations, reuse = fixture.runner.execute(
+        fixture.extension, plan, fixture.model_audit, resume=True,
+        checkpoint_root=fixture.checkpoint_root, resume_audit_path=fixture.audit_path)
+    assert fixture.inference_batches == []
+    assert observations[0]["execution_status"] == "SKIP_NOT_APPLICABLE"
+    assert reuse["selective_resume"]["valid_skips_reused_or_reconstructed"] == 1
+    assert fixture.runner._contract_compatibility_audit(
+        observations, fixture.extension, fixture.model_audit)["status"] == "PASS"
+
+
+def test_contract_audit_rejects_false_skip_for_applicable_capability(tmp_path, monkeypatch):
+    fixture = _executor_resume_fixture(tmp_path, monkeypatch)
+    monkeypatch.setattr(fixture.runner, "_catalog", lambda: {})
+    monkeypatch.setattr(fixture.runner, "_capabilities", lambda: {
+        "a": {"source_system": "OB", "available_modalities": ["business_event"]}})
+    contract = fixture.model_audit["heuristic_contracts"][0]
+    row = {"family": "H1-A", "incident_id": "a", "source_system": "OB",
+           "method": "temporal-baseline", "feature_view": "GRAPH_BUSINESS",
+           "protocol": "within-dataset", "seed": 42,
+           "applicability": "SKIP_NOT_APPLICABLE", "extension_tranche_sha256": "e" * 64}
+    observation = {**fixture.runner._expected_skip_observation(
+        row, fixture.extension, contract), "execution_status": "SKIP_NOT_APPLICABLE"}
+    audit = fixture.runner._contract_compatibility_audit(
+        [observation], fixture.extension, fixture.model_audit)
+    assert audit["status"] == "FAIL"
+    assert audit["mismatches"][0]["reason"] == "false_structured_skip"
+
+
+def test_final_campaign_not_pass_returns_nonzero_process_outcome():
+    from experiments.scripts.run_h1h2_final_147_v3 import _final_campaign_exit_code
+    assert _final_campaign_exit_code(True) == 0
+    assert _final_campaign_exit_code(False) != 0
+
+
+def test_real_learned_structured_skip_needs_no_contract_dataset_model_or_inference(
+        tmp_path, monkeypatch):
+    import experiments.scripts.run_h1h2_final_147_v3 as runner
+
+    row = {"family": "H1-B", "incident_id": "incident-ob", "source_system": "OB",
+           "method": "xgboost-rca-v3", "feature_view": "GRAPH_BUSINESS",
+           "protocol": "within-dataset", "seed": 42,
+           "applicability": "SKIP_NOT_APPLICABLE", "extension_tranche_sha256": "e" * 64}
+    plan = {"runs": [row], "counts": {"H1-B": {
+        "planned": 1, "applicable": 0, "expected_structured_skips": 1}}}
+    extension = {"selection_sha256": "e" * 64,
+                 "expanded_test_incident_ids_sha256": "z" * 64}
+    model_audit = {"learned_contracts": [], "heuristic_contracts": []}
+    calls = {"dataset": 0, "artifact": 0, "model": 0, "inference": 0}
+
+    def forbidden(kind):
+        def call(*_args, **_kwargs):
+            calls[kind] += 1
+            raise AssertionError(f"structured skip called {kind}")
+        return call
+
+    monkeypatch.setattr(runner, "FAMILY_CONTRACTS", {
+        "H1-B": [("xgboost-rca-v3", "GRAPH_BUSINESS")]})
+    monkeypatch.setattr(runner, "_catalog", lambda: {})
+    monkeypatch.setattr(runner, "_capabilities", lambda: {"incident-ob": {
+        "source_system": "OB", "available_modalities": ["metric", "trace", "log"]}})
+    monkeypatch.setattr(runner.BenchmarkDataset, "from_json", forbidden("dataset"))
+    monkeypatch.setattr(runner, "load_verified_artifact", forbidden("artifact"))
+    monkeypatch.setattr(runner.joblib, "load", forbidden("model"))
+    monkeypatch.setattr(runner, "inference_only_scores", forbidden("inference"))
+    observations, reuse = runner.execute(
+        extension, plan, model_audit, resume=True,
+        checkpoint_root=tmp_path / "checkpoints",
+        resume_audit_path=tmp_path / "resume-audit.json")
+    assert calls == {"dataset": 0, "artifact": 0, "model": 0, "inference": 0}
+    assert observations[0]["execution_status"] == "SKIP_NOT_APPLICABLE"
+    for field in ("feature_schema_sha256", "trained_model_artifact_hash",
+                  "method_implementation_hash", "training_split_sha256",
+                  "validation_split_sha256"):
+        assert observations[0][field] is None
+    assert reuse["selective_resume"]["status"] == "PASS"
+    assert runner._contract_compatibility_audit(
+        observations, extension, model_audit)["status"] == "PASS"
+
+
+def test_preflight_and_execute_fail_closed_for_missing_applicable_learned_contract(
+        tmp_path, monkeypatch):
+    import experiments.scripts.run_h1h2_final_147_v3 as runner
+
+    row = {"family": "H1-B", "incident_id": "i", "source_system": "OB",
+           "method": "xgboost-rca-v3", "feature_view": "GRAPH",
+           "protocol": "within-dataset", "seed": 42, "applicability": "APPLICABLE",
+           "extension_tranche_sha256": "e" * 64}
+    plan = {"runs": [row], "counts": {"H1-B": {
+        "planned": 1, "applicable": 1, "expected_structured_skips": 0}}}
+    extension = {"added_test_incident_ids": ["i"], "locked_base_test_incident_ids": [],
+                 "selection_sha256": "e" * 64,
+                 "expanded_test_incident_ids_sha256": "z" * 64}
+    model_audit = {"learned_contracts": [], "heuristic_contracts": []}
+    entry = {"path": "unused.json", "source_system": "OB", "protocol": "within-dataset",
+             "seed": 42, "held_out": None}
+    monkeypatch.setattr(runner, "FAMILY_CONTRACTS", {
+        "H1-B": [("xgboost-rca-v3", "GRAPH")]})
+    monkeypatch.setattr(runner, "build_plan", lambda _extension: plan)
+    monkeypatch.setattr(runner, "reconstruct_parent", lambda: {"test": ("i",)})
+    monkeypatch.setattr(runner, "_catalog", lambda: {("GRAPH", "OB"): entry})
+    monkeypatch.setattr(runner, "_capabilities", lambda: {
+        "i": {"source_system": "OB", "available_modalities": ["metric", "trace"]}})
+    monkeypatch.setattr(runner, "_historical_snapshot", lambda: {
+        "H1-A": {"bound_files": {"result.json": "a" * 64}}})
+    monkeypatch.setattr(runner.BenchmarkDataset, "from_json", lambda _path: SimpleNamespace(
+        rows=[SimpleNamespace(incident_id="i", split="test")]))
+    preflight = runner.preflight(
+        extension, model_audit,
+        v2={"ok": 12, "total": 12, "valid": True},
+        h3={"status": "PASS"})
+    assert preflight["model_identity"]["status"] == "FAIL"
+    assert preflight["model_identity"]["missing_applicable_learned_contracts"] == [
+        ["H1-B", "xgboost-rca-v3", "GRAPH"]]
+    assert preflight["execution_readiness"] == "FAIL"
+    with pytest.raises(RuntimeError, match="H1_H2_APPLICABLE_LEARNED_CONTRACT_MISSING"):
+        runner.execute(extension, plan, model_audit, resume=True,
+                       checkpoint_root=tmp_path / "checkpoints",
+                       resume_audit_path=tmp_path / "resume-audit.json")
+
+
+def test_resume_checkpoint_requires_every_identity_field(tmp_path):
+    from experiments.final_campaigns_v3.h1h2_test_extension import write_resume_checkpoint
+    with pytest.raises(ValueError, match="RESUME_IDENTITY_FIELDS_MISSING"):
+        write_resume_checkpoint(tmp_path / "incomplete.json", {
+            "family": "H1-A", "execution_status": "SUCCESS"})
+
+
+def test_final_scientific_gates_are_not_unconditional_pass_literals():
+    source = open("experiments/scripts/run_h1h2_final_147_v3.py", encoding="utf-8").read()
+    gates = {
+        "H1_H2_PARENT_TEST_COMPLEMENT_AUDIT",
+        "H1_H2_EXTENSION_INPUT_MATERIALIZATION",
+        "H1_H2_EXTENSION_MODEL_IDENTITY_AUDIT",
+        "H1_H2_107_EXTENSION_EXECUTION",
+        "H1_H2_FINAL_147_COVERAGE_AUDIT",
+        "H1_H2_FINAL_AGGREGATION_DUPLICATE_AUDIT",
+        "H1_H2_FINAL_CONTRACT_COMPATIBILITY_AUDIT",
+        "H1_H2_FINAL_147_CAMPAIGN",
+    }
+    for node in ast.walk(ast.parse(source)):
+        if not isinstance(node, ast.Dict):
+            continue
+        for key, value in zip(node.keys, node.values):
+            if (isinstance(key, ast.Constant) and key.value in gates
+                    and isinstance(value, ast.Constant)):
+                assert value.value != "PASS"

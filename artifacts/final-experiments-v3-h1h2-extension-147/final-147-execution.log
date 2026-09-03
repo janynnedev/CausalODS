@@ -1,0 +1,36 @@
+{"FAILED_EXECUTION":0,"FAILED_INPUT":0,"FAILED_VALIDATION":0,"SKIP_NOT_APPLICABLE":0,"SUCCESS":428,"family":"H1-A","stage":"extension-progress"}
+Traceback (most recent call last):
+  File "/home/janynne/projects/CausalODS/experiments/scripts/run_h1h2_final_147_v3.py", line 775, in <module>
+    raise SystemExit(main())
+                     ^^^^^^
+  File "/home/janynne/projects/CausalODS/experiments/scripts/run_h1h2_final_147_v3.py", line 663, in main
+    observations, reuse = execute(
+                          ^^^^^^^^
+  File "/home/janynne/projects/CausalODS/experiments/scripts/run_h1h2_final_147_v3.py", line 257, in execute
+    contract = (learned[(family, row["method"], row["feature_view"])]
+                ~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+KeyError: ('H1-B', 'xgboost-rca-v3', 'GRAPH_BUSINESS')
+Command exited with non-zero status 1
+	Command being timed: "correlation-engine/.venv/bin/python experiments/scripts/run_h1h2_final_147_v3.py --resume"
+	User time (seconds): 28.44
+	System time (seconds): 1.06
+	Percent of CPU this job got: 95%
+	Elapsed (wall clock) time (h:mm:ss or m:ss): 0:30.86
+	Average shared text size (kbytes): 0
+	Average unshared data size (kbytes): 0
+	Average stack size (kbytes): 0
+	Average total size (kbytes): 0
+	Maximum resident set size (kbytes): 399136
+	Average resident set size (kbytes): 0
+	Major (requiring I/O) page faults: 436
+	Minor (reclaiming a frame) page faults: 358124
+	Voluntary context switches: 1706
+	Involuntary context switches: 1260
+	Swaps: 0
+	File system inputs: 74304
+	File system outputs: 4640
+	Socket messages sent: 0
+	Socket messages received: 0
+	Signals delivered: 0
+	Page size (bytes): 4096
+	Exit status: 1

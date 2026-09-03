@@ -27,7 +27,7 @@ def _completed(returncode=0, stdout="", stderr=""):
     return SimpleNamespace(returncode=returncode, stdout=stdout, stderr=stderr)
 
 
-def _invoke(tmp_path, monkeypatch, completed):
+def _invoke(tmp_path, monkeypatch, completed, *, remove_spec_before_return=False):
     output = tmp_path / "checkpoint.json"
     original = {"status": "COMPLETED", "rows": [{"scientific": 1}],
                 "scientific_payload_sha256": "b" * 64}
@@ -47,6 +47,8 @@ def _invoke(tmp_path, monkeypatch, completed):
     def run(*_args, **_kwargs):
         if completed.returncode == 0:
             output.write_bytes(before)
+            if remove_spec_before_return:
+                output.with_suffix(".worker.json").unlink()
         return completed
 
     monkeypatch.setattr("experiments.final_campaigns_v3.preprocessing.subprocess.run", run)
@@ -66,6 +68,16 @@ def test_success_removes_only_worker_spec_and_preserves_checkpoint_and_payload(
     assert output.read_bytes() == before  # SCIENTIFIC_PAYLOAD_UNCHANGED on disk
     assert result["rows"] == [{"scientific": 1}]
     assert result["worker"]["returncode"] == 0
+
+
+def test_success_cleanup_is_idempotent_when_worker_spec_is_already_absent(
+        tmp_path, monkeypatch):
+    output, spec, before, result = _invoke(
+        tmp_path, monkeypatch, _completed(), remove_spec_before_return=True)
+    assert result["status"] == "COMPLETED"
+    assert result["worker"]["returncode"] == 0
+    assert not spec.exists()  # INCIDENT_WORKER_SPEC_CLEANUP_IDEMPOTENCY
+    assert output.read_bytes() == before  # SCIENTIFIC_CHECKPOINT_BYTES_UNCHANGED
 
 
 def test_failure_preserves_worker_spec_for_diagnostics(tmp_path, monkeypatch):
