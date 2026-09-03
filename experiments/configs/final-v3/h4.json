@@ -11,7 +11,19 @@
   "criteria": {
     "h4_input_provider": "experiments.final_campaigns_v3.providers:load_h4_inputs",
     "model_specification": "experiments/configs/final-v3/scientific-model-specification.json",
-    "scientific_benchmark_catalog": "artifacts/final-experiments-v3/scientific-inputs/benchmark-catalog.json",
+    "scientific_tranche": "experiments/configs/final-v3/scientific-tranche-a-180.json",
+    "scientific_benchmark_catalog": "artifacts/final-experiments-v3/scientific-inputs-tranche-a-180/benchmark-catalog.json",
+    "scientific_trained_artifact_index": "artifacts/final-experiments-v3/trained-artifacts-tranche-a-180/INDEX.json",
+    "h4_method": "xgboost-rca-v3",
+    "h4_feature_view": "FULL",
+    "h4_reliability_policy": {
+      "method": "reliability-gate-v1",
+      "adapter": "h4-scientific-ranking-evidence-adapter-v1",
+      "minimum_confidence": 0.5,
+      "minimum_margin": 0.05,
+      "minimum_evidence_count": 2,
+      "minimum_source_count": 2
+    },
     "model_retrained_between_severities": false,
     "runtime_predictions_reused": false
   }

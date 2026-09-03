@@ -7,6 +7,7 @@ import os
 import bisect
 import re
 import mmap
+import time
 from collections.abc import Iterator, Mapping
 from dataclasses import replace
 from datetime import datetime
@@ -19,7 +20,10 @@ import numpy as np
 from models.evidence import EvidenceDirection, EvidenceItem, EvidenceType
 from models.rca_result import RCAResult, RankedService, ReliabilityDecision, ScoreBreakdown
 from multimodal_v1.benchmark_v3 import load_verified_artifact
-from multimodal_v1.benchmark_v3.core import positive_scores
+from multimodal_v1.benchmark_v3.core import (
+    evaluate_observation_rankings,
+    positive_scores,
+)
 from multimodal_v1.degradation_v3 import ObservationDataset
 from multimodal_v1.features_v3 import (
     BaselineSnapshotV3, BaselineStatistic, FeatureRegistryV3, MetricIdentityV3,
@@ -29,6 +33,60 @@ from multimodal_v1.features_v3 import (
 from experiments.multimodal_v3.core import file_sha256, sha256_value
 
 from .preprocessing import FrozenEvidenceLoader, IncidentSource
+from ranking.reliability_gate import ReliabilityGate
+
+
+H4_RELIABILITY_ADAPTER_VERSION = "h4-scientific-ranking-evidence-adapter-v1"
+H4_LATENCY_BOUNDARY = (
+    "degraded-observation-to-feature-extraction-to-cached-model-scoring-ranking-"
+    "to-reliability-decision;verified-model-deserialization-excluded"
+)
+
+
+def evaluate_h4_ranking(incident_id: str, ranked, truth) -> dict[str, float]:
+    """Delegate H4 ranking metrics, including candidate-level FPR, to benchmark-v3."""
+    truth = frozenset(truth)
+    observation = {
+        "execution_status": "SUCCESS",
+        "incident_id": incident_id,
+        "ranked_services": [
+            {"incident_id": incident_id, "service_name": item.service_name,
+             "score": float(score), "is_root_cause": item.service_name in truth}
+            for score, item in ranked
+        ],
+    }
+    return evaluate_observation_rankings([observation])["metrics"]
+
+
+def evaluate_h4_reliability(ranked, names) -> ReliabilityDecision:
+    """Apply the frozen production gate to model ranking plus extracted-feature evidence.
+
+    H4 uses the raw frozen-model score as its ranking score.  The adapter supplies two
+    already-produced evidence sources for the leading candidate: the model prediction
+    and the frozen FULL feature vector.  It does not derive labels or tune thresholds.
+    """
+    services, evidence = [], []
+    for position, (score, vector) in enumerate(ranked, 1):
+        value = min(max(float(score), 0.0), 1.0)
+        model_id = f"h4-model-{position}"
+        feature_id = f"h4-features-{position}"
+        services.append(RankedService(position, vector.service_name, ScoreBreakdown(
+            value, 0.0, 0.0, 0.0, 0.0, value,
+            {"model_probability": 1.0}, "frozen-model-score-v1"),
+            (model_id, feature_id)))
+        evidence.extend((
+            EvidenceItem(model_id, EvidenceType.MODEL, "PredictionPipeline",
+                         "Frozen H4 model score.", service_name=vector.service_name,
+                         metric_name="root_cause_probability", raw_value=value,
+                         normalized_value=value, direction=EvidenceDirection.SUPPORTING),
+            EvidenceItem(feature_id, EvidenceType.RANKING, "RCAFeatureExtractorV3",
+                         "Frozen FULL feature vector used for H4 scoring.",
+                         service_name=vector.service_name, metric_name="feature_vector",
+                         raw_value={name: vector.values[name] for name in names},
+                         direction=EvidenceDirection.SUPPORTING,
+                         attributes={"feature_names": list(names)}),
+        ))
+    return ReliabilityGate().evaluate(tuple(services), tuple(evidence))
 
 
 def _read(path: Path):
@@ -319,21 +377,37 @@ class ScientificH4Evaluator:
         if cache_key not in self._models:
             self._models[cache_key] = joblib.load(
                 artifact_path / verified.manifest["model_file"])
+        started = time.perf_counter()
         vectors, names = self._vectors(run, observation)
         matrix = np.asarray([[np.nan if vector.values[name] is None else vector.values[name]
                               for name in names] for vector in vectors], dtype=float)
         scores = positive_scores(self._models[cache_key], matrix)
         ranked = sorted(zip(scores, vectors), key=lambda item: (-item[0], item[1].service_name))
         truth = set(observation.ground_truth[run.incident_id])
-        first = min((index for index, (_, item) in enumerate(ranked, 1)
-                     if item.service_name in truth), default=len(ranked) + 1)
+        canonical = evaluate_h4_ranking(run.incident_id, ranked, truth)
+        reliability = evaluate_h4_reliability(ranked, names)
+        processing_latency_ms = (time.perf_counter() - started) * 1000.0
         prediction = [{"service_name": item.service_name, "score": float(score)}
                       for score, item in ranked]
         return {
-            "top_1": float(first == 1), "top_3": float(first <= 3),
-            "mrr": 1 / first, "fpr": float(first != 1),
-            "confidence_values": [float(ranked[0][0])], "outcomes": [first == 1],
-            "abstentions": 0, "processing_latency_ms": 0.0,
+            "top_1": canonical["top_1"],
+            "top_3": canonical["top_3"],
+            "mrr": canonical["mrr"], "fpr": canonical["fpr"],
+            "confidence_values": [float(ranked[0][0])],
+            "outcomes": [bool(canonical["top_1"])],
+            "abstentions": int(not reliability.is_reliable),
+            "reliability": reliability.is_reliable,
+            "reliability_decision": reliability.to_dict(),
+            "reliability_policy": {
+                "method": ReliabilityGate.METHOD_VERSION,
+                "adapter": H4_RELIABILITY_ADAPTER_VERSION,
+                "minimum_confidence": reliability.minimum_confidence,
+                "minimum_margin": reliability.minimum_margin,
+                "minimum_evidence_count": ReliabilityGate().minimum_evidence_count,
+                "minimum_source_count": ReliabilityGate().minimum_source_count,
+            },
+            "processing_latency_ms": processing_latency_ms,
+            "latency_boundary": H4_LATENCY_BOUNDARY,
             "predicted_ranking": prediction,
             "predicted_service": prediction[0]["service_name"],
             "ground_truth_service": next(iter(truth)) if len(truth) == 1 else None,
@@ -384,18 +458,29 @@ def load_h4_inputs(*, config, repository_root):
         "source_dataset", "source_system", "feature_view", "protocol", "held_out", "seed", "method")): item
         for item in artifacts["artifacts"]}
     cache = os.environ.get("CAUSALODS_RCAEVAL_NORMALIZED_CACHE")
+    tranche_relative = config.criteria.get("scientific_tranche")
+    if not tranche_relative:
+        raise RuntimeError("H4_SCIENTIFIC_TRANCHE_NOT_CONFIGURED")
+    tranche = _read(_inside(repository_root, tranche_relative))
+    selected_incidents = frozenset(tranche.get("test_incident_ids", ()))
+    if len(selected_incidents) != 40:
+        raise RuntimeError("H4_SCIENTIFIC_TRANCHE_TEST_BINDING_INVALID")
     registry = __import__("experiments.final_campaigns_v3.core", fromlist=[
         "FrozenDatasetRegistry"]).FrozenDatasetRegistry.load(
             repository_root / "experiments/configs/final-v3/datasets.json", repository_root)
     loader = FrozenEvidenceLoader(registry, rcaeval_cache=cache)
     observations = {}
     for capability in config.datasets:
+        if capability.incident_id not in selected_incidents:
+            continue
         source = loader.sources[capability.incident_id]
         if source.root_cause_service is None:
             continue
         events = loader.events(source)
         observations[source.incident_id] = ObservationDataset(
             events, {}, {source.incident_id: (source.root_cause_service,)})
+    if set(observations) != selected_incidents:
+        raise RuntimeError("H4_SCIENTIFIC_TRANCHE_OBSERVATION_BINDING_MISMATCH")
     evaluator = ScientificH4Evaluator(entries, catalog, repository_root)
     return {"observations": observations, "model_evaluator": evaluator,
             "feature_hasher": evaluator.feature_hash}
