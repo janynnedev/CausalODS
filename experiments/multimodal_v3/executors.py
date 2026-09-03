@@ -274,7 +274,7 @@ class H4ExperimentExecutor:
                  *, harness: ObservationDegradationHarness | None = None,
                  replay_publisher: Any | None = None,
                  replay_topic: str = "causalods.experiments.v3"):
-        self.observations = dict(observations)
+        self.observations = observations
         self.model_evaluator = model_evaluator
         self.harness = harness or ObservationDegradationHarness()
         self.replay_publisher = replay_publisher

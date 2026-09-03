@@ -435,6 +435,52 @@ def trained_artifact_index_path(*, config, repository_root: str | Path) -> Path:
     return _inside(root, relative)
 
 
+class FrozenH4ObservationMapping(Mapping[str, ObservationDataset]):
+    """Read-only, one-incident view over the frozen H4 test observations."""
+
+    def __init__(self, loader: FrozenEvidenceLoader,
+                 sources: Mapping[str, IncidentSource]) -> None:
+        self._loader = loader
+        self._sources = dict(sources)
+        self._cached_incident_id: str | None = None
+        self._cached_observation: ObservationDataset | None = None
+        self.telemetry_load_count = 0
+        self.maximum_cached_incidents_seen = 0
+
+    def __len__(self) -> int:
+        return len(self._sources)
+
+    def __iter__(self) -> Iterator[str]:
+        return iter(self._sources)
+
+    def __contains__(self, incident_id: object) -> bool:
+        return incident_id in self._sources
+
+    def __getitem__(self, incident_id: str) -> ObservationDataset:
+        if incident_id not in self._sources:
+            raise KeyError(incident_id)
+        if incident_id == self._cached_incident_id:
+            assert self._cached_observation is not None
+            return self._cached_observation
+        source = self._sources[incident_id]
+        if source.root_cause_service is None:
+            raise ValueError("H4 frozen root cause ausente.")
+        events = self._loader.events(source)
+        observation = ObservationDataset(
+            events, {}, {incident_id: (source.root_cause_service,)})
+        self.telemetry_load_count += 1
+        self._cached_incident_id = incident_id
+        self._cached_observation = observation
+        self.maximum_cached_incidents_seen = max(
+            self.maximum_cached_incidents_seen, len(self.current_cached_incidents))
+        return observation
+
+    @property
+    def current_cached_incidents(self) -> tuple[str, ...]:
+        return (() if self._cached_incident_id is None
+                else (self._cached_incident_id,))
+
+
 def load_h4_inputs(*, config, repository_root):
     """Resolve frozen observations and post-H1/H2 verified models explicitly."""
     repository_root = Path(repository_root).resolve()
@@ -469,18 +515,21 @@ def load_h4_inputs(*, config, repository_root):
         "FrozenDatasetRegistry"]).FrozenDatasetRegistry.load(
             repository_root / "experiments/configs/final-v3/datasets.json", repository_root)
     loader = FrozenEvidenceLoader(registry, rcaeval_cache=cache)
-    observations = {}
+    sources = {}
     for capability in config.datasets:
         if capability.incident_id not in selected_incidents:
             continue
-        source = loader.sources[capability.incident_id]
+        try:
+            source = loader.sources[capability.incident_id]
+        except KeyError:
+            raise RuntimeError(
+                "H4_SCIENTIFIC_TRANCHE_OBSERVATION_BINDING_MISMATCH") from None
         if source.root_cause_service is None:
-            continue
-        events = loader.events(source)
-        observations[source.incident_id] = ObservationDataset(
-            events, {}, {source.incident_id: (source.root_cause_service,)})
-    if set(observations) != selected_incidents:
+            raise RuntimeError("H4_SCIENTIFIC_TRANCHE_ROOT_CAUSE_MISSING")
+        sources[source.incident_id] = source
+    if set(sources) != selected_incidents:
         raise RuntimeError("H4_SCIENTIFIC_TRANCHE_OBSERVATION_BINDING_MISMATCH")
+    observations = FrozenH4ObservationMapping(loader, sources)
     evaluator = ScientificH4Evaluator(entries, catalog, repository_root)
     return {"observations": observations, "model_evaluator": evaluator,
             "feature_hasher": evaluator.feature_hash}
