@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import os
 import bisect
+import hashlib
 import re
 import mmap
 import time
@@ -29,10 +30,11 @@ from multimodal_v1.features_v3 import (
     BaselineSnapshotV3, BaselineStatistic, FeatureRegistryV3, MetricIdentityV3,
     MetricSelectionV3, RCAFeatureExtractorV3,
 )
+from multimodal_v1.features_v3.dataset import baseline_binding_sha256
 
 from experiments.multimodal_v3.core import file_sha256, sha256_value
 
-from .preprocessing import FrozenEvidenceLoader, IncidentSource
+from .preprocessing import PREPROCESSING_VERSION, FrozenEvidenceLoader, IncidentSource
 from ranking.reliability_gate import ReliabilityGate
 
 
@@ -328,12 +330,111 @@ def _baseline(payload):
     )
 
 
+def _resolve_scientific_baseline(dataset_manifest: Mapping[str, Any],
+                                 repository_root: str | Path) -> BaselineSnapshotV3:
+    """Resolve and cryptographically verify an authoritative benchmark baseline."""
+    policy = dataset_manifest.get("baseline_binding_policy", "split-train-exact")
+    expected_sha256 = dataset_manifest.get("baseline_sha256")
+    baseline_json = dataset_manifest.get("baseline_json")
+    expected_parent_ids = None
+    if not isinstance(expected_sha256, str) or len(expected_sha256) != 64:
+        raise ValueError("H4 scientific baseline SHA inválido.")
+    if policy == "split-train-exact":
+        if not isinstance(baseline_json, str):
+            raise ValueError("H4 split-train-exact requer baseline_json embutido.")
+    elif policy == "frozen-parent-train":
+        if baseline_json is not None:
+            raise ValueError("H4 frozen-parent-train não aceita baseline_json embutido.")
+        reference = dataset_manifest.get("baseline_reference")
+        required = {"schema_version", "path", "baseline_sha256", "parent_base_key",
+                    "parent_split_sha256", "parent_training_incident_ids_sha256",
+                    "parent_training_incident_count", "preprocessing_version"}
+        if (not isinstance(reference, Mapping) or set(reference) != required
+                or reference.get("schema_version") != "frozen-parent-baseline-reference-v1"):
+            raise ValueError("H4 frozen-parent baseline_reference inválida.")
+        provenance = dataset_manifest.get("baseline_binding_provenance")
+        provenance_required = {
+            "official_parent_baseline_sha256", "parent_base_key", "parent_split_sha256",
+            "scientific_tranche_id", "scientific_tranche_sha256",
+            "parent_training_incident_ids_sha256", "parent_training_incident_count",
+            "baseline_binding_sha256",
+        }
+        if not isinstance(provenance, Mapping) or set(provenance) != provenance_required:
+            raise ValueError("H4 frozen-parent baseline provenance inválida.")
+        expected_reference = {
+            "baseline_sha256": provenance["official_parent_baseline_sha256"],
+            "parent_base_key": provenance["parent_base_key"],
+            "parent_split_sha256": provenance["parent_split_sha256"],
+            "parent_training_incident_ids_sha256": provenance[
+                "parent_training_incident_ids_sha256"],
+            "parent_training_incident_count": provenance["parent_training_incident_count"],
+            "preprocessing_version": PREPROCESSING_VERSION,
+        }
+        if any(reference.get(name) != value for name, value in expected_reference.items()):
+            raise ValueError("H4 frozen-parent reference/provenance divergem.")
+        if reference["baseline_sha256"] != expected_sha256:
+            raise ValueError("H4 frozen-parent baseline SHA diverge do dataset.")
+        parent_ids = dataset_manifest.get("baseline_parent_training_incident_ids")
+        splits = dataset_manifest.get("split_incident_ids")
+        if not isinstance(parent_ids, list) or not isinstance(splits, Mapping):
+            raise ValueError("H4 frozen-parent training/split binding ausente.")
+        expected_parent_ids = tuple(parent_ids)
+        if (len(set(parent_ids)) != reference["parent_training_incident_count"]
+                or sha256_value(sorted(parent_ids)) != reference[
+                    "parent_training_incident_ids_sha256"]
+                or not set(splits.get("train", ())) <= set(parent_ids)
+                or (set(splits.get("validation", ())) | set(splits.get("test", ())))
+                & set(parent_ids)):
+            raise ValueError("H4 frozen-parent dataset training identity diverge.")
+        if provenance["baseline_binding_sha256"] != baseline_binding_sha256(
+                provenance, splits):
+            raise ValueError("H4 frozen-parent canonical binding diverge.")
+        relative = reference.get("path")
+        if not isinstance(relative, str) or not relative.strip():
+            raise ValueError("H4 frozen-parent baseline path ausente.")
+        snapshot_path = _inside(Path(repository_root).resolve(), relative)
+        if not snapshot_path.is_file():
+            raise ValueError("H4 frozen-parent baseline snapshot ausente.")
+        snapshot = _read(snapshot_path)
+        training_ids = snapshot.get("training_incident_ids")
+        if (snapshot.get("status") != "COMPLETED"
+                or snapshot.get("preprocessing_version") != PREPROCESSING_VERSION):
+            raise ValueError("H4 frozen-parent baseline snapshot inválido.")
+        if (snapshot.get("baseline_sha256") != reference["baseline_sha256"]
+                or snapshot.get("base_key") != reference["parent_base_key"]
+                or snapshot.get("split_sha256") != reference["parent_split_sha256"]):
+            raise ValueError("H4 frozen-parent snapshot binding diverge.")
+        if (not isinstance(training_ids, list)
+                or len(training_ids) != reference["parent_training_incident_count"]
+                or sha256_value(sorted(training_ids)) != reference[
+                    "parent_training_incident_ids_sha256"]):
+            raise ValueError("H4 frozen-parent training identity diverge.")
+        baseline_json = snapshot.get("baseline_json")
+        if not isinstance(baseline_json, str):
+            raise ValueError("H4 frozen-parent snapshot baseline_json inválido.")
+    else:
+        raise ValueError("H4 baseline_binding_policy desconhecida.")
+    try:
+        baseline_payload = json.loads(baseline_json)
+    except (TypeError, json.JSONDecodeError) as exc:
+        raise ValueError("H4 scientific baseline_json inválido.") from exc
+    if not isinstance(baseline_payload, Mapping) \
+            or sha256_value(baseline_payload) != expected_sha256:
+        raise ValueError("H4 scientific baseline payload hash mismatch.")
+    if expected_parent_ids is not None and tuple(
+            baseline_payload.get("training_incident_ids", ())) != expected_parent_ids:
+        raise ValueError("H4 frozen-parent baseline payload training identity diverge.")
+    return _baseline(baseline_payload)
+
+
 class ScientificH4Evaluator:
     def __init__(self, entries, catalog, repository_root: Path):
         self.entries = entries
         self.catalog = catalog
         self.repository_root = repository_root
         self._models = {}
+        self._metadata = {}
+        self.maximum_metadata_cache_entries_seen = 0
 
     def _entry(self, run):
         key = (run.source_dataset, run.source_system, run.feature_view, run.protocol,
@@ -351,10 +452,53 @@ class ScientificH4Evaluator:
         except KeyError as exc:
             raise RuntimeError(f"H4_SCIENTIFIC_INPUT_NOT_AVAILABLE:{key}") from exc
 
-    def _vectors(self, run, observation):
+    def _metadata_for(self, run):
         catalog = self._catalog(run)
-        dataset_payload = _read(_inside(self.repository_root, catalog["path"]))
-        baseline = _baseline(json.loads(dataset_payload["manifest"]["baseline_json"]))
+        entry = self._entry(run)
+        cache_key = (catalog["path"], entry["artifact_dir"])
+        if cache_key in self._metadata:
+            return self._metadata[cache_key]
+        dataset_path = _inside(self.repository_root, catalog["path"])
+        if not dataset_path.is_file() or file_sha256(dataset_path) != catalog.get("dataset_sha256"):
+            raise ValueError("H4 scientific dataset hash mismatch.")
+        dataset_payload = _read(dataset_path)
+        manifest = dataset_payload.get("manifest")
+        if not isinstance(manifest, Mapping):
+            raise ValueError("H4 scientific dataset manifest inválido.")
+        baseline = _resolve_scientific_baseline(manifest, self.repository_root)
+        feature_view_json = manifest.get("feature_view_json")
+        if not isinstance(feature_view_json, str):
+            raise ValueError("H4 feature_view_json ausente ou inválido.")
+        try:
+            feature_view = json.loads(feature_view_json)
+        except json.JSONDecodeError as exc:
+            raise ValueError("H4 feature_view_json malformado.") from exc
+        features = feature_view.get("features") if isinstance(feature_view, Mapping) else None
+        if (not isinstance(features, list) or not features
+                or any(not isinstance(item, Mapping) or not isinstance(item.get("name"), str)
+                       for item in features)):
+            raise ValueError("H4 feature view sem features ordenadas válidas.")
+        names = tuple(item["name"] for item in features)
+        if len(names) != len(set(names)):
+            raise ValueError("H4 feature view contém nomes duplicados.")
+        feature_sha256 = hashlib.sha256(feature_view_json.encode()).hexdigest()
+        expected_feature_sha256 = manifest.get("feature_view_sha256")
+        artifact_path = _inside(self.repository_root, entry["artifact_dir"])
+        verified = load_verified_artifact(artifact_path)
+        if (feature_sha256 != expected_feature_sha256
+                or expected_feature_sha256 != catalog.get("feature_view_sha256")
+                or expected_feature_sha256 != entry.get("feature_schema_sha256")
+                or expected_feature_sha256 != verified.manifest.get("feature_view_sha256")
+                or names != tuple(verified.manifest.get("feature_names", ()))):
+            raise ValueError("H4 feature view/artifact binding mismatch.")
+        metadata = (baseline, names, manifest["baseline_sha256"], feature_sha256)
+        self._metadata[cache_key] = metadata
+        self.maximum_metadata_cache_entries_seen = max(
+            self.maximum_metadata_cache_entries_seen, len(self._metadata))
+        return metadata
+
+    def _vectors(self, run, observation):
+        baseline, names, _, _ = self._metadata_for(run)
         source = IncidentSource(run.incident_id, run.source_dataset, run.source_system,
                                 Path("."), run.source_manifest_hash, None,
                                 tuple(run.available_modalities))
@@ -362,9 +506,6 @@ class ScientificH4Evaluator:
         vectors = RCAFeatureExtractorV3().extract(
             feature_input.bundle, feature_input.graph, baselines=baseline,
             topology=observation.topology)
-        names = tuple(json.loads(dataset_payload["manifest"]["feature_view_json"])[
-            "features"][index]["name"] for index in range(
-                len(json.loads(dataset_payload["manifest"]["feature_view_json"])["features"])))
         return vectors, names
 
     def __call__(self, run, observation):

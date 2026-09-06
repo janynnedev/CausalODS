@@ -6,6 +6,7 @@ import json
 import hashlib
 from collections.abc import Mapping
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 
@@ -13,6 +14,7 @@ from experiments.final_campaigns_v3 import h4_final_40 as h4
 from experiments.final_campaigns_v3.providers import (
     FrozenH4ObservationMapping,
     ScientificH4Evaluator,
+    _resolve_scientific_baseline,
     evaluate_h4_ranking,
     evaluate_h4_reliability,
     load_h4_inputs,
@@ -26,6 +28,7 @@ from experiments.multimodal_v3.fixtures import smoke_config, smoke_observation
 from multimodal_v1.degradation_v3 import (
     OPERATORS, ObservationDataset, ObservationDegradationHarness,
 )
+from multimodal_v1.features_v3.dataset import baseline_binding_sha256
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -263,6 +266,146 @@ def test_lazy_observation_matches_eager_and_provenance_reuses_cached_base():
     ).execute(run)
     assert loader.calls == [run.incident_id]
     assert lazy_result == eager_result
+
+
+def _minimal_baseline_payload():
+    return {"statistics": {}, "log_templates": {}, "training_incident_ids": [],
+            "metric_selections": {}, "anomaly_policy_version": "test-v1",
+            "schema_version": "rca-feature-baselines-v3"}
+
+
+def _frozen_parent_fixture(tmp_path):
+    payload = _minimal_baseline_payload()
+    digest = h4.sha256_value(payload)
+    reference = {
+        "schema_version": "frozen-parent-baseline-reference-v1",
+        "path": "snapshot.json", "baseline_sha256": digest,
+        "parent_base_key": "base", "parent_split_sha256": "split",
+        "parent_training_incident_ids_sha256": h4.sha256_value([]),
+        "parent_training_incident_count": 0,
+        "preprocessing_version": "scientific-input-preprocessing-v3",
+    }
+    provenance = {
+        "official_parent_baseline_sha256": digest,
+        "parent_base_key": "base", "parent_split_sha256": "split",
+        "scientific_tranche_id": "tranche", "scientific_tranche_sha256": "t" * 64,
+        "parent_training_incident_ids_sha256": h4.sha256_value([]),
+        "parent_training_incident_count": 0, "baseline_binding_sha256": "",
+    }
+    splits = {"train": [], "validation": [], "test": []}
+    provenance["baseline_binding_sha256"] = baseline_binding_sha256(provenance, splits)
+    snapshot = {
+        "status": "COMPLETED", "preprocessing_version":
+        "scientific-input-preprocessing-v3", "baseline_sha256": digest,
+        "base_key": "base", "split_sha256": "split", "training_incident_ids": [],
+        "baseline_json": json.dumps(payload, sort_keys=True, separators=(",", ":")),
+    }
+    (tmp_path / "snapshot.json").write_text(json.dumps(snapshot))
+    return {"baseline_binding_policy": "frozen-parent-train", "baseline_json": None,
+            "baseline_sha256": digest, "baseline_reference": reference,
+            "baseline_binding_provenance": provenance,
+            "baseline_parent_training_incident_ids": [], "split_incident_ids": splits}
+
+
+def test_split_train_exact_baseline_resolution_and_unknown_policy_fail_closed(tmp_path):
+    payload = _minimal_baseline_payload()
+    manifest = {"baseline_binding_policy": "split-train-exact",
+                "baseline_json": json.dumps(payload),
+                "baseline_sha256": h4.sha256_value(payload)}
+    assert _resolve_scientific_baseline(manifest, tmp_path).training_incident_ids == ()
+    manifest["baseline_binding_policy"] = "unknown"
+    with pytest.raises(ValueError, match="policy"):
+        _resolve_scientific_baseline(manifest, tmp_path)
+    manifest["baseline_binding_policy"] = "split-train-exact"
+    manifest["baseline_json"] = None
+    with pytest.raises(ValueError, match="baseline_json"):
+        _resolve_scientific_baseline(manifest, tmp_path)
+
+
+@pytest.mark.parametrize("mutation", [
+    "embedded", "missing_reference", "missing_snapshot", "reference_sha",
+    "dataset_sha", "parent_base", "parent_split", "training_identity",
+    "malformed_baseline",
+])
+def test_frozen_parent_baseline_resolution_fails_closed(tmp_path, mutation):
+    manifest = _frozen_parent_fixture(tmp_path)
+    if mutation == "embedded":
+        manifest["baseline_json"] = "{}"
+    elif mutation == "missing_reference":
+        del manifest["baseline_reference"]
+    elif mutation == "missing_snapshot":
+        manifest["baseline_reference"]["path"] = "missing.json"
+    elif mutation == "reference_sha":
+        manifest["baseline_reference"]["baseline_sha256"] = "0" * 64
+    elif mutation == "dataset_sha":
+        manifest["baseline_sha256"] = "0" * 64
+    elif mutation == "parent_base":
+        manifest["baseline_reference"]["parent_base_key"] = "wrong"
+    elif mutation == "parent_split":
+        manifest["baseline_reference"]["parent_split_sha256"] = "wrong"
+    elif mutation == "training_identity":
+        manifest["baseline_reference"]["parent_training_incident_count"] = 1
+    elif mutation == "malformed_baseline":
+        snapshot = json.loads((tmp_path / "snapshot.json").read_text())
+        snapshot["baseline_json"] = "not-json"
+        (tmp_path / "snapshot.json").write_text(json.dumps(snapshot))
+    with pytest.raises(ValueError):
+        _resolve_scientific_baseline(manifest, tmp_path)
+
+
+def test_actual_h4_ob_ss_tt_frozen_parent_baseline_and_feature_binding():
+    catalog_payload = json.loads((ROOT / CONFIG["criteria"][
+        "scientific_benchmark_catalog"]).read_text())
+    artifact_payload = json.loads((ROOT / CONFIG["criteria"][
+        "scientific_trained_artifact_index"]).read_text())
+    catalogs, entries = {}, {}
+    for item in catalog_payload["datasets"]:
+        key = tuple(item[name] for name in (
+            "source_dataset", "source_system", "feature_view", "protocol", "held_out", "seed"))
+        catalogs[key] = item
+    for item in artifact_payload["artifacts"]:
+        key = tuple(item[name] for name in (
+            "source_dataset", "source_system", "feature_view", "protocol", "held_out", "seed",
+            "method"))
+        entries[key] = item
+    evaluator = ScientificH4Evaluator(entries, catalogs, ROOT)
+    policies = {}
+    for system in ("OB", "SS", "TT"):
+        run = SimpleNamespace(source_dataset="rcaeval", source_system=system,
+                              feature_view="FULL", protocol="within-dataset",
+                              held_out=None, seed=42, method="xgboost-rca-v3")
+        catalog = evaluator._catalog(run)
+        manifest = json.loads((ROOT / catalog["path"]).read_text())["manifest"]
+        policies[system] = manifest["baseline_binding_policy"]
+        baseline, names, baseline_sha, feature_sha = evaluator._metadata_for(run)
+        assert baseline.training_incident_ids
+        assert baseline_sha == manifest["baseline_sha256"]
+        assert feature_sha == manifest["feature_view_sha256"]
+        assert names
+    assert policies == {system: "frozen-parent-train" for system in ("OB", "SS", "TT")}
+    assert len(evaluator._metadata) == evaluator.maximum_metadata_cache_entries_seen == 1
+
+
+def test_h4_technical_canary_is_three_system_noncanonical_and_nonleaking():
+    root = ROOT / "artifacts/final-experiments-v3-h4-final-40-canary"
+    report = json.loads((root / "canary-report.json").read_text())
+    assert report["status"] == "PASS"
+    assert report["purpose"] == "TECHNICAL_EXECUTION_VALIDATION_ONLY"
+    assert not report["used_for_model_selection"]
+    assert not report["used_for_threshold_selection"]
+    assert not report["used_for_hypothesis_interpretation"]
+    assert report["operator"] == "metric_delay" and report["severity"] == 0.0
+    assert {item["source_system"] for item in report["systems"]} == {"OB", "SS", "TT"}
+    assert all(item["execution"] == "SUCCESS" for item in report["systems"])
+    assert all(item["result_schema_validation"] == "PASS" for item in report["systems"])
+    assert all(item["model_sha256"] ==
+               "a10ede7c8bfd922e14765caaf8dc6bfbf7e18627a3a49b722895bb2240e9f889"
+               for item in report["systems"])
+    serialized = root.joinpath("canary-report.json").read_text()
+    assert all(field not in serialized for field in (
+        "predicted_service", "ground_truth_service", "top_1", "top_3", "mrr", "confidence"))
+    canonical = ROOT / "artifacts/final-experiments-v3-h4-final-40/H4/final-h4-v3"
+    assert not any(canonical.iterdir())
 
 
 def test_model_identity_and_same_hash_across_severities():
