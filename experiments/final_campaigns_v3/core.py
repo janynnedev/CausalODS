@@ -1009,6 +1009,12 @@ def promote_trained_artifacts(repository_root: Path, results: Iterable[Mapping[s
 def prepare_selective_resume(store: Any, runs: Iterable[ExperimentRunV3]) -> dict[str, Any]:
     """Keep only byte-valid SUCCESS runs; quarantine mismatches for targeted reexecution."""
     planned = {run.run_id: run for run in runs}
+    # Legacy H4 recovery has neither its original checksum index nor persisted
+    # trained-model identity. Never silently ignore it and reexecute duplicates.
+    if any(run.hypothesis == "H4" for run in planned.values()):
+        recovery_path = store.path / "recovery"
+        if recovery_path.exists() and any(recovery_path.rglob("*.json")):
+            raise ValueError("H4_RECOVERY_REQUIRES_VERIFIED_CANONICAL_REPAIR")
     expected_datasets = {}
     configuration_path = store.path / "configuration.json"
     if configuration_path.is_file():
@@ -1083,6 +1089,10 @@ def prepare_selective_resume(store: Any, runs: Iterable[ExperimentRunV3]) -> dic
         stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
         quarantine = store.path / "recovery" / stamp
         quarantine.mkdir(parents=True, exist_ok=True)
+        # Preserve checksum evidence before replacing the live index or moving
+        # payloads. This is essential for subsequent forensic recovery.
+        store.write_json(f"recovery/{stamp}/pre-recovery-index.json", index,
+                         immutable=True)
         for path in invalid:
             if path.exists():
                 os.replace(path, quarantine / path.name)
@@ -1138,6 +1148,60 @@ def require_clean_final(repository_root: Path, *, mode: str,
     if mode == "development" and status["dirty"] and not allow_dirty_development:
         raise RuntimeError("DIRTY_WORKTREE_REQUIRES_EXPLICIT_DEVELOPMENT_FLAG")
     return {**status, "mode": mode, "valid": True}
+
+
+def preserve_creation_environment(store: Any, repository_root: Path, *,
+                                  mode: str = "final",
+                                  allow_dirty_development: bool = False) -> None:
+    """Keep creation bytes; validate resume compatibility independently of timestamps.
+
+    Scientific manifests are still checked immutably by _write_pre_execution.
+    Worktree policy is the existing final/development policy, never inferred from
+    the creation manifest's observational dirty flag.
+    """
+    path = store.path / "environment.json"
+    current = environment_report(repository_root)
+    if not path.exists():
+        store.write_json("environment.json", current, immutable=True)
+        return
+    original = _read_json(path)
+    require_clean_final(repository_root, mode=mode,
+                        allow_dirty_development=allow_dirty_development)
+
+    def compatibility(value):
+        runtime = value.get("python", "").split()
+        if not runtime or len(runtime[0].split(".")) != 3:
+            raise ValueError("RESUME_RUNTIME_VERSION_MISSING")
+        packages = value.get("packages", {})
+        if any(not packages.get(name) for name in
+               ("numpy", "scikit-learn", "xgboost", "joblib")):
+            raise ValueError("RESUME_SCIENTIFIC_DEPENDENCY_MISSING")
+        commit = value.get("git", {}).get("git_commit")
+        if not commit:
+            raise ValueError("RESUME_SCIENTIFIC_COMMIT_MISSING")
+        return {"git_commit": commit, "python": runtime[0],
+                "packages": {name: packages[name] for name in
+                             ("numpy", "scikit-learn", "xgboost", "joblib")},
+                **{key: value.get(key) for key in
+                   ("schema_version", "os", "architecture", "platform", "contracts")}}
+
+    before, after = compatibility(original), compatibility(current)
+    mismatches = sorted(key for key in before if before[key] != after[key])
+    if mismatches:
+        raise ValueError("RESUME_ENVIRONMENT_INCOMPATIBLE:" + ",".join(mismatches))
+    report = {"schema_version": "resume-environment-compatibility-v1",
+              "creation_environment_sha256": file_sha256(path),
+              "compatibility": after, "current_environment": current,
+              "operational_differences": {
+                  key: {"creation": original.get(key), "resume": current.get(key)}
+                  for key in sorted(set(original) | set(current))
+                  if original.get(key) != current.get(key)}}
+    # Outside the store: adding a file inside would invalidate its exact-cover
+    # SHA256SUMS manifest before the orchestrator verifies a completed campaign.
+    report_path = (store.path.parent / "resume-environments" / store.path.name
+                   / f"{sha256_value(report)}.json")
+    if not report_path.exists():
+        _atomic_json(report_path, report)
 
 
 def environment_report(repository_root: Path) -> dict[str, Any]:

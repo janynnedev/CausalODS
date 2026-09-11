@@ -203,6 +203,7 @@ def test_18_corrupt_result_is_not_resumed(tmp_path):
 def test_18b_selective_resume_reexecutes_only_corrupt_run(tmp_path):
     first = build_smoke_orchestrator(tmp_path, ROOT, "selective-resume")
     initial = first.run()
+    original_index = json.loads((first.store.runs_path / "index.json").read_text())
     target = next(path for path in first.store.runs_path.glob("*.json")
                   if path.name != "index.json")
     target.write_text(target.read_text() + " ")
@@ -210,7 +211,13 @@ def test_18b_selective_resume_reexecutes_only_corrupt_run(tmp_path):
     assert audit == {"reused": 25, "reexecute": 1, "quarantined": 1}
     resumed = build_smoke_orchestrator(tmp_path, ROOT, "selective-resume").run(resume=True)
     assert len(initial) == len(resumed) == 26
-    assert len(list((first.store.path / "recovery").rglob("*.json"))) == 1
+    recovery_files = list((first.store.path / "recovery").rglob("*.json"))
+    assert len([path for path in recovery_files
+                if path.name != "pre-recovery-index.json"]) == 1
+    saved_index = next(path for path in recovery_files
+                       if path.name == "pre-recovery-index.json")
+    historical_checksums = json.loads(saved_index.read_text())
+    assert historical_checksums == original_index
 
 
 def test_19_dirty_git_blocks_final(monkeypatch):

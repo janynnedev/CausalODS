@@ -17,6 +17,7 @@ from .core import (
     compact_plan, deterministic_blind_map, dry_run,
     environment_report, load_campaign_config, plan_summary, prepare_selective_resume,
     promote_trained_artifacts, require_clean_final, write_final_result_indexes,
+    preserve_creation_environment,
 )
 from .preprocessing import (
     FrozenEvidenceLoader, _incident_worker_payload, _read_json, _registry_from_snapshot,
@@ -255,10 +256,12 @@ def _factory(reference: str):
 
 
 def _write_pre_execution(store: CampaignStoreV3, payload, registry, config, runs,
-                         evaluation_context) -> None:
+                         evaluation_context, *, mode="final",
+                         allow_dirty_development=False) -> None:
     store.write_json("configuration.json", payload, immutable=True)
     store.write_json("dataset-registry-snapshot.json", registry.snapshot(), immutable=True)
-    store.write_json("environment.json", environment_report(REPOSITORY_ROOT), immutable=True)
+    preserve_creation_environment(store, REPOSITORY_ROOT, mode=mode,
+                                  allow_dirty_development=allow_dirty_development)
     store.write_json("execution-plan.json", {
         "schema_version": "execution-plan-v3", "summary": plan_summary(payload["family"], runs),
         "runs": [run.to_dict() for run in runs],
@@ -621,7 +624,9 @@ def main(argv=None) -> int:
     } for run in planned_runs}.values())
     # Labels stay in a separate evaluation-only artifact and never reach executors.
     runs = tuple(replace(run, fault_type=None, scenario=None) for run in planned_runs)
-    _write_pre_execution(store, payload, registry, config, runs, evaluation_context)
+    _write_pre_execution(store, payload, registry, config, runs, evaluation_context,
+                         mode=args.mode,
+                         allow_dirty_development=args.allow_dirty_development)
     if tranche is not None:
         store.write_json("scientific-tranche.json", {
             "schema_version": tranche["schema_version"],
