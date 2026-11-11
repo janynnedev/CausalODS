@@ -1,0 +1,9 @@
+# Consumer isolation for both deterministic and live presentation runs.
+services:
+  platform-v3-runtime:
+    environment:
+      PLATFORM_V3_EXPLANATION_PROVIDER: ${PLATFORM_V3_DEMO_PROVIDER:-deterministic}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      MULTIMODAL_CONSUMER_GROUP: causalods-platform-v3-presentation-demo
+    volumes:
+      - ./experiments:/app/experiments:ro

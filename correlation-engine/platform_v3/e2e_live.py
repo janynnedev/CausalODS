@@ -22,6 +22,7 @@ from platform_v3.fault_e2e import (
 )
 from platform_v3.operational_model import DEFAULT_MODELS_ROOT, operational_model_status
 from platform_v3.serialization import canonical_json, source_snapshot_sha256
+from platform_v3.explanation_status import OperationalExplanationError
 
 
 COMPOSE = (
@@ -134,6 +135,16 @@ def _runtime_health() -> dict[str, Any] | None:
         return None
 
 
+def _find_explanation(incident_id: str):
+    documents = _search(INDEX_NAMES["explanations"], "incident_id", incident_id)
+    if documents:
+        return documents
+    incidents = _search(INDEX_NAMES["incidents"], "incident_id", incident_id)
+    if incidents and incidents[0].get("explanation_status") == "FAILED":
+        raise OperationalExplanationError(incidents[0].get("explanation_error_code", ""))
+    return None
+
+
 def _find_trace_id(correlation_id: str) -> tuple[str, list[dict[str, Any]]] | None:
     events = _search(INDEX_NAMES["unified_events"], "correlation_id", correlation_id)
     trace_ids = sorted({item.get("trace_id") for item in events if item.get("trace_id")})
@@ -224,6 +235,20 @@ def run_fault_e2e(
     *, scenario: str = "payment_failure",
     timeout: float = 120,
 ) -> dict[str, Any]:
+    return execute_live_incident(output, scenario=scenario, timeout=timeout)
+
+
+def execute_live_incident(
+    output: Path = ARTIFACT_ROOT,
+    *, scenario: str = "payment_failure", timeout: float = 120,
+    correlation_id: str | None = None, manage_fault: bool = True,
+    write_report: bool = True,
+) -> dict[str, Any]:
+    """Observe the existing 19-stage E2E; campaigns own the global fault lifecycle.
+
+    With manage_fault=False, stage 19 is deferred to the campaign, and this
+    report's fault_restored is None until the campaign verifies restoration.
+    """
     if scenario != "payment_failure":
         raise ValueError("Prompt 12 aprova somente o fault E2E payment_failure.")
     output = Path(output)
@@ -237,7 +262,7 @@ def run_fault_e2e(
         timeout=60,
         description="runtime v3 READY",
     )
-    correlation_id = f"platform-v3-e2e-{uuid.uuid4().hex[:20]}"
+    correlation_id = correlation_id or f"platform-v3-e2e-{uuid.uuid4().hex[:20]}"
     stages = Stages()
     trace_id = incident_id = rca_result_id = explanation_id = None
     events: list[dict[str, Any]] = []
@@ -247,7 +272,8 @@ def run_fault_e2e(
     grafana_ok = tempo_direct = tempo_proxy = restored = False
     error: str | None = None
     try:
-        _configure_fault(True)
+        if manage_fault:
+            _configure_fault(True)
         stages.pass_(1, {"service": "payment-service", "mode": "error", "rate": 1.0})
         status, response_headers, response = _request(
             "http://localhost:8081/orders",
@@ -310,7 +336,7 @@ def run_fault_e2e(
                           "root_cause_service": rca["root_cause_service"],
                           "confidence": rca["confidence"], "reliable": rca["reliable"]})
         explanation_docs = _wait_until(
-            lambda: _search(INDEX_NAMES["explanations"], "incident_id", incident_id),
+            lambda: _find_explanation(incident_id),
             timeout=timeout,
             description="explicação persistida",
         )
@@ -338,17 +364,20 @@ def run_fault_e2e(
         stages.pass_(18, {"trace_id": trace_id, "tempo_direct": tempo_direct,
                           "grafana_tempo_proxy": tempo_proxy})
     except Exception as exception:
-        error = f"{type(exception).__name__}: {exception}"
+        error = (f"{type(exception).__name__}: {exception}" if manage_fault
+                 else (exception.code if isinstance(exception, OperationalExplanationError)
+                       else type(exception).__name__))
         next_stage = min(len(stages.values) + 1, 18)
         if next_stage <= 18:
             stages.fail(next_stage, error)
     finally:
         try:
-            _configure_fault(False)
-            restored = True
+            if manage_fault:
+                _configure_fault(False)
+                restored = True
         except Exception as exception:
             error = error or f"{type(exception).__name__}: {exception}"
-        if len(stages.values) < 19:
+        if manage_fault and len(stages.values) < 19:
             if len(stages.values) < 18:
                 stages.fail(18, "blocked_by_prior_stage")
             if restored:
@@ -361,16 +390,16 @@ def run_fault_e2e(
     predicted = rca_docs[0].get("root_cause_service") if rca_docs else None
     top1 = predicted == "payment-service"
     success = (
-        len(stages.values) == 19
+        len(stages.values) == (19 if manage_fault else 18)
         and all(item["status"] == "PASS" for item in stages.values)
-        and top1 and not forbidden and restored
+        and top1 and not forbidden and (restored or not manage_fault)
     )
     report = {
         "schema_version": FAULT_E2E_SCHEMA,
         "platform_version": PLATFORM_VERSION,
         "generated_at": _now(),
         "repository_commit": _git_commit(),
-        "source_snapshot_sha256": source_snapshot_sha256(),
+        "source_snapshot_sha256": source_snapshot_sha256() if manage_fault else None,
         "execution_mode": "live",
         "scenario": scenario,
         "correlation_id": correlation_id,
@@ -386,6 +415,13 @@ def run_fault_e2e(
             "feature_view_sha256": manifest["feature_view_sha256"],
         },
         "stages": stages.values,
+        "operational_progress": {
+            **({key: rca_docs[0].get(key) for key in
+                ("root_cause_service", "confidence", "reliable")} if rca_docs else {}),
+            **({key: incident_docs[0].get(key) for key in
+                ("event_count", "modalities")} if incident_docs else {}),
+            "provider": health_before.get("explanation_provider"),
+        },
         "runtime_evidence": {
             "runtime_ready": bool((_runtime_health() or {}).get("ready")),
             "telemetry_real": bool(events),
@@ -394,7 +430,7 @@ def run_fault_e2e(
             "grafana_query_passed": grafana_ok,
             "tempo_direct_passed": tempo_direct,
             "tempo_grafana_proxy_passed": tempo_proxy,
-            "fault_restored": restored,
+            "fault_restored": restored if manage_fault else None,
             "observed_modalities": sorted({item.get("signal_type") for item in events if item.get("signal_type")}),
             "business_event_live_required": False,
         },
@@ -411,6 +447,8 @@ def run_fault_e2e(
         "error": error,
         "status": "SUCCESS" if success else "FAILED",
     }
+    if not write_report:
+        return report
     report_path = output / FAULT_E2E_REPORT
     checksum_path = output / FAULT_E2E_CHECKSUM
     report_path.write_text(canonical_json(report) + "\n", encoding="utf-8")

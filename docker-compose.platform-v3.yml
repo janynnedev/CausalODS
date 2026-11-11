@@ -75,7 +75,7 @@ services:
         condition: service_healthy
     environment:
       KAFKA_BOOTSTRAP_SERVERS: kafka:9092
-      MULTIMODAL_CONSUMER_GROUP: causalods-platform-v3-runtime
+      MULTIMODAL_CONSUMER_GROUP: causalods-platform-v3-presentation-demo
       MULTIMODAL_TRACE_TOPIC: traces-v3
       MULTIMODAL_LOG_TOPIC: logs-v1
       MULTIMODAL_METRIC_TOPIC: metrics-v1
@@ -87,6 +87,7 @@ services:
       PLATFORM_V3_TEMPLATE_ROOT: /platform-v3-templates
       PLATFORM_V3_HEALTH_PORT: "8090"
       PLATFORM_V3_INCIDENT_IDLE_SECONDS: "3"
+      PLATFORM_V3_EXPLANATION_PROVIDER: deterministic
     volumes:
       - ./artifacts/platform-v3/models:/models:ro
       - ./infrastructure/platform-v3/opensearch/templates:/platform-v3-templates:ro

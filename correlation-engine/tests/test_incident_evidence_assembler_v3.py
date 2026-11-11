@@ -491,3 +491,18 @@ def test_later_observation_does_not_rewrite_historical_association_score():
     assert second.score == 0.5
     assert third.score == 1.0  # upgrade explícito vale somente para matches futuros
     assert bundle.association_scores[EventReference("observed-2", "kafka:observed-2")] == 0.5
+
+
+def test_probe_cannot_capture_request_before_correlation_bearing_span():
+    assembler = IncidentEvidenceAssembler(topology={"order-service": ["payment-service"]})
+    probe = assembler.ingest(event("probe-1", correlation_id="probe", trace_id="b" * 32))
+    early = assembler.ingest(event("request-2", "log", seconds=1, trace_id="a" * 32))
+    server = assembler.ingest(event("server-3", seconds=1, correlation_id="request", trace_id="a" * 32))
+    payment = assembler.ingest(event("payment-4", seconds=2, correlation_id="request",
+                                    trace_id="a" * 32, service_name="payment-service"))
+    assert early.associated and server.associated and payment.associated
+    assert early.incident_id == server.incident_id == payment.incident_id
+    assert server.incident_id != probe.incident_id
+    bundle = next(b for b in assembler.active_bundles() if b.incident_id == server.incident_id)
+    assert bundle.traces == ("a" * 32,)
+    assert {e.correlation_id for e in bundle.events if e.correlation_id} == {"request"}

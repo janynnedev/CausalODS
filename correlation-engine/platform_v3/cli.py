@@ -35,6 +35,12 @@ def parser() -> argparse.ArgumentParser:
     e2e.add_argument("--scenario", default="payment_failure", choices=("payment_failure",))
     e2e.add_argument("--output", type=Path, default=ARTIFACT_ROOT)
     e2e.add_argument("--timeout", type=float, default=120.0)
+    demo = commands.add_parser("presentation-demo")
+    demo.add_argument("--runs", type=int, default=10)
+    demo.add_argument("--scenario", choices=("payment_failure",), default="payment_failure")
+    demo.add_argument("--output", type=Path, default=ROOT / "artifacts/presentation-demo")
+    demo.add_argument("--live-llm", action="store_true")
+    demo.add_argument("--export-graphs", action=argparse.BooleanOptionalAction, default=True)
     validate = commands.add_parser("validate")
     validate.add_argument("--live", action="store_true", default=False)
     validate.add_argument("--output", type=Path, default=ARTIFACT_ROOT)
@@ -73,6 +79,14 @@ def main(argv: list[str] | None = None) -> int:
         report = run_fault_e2e(args.output, scenario=args.scenario, timeout=args.timeout)
         print(json.dumps({"status": report["status"], "output": str(args.output)}, sort_keys=True))
         return 0 if report["status"] == "SUCCESS" else 2
+    if args.command == "presentation-demo":
+        from platform_v3.presentation_demo import run_presentation_demo
+        report = run_presentation_demo(
+            args.output, runs=args.runs, scenario=args.scenario,
+            live_llm=args.live_llm, export_graphs=args.export_graphs,
+        )
+        print(json.dumps(report, sort_keys=True))
+        return 0 if report["campaign_status"] == "SUCCESS" else 2
     if args.command in {"validate", "report"}:
         paths = write_validation_artifacts(args.output, live=args.live)
         report = json.loads(paths["report_json"].read_text(encoding="utf-8"))

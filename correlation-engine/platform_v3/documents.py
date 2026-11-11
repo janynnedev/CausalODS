@@ -4,7 +4,13 @@ from datetime import datetime, timezone
 from typing import Any, Mapping
 
 from platform_v3.constants import PROJECTION_VERSION
-from platform_v3.serialization import arbitrary_json, plain, sanitize, sha256_value
+from platform_v3.serialization import (
+    arbitrary_json,
+    canonical_json,
+    plain,
+    sanitize,
+    sha256_value,
+)
 
 
 def _mapping(value: Any) -> dict[str, Any]:
@@ -25,6 +31,26 @@ def _event_reference(value: Any) -> dict[str, Any]:
         "source_reference": data.get("source_reference"),
     }
 
+def _safe_graph_mapping(graph: Any) -> dict[str, Any]:
+    """Sanitiza o grafo sem confundir edge.target com ground truth."""
+    raw = _mapping(graph)
+    safe = sanitize(raw)
+
+    raw_edges = raw.get("edges", [])
+    safe_edges = safe.get("edges", [])
+
+    if isinstance(raw_edges, list) and isinstance(safe_edges, list):
+        for raw_edge, safe_edge in zip(raw_edges, safe_edges):
+            if (
+                isinstance(raw_edge, dict)
+                and isinstance(safe_edge, dict)
+                and "target" in raw_edge
+            ):
+                # `target` aqui é o endpoint estrutural da aresta,
+                # não um target/label de ground truth.
+                safe_edge["target"] = sanitize(raw_edge["target"])
+
+    return safe
 
 class VisualizationDocumentAdapter:
     """Adapta contratos existentes para projeções pesquisáveis, sem os redefinir."""
@@ -70,7 +96,7 @@ class VisualizationDocumentAdapter:
             "payload_hash": sha256_value(data),
         }
 
-    def incident(self, bundle: Any, graph: Any | None = None) -> dict[str, Any]:
+    def incident(self, bundle: Any, graph: Any | None = None, *, pruning: Any | None = None) -> dict[str, Any]:
         data = sanitize(_mapping(bundle))
         incident_id = data.get("incident_id")
         if not incident_id:
@@ -93,7 +119,8 @@ class VisualizationDocumentAdapter:
             association_scores = [
                 float(item.get("score", 0.0)) for item in raw_scores if isinstance(item, dict)
             ]
-        graph_data = sanitize(_mapping(graph)) if graph is not None else {}
+        graph_data = _safe_graph_mapping(graph) if graph is not None else {}
+        pruning_data = sanitize(_mapping(pruning)) if pruning is not None else {}
         return {
             "projection_version": PROJECTION_VERSION,
             "incident_id": incident_id,
@@ -125,7 +152,11 @@ class VisualizationDocumentAdapter:
             "graph_edge_count": len(graph_data.get("edges", [])),
             "graph_rule_versions_json": arbitrary_json(graph_data.get("rule_versions", {})),
             "graph_nodes_json": arbitrary_json(graph_data.get("nodes", [])),
-            "graph_edges_json": arbitrary_json(graph_data.get("edges", [])),
+            "graph_edges_json": canonical_json(graph_data.get("edges", [])),
+            "pruning_before_count": pruning_data.get("before_count"),
+            "pruning_after_count": pruning_data.get("after_count"),
+            "pruning_candidates": pruning_data.get("candidates", []),
+            "pruning_json": arbitrary_json(pruning_data),
             "payload_hash": sha256_value(data),
         }
 
@@ -202,6 +233,8 @@ class VisualizationDocumentAdapter:
             "summary": data.get("summary"),
             "evidence_references": data.get("cited_evidence_ids", []),
             "evidence_statements_json": arbitrary_json(data.get("evidence_statements", [])),
+            "propagation_path_json": arbitrary_json(data.get("propagation_path", [])),
+            "recommendations_json": arbitrary_json(data.get("recommendations", [])),
             "missing_evidence": data.get("missing_evidence", []),
             "limitations": data.get("limitations", []),
             "valid": not data.get("used_fallback", False),

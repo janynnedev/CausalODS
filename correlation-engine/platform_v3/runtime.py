@@ -30,6 +30,9 @@ from multimodal_v1.ingestion.kafka_consumer import (
     MultimodalKafkaSettings,
 )
 from platform_v3.documents import VisualizationDocumentAdapter
+from platform_v3.explanation_provider import build_explanation_service
+from platform_v3.explanation_status import explanation_error_code
+from platform_v3.presentation_safety import checked_json
 from platform_v3.opensearch import OpenSearchProjectionRepository, TemplateCatalog
 from platform_v3.operational_model import (
     DEFAULT_MODELS_ROOT,
@@ -99,6 +102,8 @@ class RuntimeHealth:
                 "processed_incidents": self.processed_incidents,
                 "last_incident_id": self.last_incident_id,
                 "last_error": self.last_error,
+                "explanation_provider": os.getenv("PLATFORM_V3_EXPLANATION_PROVIDER", "deterministic"),
+                "consumer_group": os.getenv("MULTIMODAL_CONSUMER_GROUP", "causalods-multimodal-v3"),
             }
 
 
@@ -118,6 +123,8 @@ class RuntimeSink:
 
     def deliver(self, events) -> None:
         with self._lock:
+            documents = []
+            incident_ids = set()
             for event in events:
                 decision = self.assembler.ingest(event)
                 if (not decision.associated or not decision.incident_id) \
@@ -125,10 +132,15 @@ class RuntimeSink:
                     continue
                 incident_id = decision.incident_id if decision.associated else None
                 document = self.adapter.unified_event(event, incident_id=incident_id)
-                self.repository.index("unified_events", document["event_id"], document)
+                if event.correlation_id and event.correlation_id.startswith("presentation-demo-"):
+                    checked_json(document)
+                documents.append(document)
                 if incident_id:
-                    self._last_seen[incident_id] = time.monotonic()
-                self.health.increment("consumed_events")
+                    incident_ids.add(incident_id)
+            self.repository.index_many("unified_events", documents)
+            for incident_id in incident_ids:
+                self._last_seen[incident_id] = time.monotonic()
+            self.health.increment("consumed_events", len(documents))
 
     def ready_bundles(self, *, idle_seconds: float) -> tuple[Any, ...]:
         now = time.monotonic()
@@ -171,7 +183,7 @@ class RuntimeProcessor:
             minimum_evidence_count=2,
             minimum_source_count=2,
         )
-        self.explanations = ExplanationService()
+        self.explanations = build_explanation_service()
 
     @staticmethod
     def _score(value: Any) -> float:
@@ -305,14 +317,13 @@ class RuntimeProcessor:
             metadata=metadata,
         )
         rca = replace(rca, rca_result_id=f"rca-v3-{_hash({'incident_id': bundle.incident_id, 'model': self.model.model_sha256})[:24]}")
-        explanation_result = self.explanations.explain(
-            rca,
-            raw_telemetry=tuple(event.to_dict() for event in bundle.events),
-        )
-        explanation = explanation_result.explanation
-        explanation_id = f"explanation-v3-{_hash({'rca_result_id': rca.rca_result_id, 'prompt_hash': explanation.prompt_hash})[:24]}"
-
-        incident_document = self.adapter.incident(bundle, graph)
+        demo_only = all(
+            value.startswith("presentation-demo-") for value in metadata["correlation_ids"]
+        ) and bool(metadata["correlation_ids"])
+        explanations = self.explanations
+        if self.explanations.llm_client is not None and not demo_only:
+            explanations = ExplanationService()
+        incident_document = self.adapter.incident(bundle, graph, pruning=pruning)
         rca_document = self.adapter.rca_result(
             rca,
             model_hash=self.model.model_sha256,
@@ -320,16 +331,44 @@ class RuntimeProcessor:
             graph_rule_versions=graph.rule_versions,
             shap_values=shap_results,
         )
-        explanation_document = self.adapter.explanation(
-            explanation,
-            incident_id=bundle.incident_id,
-            explanation_id=explanation_id,
-            evidence_hash=rca_document["payload_hash"],
-            provider="deterministic-fallback" if explanation.used_fallback else "llm",
+        if demo_only:
+            checked_json([incident_document, rca_document])
+        incident_document.update(
+            explanation_status="RUNNING",
+            explanation_provider="openai" if explanations.llm_client is not None else "deterministic",
+            explanation_started_at=_utc_now(),
         )
+        # A provider failure must not erase the independently determined RCA.
         self.repository.index("incidents", bundle.incident_id, incident_document)
         self.repository.index("rca_results", rca.rca_result_id, rca_document)
-        self.repository.index("explanations", explanation_id, explanation_document)
+        try:
+            explanation_result = explanations.explain(
+                rca,
+                raw_telemetry=tuple(event.to_dict() for event in bundle.events),
+            )
+            explanation = explanation_result.explanation
+            explanation_id = f"explanation-v3-{_hash({'rca_result_id': rca.rca_result_id, 'prompt_hash': explanation.prompt_hash})[:24]}"
+
+            explanation_document = self.adapter.explanation(
+                explanation,
+                incident_id=bundle.incident_id,
+                explanation_id=explanation_id,
+                evidence_hash=rca_document["payload_hash"],
+                provider="deterministic-fallback" if explanation.used_fallback else "llm",
+            )
+            if demo_only:
+                checked_json([incident_document, rca_document, explanation_document])
+            self.repository.index("explanations", explanation_id, explanation_document)
+        except Exception as exception:
+            incident_document.update(
+                explanation_status="FAILED",
+                explanation_error_code=explanation_error_code(exception),
+                explanation_completed_at=_utc_now(),
+            )
+            self.repository.index("incidents", bundle.incident_id, incident_document)
+            raise
+        incident_document.update(explanation_status="COMPLETED", explanation_completed_at=_utc_now())
+        self.repository.index("incidents", bundle.incident_id, incident_document)
         return {
             "incident_id": bundle.incident_id,
             "trace_id": trace_id,
@@ -395,10 +434,12 @@ def run_runtime() -> int:
         auto_offset_reset="latest",
         enable_auto_commit=False,
         consumer_timeout_ms=1000,
+        max_poll_records=1,
     )
     required_topics = (settings.trace_topic, settings.log_topic, settings.metric_topic)
     connected = all(raw_consumer.partitions_for_topic(topic) for topic in required_topics)
-    health.update(consumer_connected=connected)
+    # Topic metadata availability does not establish group membership.
+    health.update(consumer_connected=False)
     if not connected:
         raise RuntimeError("Consumer Kafka não localizou os tópicos multimodais obrigatórios.")
 
@@ -413,11 +454,12 @@ def run_runtime() -> int:
     def consume_loop() -> None:
         health.update(consumer_running=True)
         try:
-            # consumer_timeout permite revisar readiness sem declarar processo
-            # morto; reabre iteração sobre o mesmo consumer continuamente.
             while health.alive:
-                for message in consumer.consumer:
-                    consumer.process_message(message)
+                batches = consumer.consumer.poll(timeout_ms=1000, max_records=1)
+                health.update(consumer_connected=bool(consumer.consumer.assignment()))
+                for messages in batches.values():
+                    for message in messages:
+                        consumer.process_message(message)
         except Exception as exception:  # health boundary; não mascara falha
             health.update(consumer_running=False, last_error=f"{type(exception).__name__}: {exception}")
 
@@ -435,8 +477,9 @@ def run_runtime() -> int:
                     health.update(last_incident_id=result["incident_id"], last_error=None)
                     print(canonical_json({"runtime_event": "incident_processed", **result}), flush=True)
             except Exception as exception:
-                health.update(last_error=f"{type(exception).__name__}: {exception}")
-                print(canonical_json({"runtime_event": "processing_error", "error_type": type(exception).__name__, "message": str(exception)}), flush=True)
+                # Provider exception text may contain remote content or credentials.
+                health.update(last_error=type(exception).__name__)
+                print(canonical_json({"runtime_event": "processing_error", "error_type": type(exception).__name__}), flush=True)
             time.sleep(0.5)
 
     monitor = threading.Thread(target=process_loop, name="platform-v3-processor", daemon=True)

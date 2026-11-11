@@ -1,0 +1,44 @@
+{
+  "scientific_result": false,
+  "campaign": "artifacts/presentation-demo/5d35245631c444d8a73134475efe215a",
+  "campaign_status": "SUCCESS",
+  "root_cause_service": "payment-service",
+  "trace_id": "220c9f5603d443f355d25fd785b84dad",
+  "incident_id": "inc-v3-ab25a3ac5064ad07a1d80318",
+  "rca_result_id": "rca-v3-058b10a754a0085e1e4d9b26",
+  "explanation_id": "explanation-v3-4fca8494eca31a120b31a8c1",
+  "events_by_trace": 10,
+  "event_count": 10,
+  "graph_node_count": 10,
+  "graph_edge_count": 20,
+  "graph_pngs": [
+    "featured/graph/01-observed-events.png",
+    "featured/graph/02-structural-relations.png",
+    "featured/graph/03-semantic-relations.png",
+    "featured/graph/04-temporal-statistical-evidence.png",
+    "featured/graph/05-causal-candidates.png",
+    "featured/graph/06-pruning.png",
+    "featured/graph/07-rca-result.png"
+  ],
+  "png_count": 7,
+  "report_runtime_evidence": {
+    "business_event_live_required": false,
+    "fault_restored": null,
+    "grafana_query_passed": true,
+    "model_inference_real": true,
+    "observed_modalities": [
+      "trace"
+    ],
+    "opensearch_links_verified": true,
+    "runtime_ready": true,
+    "telemetry_real": true,
+    "tempo_direct_passed": true,
+    "tempo_grafana_proxy_passed": true
+  },
+  "fault_restored": true,
+  "runtime_provider_restored": true,
+  "live_status": "BLOCKED_MISSING_OPENAI_API_KEY",
+  "live_calls_made": 0,
+  "provider": "deterministic-fallback",
+  "fallback": true
+}

@@ -80,6 +80,30 @@ class OpenSearchProjectionRepository:
             index=INDEX_NAMES[kind], id=document_id, body=dict(document), refresh="wait_for",
         )
 
+    def index_many(self, kind: str, documents: list[Mapping[str, Any]]) -> None:
+        """Persist one ingestion batch without blocking Kafka on refresh.
+
+        Per-event wait_for refresh can stall Kafka polling for minutes on OTLP
+        metric batches. Search visibility follows the normal index refresh.
+        Bulk preserves idempotent IDs and fails before commit
+        if any item was rejected.
+        """
+        if kind not in INDEX_NAMES:
+            raise KeyError(kind)
+        if not documents:
+            return
+        body = []
+        for document in documents:
+            identifier = document.get("event_id")
+            if not identifier:
+                raise ValueError("UnifiedEvent requires event_id")
+            body.extend(({"index": {"_index": INDEX_NAMES[kind], "_id": identifier}},
+                         dict(document)))
+        response = self.client.bulk(body=body, refresh=False)
+        if response.get("errors"):
+            # Do not include arbitrary server document content in diagnostics.
+            raise RuntimeError("OpenSearch ingestion bulk contained failed items")
+
     def query(self, kind: str, field: str, value: str, *, size: int = 100) -> list[dict[str, Any]]:
         if kind not in INDEX_NAMES:
             raise KeyError(kind)

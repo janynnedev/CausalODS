@@ -51,6 +51,7 @@ SECRET_FIELD_NAMES = frozenset(
         "passwd",
         "secret",
         "api_key",
+        "openai_api_key",
         "apikey",
         "access_token",
         "refresh_token",

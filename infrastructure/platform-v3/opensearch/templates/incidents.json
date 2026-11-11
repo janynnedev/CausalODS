@@ -27,6 +27,15 @@
         "graph_rule_versions_json": {"type": "keyword", "index": false, "doc_values": false},
         "graph_nodes_json": {"type": "keyword", "index": false, "doc_values": false},
         "graph_edges_json": {"type": "keyword", "index": false, "doc_values": false},
+        "pruning_before_count": {"type": "long"},
+        "pruning_after_count": {"type": "long"},
+        "pruning_candidates": {"type": "keyword"},
+        "pruning_json": {"type": "keyword", "index": false, "doc_values": false},
+        "explanation_status": {"type": "keyword"},
+        "explanation_provider": {"type": "keyword"},
+        "explanation_error_code": {"type": "keyword"},
+        "explanation_started_at": {"type": "date"},
+        "explanation_completed_at": {"type": "date"},
         "payload_hash": {"type": "keyword"}
       }
     }

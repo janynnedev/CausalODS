@@ -63,6 +63,14 @@ class EventAssociationScorer:
             reasons.append("same_business_entity_id")
             strengths.append(0.75)
 
+        current_traces = {item.identity_value for item in current if item.identity_type == "trace_id"}
+        stored_traces = {item.identity_value for item in stored if item.identity_type == "trace_id"}
+        if (current_traces and stored_traces and current_traces.isdisjoint(stored_traces)
+                and not strengths):
+            # Time/topology alone must not attach an identified request to an
+            # unrelated probe/workflow before its correlation-bearing span arrives.
+            return AssociationScore(0.0, ("distinct_trace_identity_without_link",))
+
         temporal = self.policy.temporal_score(event.event_timestamp, (item.event_timestamp for item in items))
         service = self.resolver.resolve(event).service_name
         related = any(self.topology.related(service, self.resolver.resolve(item).service_name) for item in items)
